@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Red Apple: land a canard-delta unmanned fighter powered by the TF-10K engine at one of four airfields, with a sim-style flight model, virtual cockpit, oleo-strut gear, autopilot with ILS autoland, moving map and scoring.">
+<meta name="description" content="Red Apple: land a canard-delta unmanned fighter powered by the TF-10K engine at one of four airfields, with a sim-style flight model, an interactive virtual cockpit, oleo-strut gear, autopilot with ILS autoland, moving map and scoring.">
 <meta name="author" content="Baris Hiz">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22lgA%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ff6b5a%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23c3261c%22/%3E%3C/linearGradient%3E%3ClinearGradient%20id%3D%22lgS%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23f4f7fa%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23a9b4bf%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath%20d%3D%22M24%204.2%20C24.6%202.6%2025.6%201.6%2027%201.2%22%20stroke%3D%22%237a4a2a%22%20stroke-width%3D%221.6%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22/%3E%3Cpath%20d%3D%22M26.2%203.4%20C29.5%200.6%2033.4%201.2%2034.6%202.4%20C32.6%205.2%2028.8%205.6%2026.2%203.4%20Z%22%20fill%3D%22%234fbf6a%22/%3E%3Ccircle%20cx%3D%2224%22%20cy%3D%2225%22%20r%3D%2221.5%22%20fill%3D%22%23120c0d%22%20stroke%3D%22url%28%23lgA%29%22%20stroke-width%3D%222.6%22/%3E%3Cpath%20d%3D%22M5%2038%20L43%2026%22%20stroke%3D%22%23ffb432%22%20stroke-width%3D%221.6%22%20stroke-dasharray%3D%222.6%202%22%20fill%3D%22none%22%20opacity%3D%22.9%22/%3E%3Cpath%20fill%3D%22url%28%23lgS%29%22%20d%3D%22M24%207%20L26.3%2015%20L26.8%2020.5%20L39%2032%20L39%2034.4%20L27.8%2035.8%20L28.4%2040.4%20L31.2%2043.4%20L26.3%2042.6%20L24%2044.4%20L21.7%2042.6%20L16.8%2043.4%20L19.6%2040.4%20L20.2%2035.8%20L9%2034.4%20L9%2032%20L21.2%2020.5%20L21.7%2015%20Z%22/%3E%3Cpath%20fill%3D%22url%28%23lgS%29%22%20d%3D%22M21.6%2016.2%20L16.2%2020.2%20L16.2%2021.6%20L21.3%2020.6%20Z%20M26.4%2016.2%20L31.8%2020.2%20L31.8%2021.6%20L26.7%2020.6%20Z%22/%3E%3Ccircle%20cx%3D%2224%22%20cy%3D%2239.6%22%20r%3D%221.1%22%20fill%3D%22%23ff5a4a%22/%3E%3C/svg%3E">
 <style>html{color-scheme:dark}body{margin:0}[hidden]{display:none!important}</style>
@@ -76,6 +76,8 @@ main{display:grid;grid-template-columns:1fr 372px;min-height:0}
 #fma .arm{color:#e3eaf2} #fma .act{color:var(--hud)} #fma .off{color:var(--fg-mute)} #fma .warn{color:var(--amber)}
 #view.ckView .hb,#view.ckView #cdi,#view.ckView #rwySym{display:none}
 #view.ckView #fma{top:12px}
+#app.ckFull main{grid-template-columns:1fr;grid-template-rows:1fr} #app.ckFull #panel{display:none}
+#ckTip{position:absolute;z-index:6;max-width:260px;padding:5px 9px;border-radius:5px;background:rgba(10,14,20,.9);border:1px solid var(--line-2);font-size:12px;line-height:1.35;color:var(--fg);pointer-events:none}
 #rwySym{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 
 #cdi{position:absolute;left:50%;top:calc(50% + 110px);transform:translateX(-50%);width:170px;height:44px}
@@ -270,7 +272,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
             <dt>← → / A D</dt><dd>Roll left / right with the ailerons</dd>
             <dt>PgUp PgDn / + −</dt><dd>Thrust (or drag anywhere on the throttle, or tap Idle, CLB, TO/GA)</dd>
             <dt>F · G · B · Space</dt><dd>Flaps · Gear · Brakes · Speed brake</dd>
-            <dt>C · V · R</dt><dd>Cockpit view · cycle cameras · restart. In the cockpit, drag to look around, scroll to zoom, double-click to look ahead</dd>
+            <dt>C · V · R</dt><dd>Cockpit view · cycle cameras · restart. In the cockpit every control is clickable: autopilot on the glareshield, gear lever, flap lever, switches, and drag the throttle. Drag elsewhere to look around, scroll to zoom, double-click to look ahead</dd>
             <dt>Touch</dt><dd>Stick at bottom-left for pitch and bank, buttons in the panel</dd>
           </dl>
           <div class="row"><button class="btn go" id="btnGo" type="button">Start approach</button><a class="btn eng" id="btnEngine" href="testcell">Test the engine</a></div>
@@ -955,7 +957,7 @@ const ckTex={};
  // glareshield and instrument panel
  const gs=add(new THREE.Mesh(new THREE.BoxGeometry(1.1,0.05,0.3),mPanel),0,-0.21,-0.84);gs.rotation.x=0.08;
  add(new THREE.Mesh(new THREE.BoxGeometry(1.1,0.025,0.03),mBlack),0,-0.195,-0.69);
- const panel=new THREE.Group();panel.position.set(0,-0.45,-0.86);panel.rotation.x=-0.32;cockpit.add(panel);
+ const panel=new THREE.Group();panel.position.set(0,-0.52,-0.86);panel.rotation.x=-0.32;cockpit.add(panel);
  add(new THREE.Mesh(new THREE.BoxGeometry(1.12,0.46,0.05),mPanel),0,0,-0.03,panel);
  const mkScreen=(name,x,w,h)=>{const c=document.createElement('canvas');c.width=512;c.height=Math.round(512*h/w);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;
    add(new THREE.Mesh(new THREE.BoxGeometry(w+0.03,h+0.03,0.02),mBlack),x,0.01,0,panel);
@@ -1025,15 +1027,96 @@ function drawHUD(a){const d=ckTex.hud,g=d.g;g.setTransform(1,0,0,1,0,0);g.clearR
   if(a.stallW){g.font='700 32px Rajdhani, sans-serif';g.fillText('STALL',256,140);}
   if(!a.gear&&a.agl<1000){g.font='700 24px Rajdhani, sans-serif';g.fillText('GEAR',256,420);}
   d.t.needsUpdate=true;}
-function updateCockpit(dt){const on=camMode==='cockpit';cockpit.visible=on;view.classList.toggle('ckView',on);if(on!==ck.was){ck.t=1;const sn=drone.getObjectByName('sensor');if(sn)sn.visible=!on;}ck.was=on;if(!on)return;
+function updateCockpit(dt){const on=camMode==='cockpit';cockpit.visible=on;view.classList.toggle('ckView',on);if(on!==ck.was){ck.t=1;const sn=drone.getObjectByName('sensor');if(sn)sn.visible=!on;$('app').classList.toggle('ckFull',on);if(!on){ckTip.hidden=true;canvas.style.cursor='';}}ck.was=on;if(!on)return;updateCockpitControls();
   ck.stick.rotation.x=(ac.de||0)*0.3;ck.stick.rotation.z=-(ac.da||0)*0.3;ck.thr.position.z=-0.2+0.15-sim.throttle*0.3;
   ck.ped[0].position.z=-0.92-(ac.drTot||0)*0.05;ck.ped[1].position.z=-0.92+(ac.drTot||0)*0.05;
   drawHUD(ac);ck.t+=dt;if(ck.t>0.1){ck.t=0;drawCockpitDisplays(ac);}}
-canvas.addEventListener('pointerdown',e=>{if(camMode!=='cockpit')return;ck.drag={x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);});
-canvas.addEventListener('pointermove',e=>{if(!ck.drag)return;ck.headY=clamp(ck.headY-(e.clientX-ck.drag.x)*0.005,-2.4,2.4);ck.headP=clamp(ck.headP-(e.clientY-ck.drag.y)*0.005,-1.1,1.0);ck.drag.x=e.clientX;ck.drag.y=e.clientY;});
-canvas.addEventListener('pointerup',()=>{ck.drag=null;});canvas.addEventListener('pointercancel',()=>{ck.drag=null;});
-canvas.addEventListener('wheel',e=>{if(camMode!=='cockpit')return;e.preventDefault();ck.fov=clamp(ck.fov+e.deltaY*0.03,28,85);},{passive:false});
+canvas.addEventListener('pointerdown',e=>{if(camMode!=='cockpit')return;const p=ckPick(e);
+  if(p){if(p.h.drag==='thr'){manualThrust();ck.drag={x:e.clientX,y:e.clientY,thr:true};canvas.setPointerCapture(e.pointerId);}else p.h.click(p.uv,e);return;}
+  ck.drag={x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);canvas.style.cursor='grabbing';});
+canvas.addEventListener('pointermove',e=>{if(camMode!=='cockpit'){ckTip.hidden=true;return;}
+  if(ck.drag){if(ck.drag.thr)setThrottle(+thr.value-(e.clientY-ck.drag.y)*0.5);else{ck.headY=clamp(ck.headY-(e.clientX-ck.drag.x)*0.005,-2.4,2.4);ck.headP=clamp(ck.headP-(e.clientY-ck.drag.y)*0.005,-1.1,1.0);}ck.drag.x=e.clientX;ck.drag.y=e.clientY;return;}
+  const p=ckPick(e);if(p){const t=p.h.tip(p.uv);canvas.style.cursor='pointer';if(t){ckTip.textContent=t;ckTip.hidden=false;const r=view.getBoundingClientRect();ckTip.style.left=min(e.clientX-r.left+14,r.width-270)+'px';ckTip.style.top=(e.clientY-r.top+16)+'px';}else ckTip.hidden=true;}
+  else{canvas.style.cursor='grab';ckTip.hidden=true;}});
+canvas.addEventListener('pointerup',()=>{ck.drag=null;canvas.style.cursor='grab';});canvas.addEventListener('pointercancel',()=>{ck.drag=null;});
+canvas.addEventListener('pointerleave',()=>{ckTip.hidden=true;});
+canvas.addEventListener('wheel',e=>{if(camMode!=='cockpit')return;e.preventDefault();const p=ckPick(e);if(p&&p.h.wheel&&p.h.wheel(p.uv,e.deltaY,e))return;ck.fov=clamp(ck.fov+e.deltaY*0.03,28,85);},{passive:false});
 canvas.addEventListener('dblclick',()=>{ck.headY=0;ck.headP=-0.1;ck.fov=62;});
+/* ================= Cockpit controls: glareshield autopilot, gear and flap levers, switches, draggable throttle ================= */
+const ckHits=[];const ckLights={};
+{const mPlate=std({color:0x1b1f24,roughness:0.8,metalness:0.2}),mMetal=std({color:0x7d8690,roughness:0.4,metalness:0.7}),mBlack=std({color:0x0d0f12,roughness:0.9});
+ const add=(m,x,y,z,parent)=>{m.position.set(x,y,z);(parent||cockpit).add(m);return m;};
+ const label=(text,w,h,x,y,z,rx,parent,size)=>{const c=document.createElement('canvas');c.width=256;c.height=Math.round(256*h/w);const g=c.getContext('2d');g.fillStyle='#e3eaf2';g.font='700 '+(size||Math.round(c.height*0.62))+'px Rajdhani, Arial Narrow, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(text,128,c.height/2);
+   const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;const m=add(new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,toneMapped:false})),x,y,z,parent);m.rotation.x=rx||0;m.renderOrder=3;return m;};
+ const light=(name,x,y,z,parent,rx)=>{const m=add(new THREE.Mesh(new THREE.PlaneGeometry(0.018,0.018),new THREE.MeshBasicMaterial({color:0x1c2228,toneMapped:false})),x,y,z,parent);m.rotation.x=rx||0;ckLights[name]=m;return m;};
+ // glareshield autopilot panel (canvas display + hit regions)
+ const mc=document.createElement('canvas');mc.width=1024;mc.height=128;const mt=new THREE.CanvasTexture(mc);mt.colorSpace=THREE.SRGBColorSpace;mt.anisotropy=8;ckTex.mcp={c:mc,g:mc.getContext('2d'),t:mt,key:''};
+ const mcpG=new THREE.Group();mcpG.position.set(0,-0.245,-0.655);mcpG.rotation.x=-0.22;cockpit.add(mcpG);
+ add(new THREE.Mesh(new THREE.BoxGeometry(1.02,0.13,0.03),mPlate),0,0,-0.016,mcpG);
+ const mcpMesh=add(new THREE.Mesh(new THREE.PlaneGeometry(1.0,0.125),new THREE.MeshBasicMaterial({map:mt,toneMapped:false})),0,0,0.001,mcpG);
+ const WIN=[['ias','SPD',16],['hdg','HDG',166],['alt','ALT',316],['vs','V/S',466]],BTN=[['AP','AP'],['ATHR','A/THR'],['HDG','HDG'],['ALT','ALT'],['VS','V/S'],['APP','APP']];
+ const btnX=i=>620+i*68;
+ ckHits.push({mesh:mcpMesh,
+   region(uv){const x=uv.x*1024;for(const[k,l,x0]of WIN)if(x>=x0&&x<x0+140)return{t:'win',k,l,dir:x<x0+70?-1:1};for(let i=0;i<6;i++)if(x>=btnX(i)&&x<btnX(i)+60)return{t:'btn',m:BTN[i][0],l:BTN[i][1]};return null;},
+   click(uv,e){const r=this.region(uv);if(!r)return;if(r.t==='win')apSel(r.k,r.dir,e.shiftKey);else{ensureGameAudio();apMode(r.m);}audio.click&&audio.click();},
+   wheel(uv,dy,e){const r=this.region(uv);if(r&&r.t==='win'){apSel(r.k,dy<0?1:-1,e.shiftKey);return true;}return false;},
+   tip(uv){const r=this.region(uv);if(!r)return'';return r.t==='win'?r.l+': click left to decrease, right to increase, or scroll (Shift for big steps)':r.l+': '+({AP:'autopilot on/off',ATHR:'auto-thrust holds the SPD window',HDG:'fly the HDG window',ALT:'hold altitude',VS:'climb or descend at the V/S window',APP:'arm ILS approach and autoland'}[r.m]);}});
+ // gear lever with wheel knob + three lights (left of the main panel)
+ const gearG=new THREE.Group();gearG.position.set(-0.59,-0.41,-0.79);gearG.rotation.x=-0.32;cockpit.add(gearG);
+ add(new THREE.Mesh(new THREE.BoxGeometry(0.1,0.2,0.02),mPlate),0,0,-0.01,gearG);
+ add(new THREE.Mesh(new THREE.BoxGeometry(0.012,0.13,0.012),mBlack),0,0,0.002,gearG);
+ ck.gearArm=new THREE.Group();gearG.add(ck.gearArm);
+ add(new THREE.Mesh(new THREE.BoxGeometry(0.012,0.012,0.06),mMetal),0,0,0.03,ck.gearArm);
+ const knob=add(new THREE.Mesh(new THREE.CylinderGeometry(0.024,0.024,0.016,18).rotateX(PI/2),std({color:0xe8ebee,roughness:0.5})),0,0,0.065,ck.gearArm);
+ ['N','L','R'].forEach((n,i)=>light('gear'+n,0.035,0.07-i*0.025,0.002,gearG));
+ label('GEAR',0.08,0.022,0,-0.088,0.002,0,gearG);
+ ckHits.push({mesh:knob,click(){toggleGear();},tip(){return 'Landing gear: '+(ac.gear?'down, click to raise':'up, click to lower')+' (G)';}});
+ ckHits.push({mesh:gearG.children[0],click(){toggleGear();},tip(){return 'Landing gear lever (G)';}});
+ // flap lever on the left console, ahead of the throttle
+ const flapG=new THREE.Group();flapG.position.set(-0.4,-0.505,-0.56);cockpit.add(flapG);
+ add(new THREE.Mesh(new THREE.BoxGeometry(0.09,0.012,0.16),mPlate),0,0,0,flapG);
+ add(new THREE.Mesh(new THREE.BoxGeometry(0.01,0.014,0.12),mBlack),0,0.002,0,flapG);
+ ck.flapArm=new THREE.Group();flapG.add(ck.flapArm);
+ add(new THREE.Mesh(new THREE.BoxGeometry(0.008,0.05,0.008),mMetal),0,0.03,0,ck.flapArm);
+ const fk=add(new THREE.Mesh(new THREE.BoxGeometry(0.04,0.022,0.03),std({color:0xd8dde2,roughness:0.6})),0,0.06,0,ck.flapArm);
+ label('FLAPS',0.07,0.02,0,0.008,0.09,-PI/2,flapG);label('0   15   30',0.04,0.016,0.035,0.008,0,-PI/2,flapG,22).rotation.z=-PI/2;
+ ckHits.push({mesh:fk,click(){ac.flaps=(ac.flaps+1)%3;syncSys();audio.clunk&&audio.clunk(0.3);},tip(){return 'Flaps '+['0','15','30'][ac.flaps]+': click to select next (F)';}});
+ ckHits.push({mesh:flapG.children[0],click(){ac.flaps=(ac.flaps+1)%3;syncSys();audio.clunk&&audio.clunk(0.3);},tip(){return 'Flap lever: click to step 0 / 15 / 30 (F)';}});
+ // switches: speed brake + wheel brakes on the left console, auto-trim + auto-rudder on the right console
+ const sw=(name,x,z,text,get,act,tipT)=>{const g=new THREE.Group();g.position.set(x,-0.505,z);cockpit.add(g);
+   const base=add(new THREE.Mesh(new THREE.BoxGeometry(0.075,0.012,0.06),mPlate),0,0,0,g);
+   const tog=add(new THREE.Mesh(new THREE.BoxGeometry(0.012,0.035,0.012),mMetal),0,0.022,0,g);
+   light(name,0.025,0.0075,-0.018,g,-PI/2);label(text,0.075,0.018,0,0.0075,0.022,-PI/2,g);
+   const h={mesh:base,tog,get,click(){act();audio.click&&audio.click();},tip(){return tipT+': '+(get()?'on':'off')+', click to switch';}};ckHits.push(h);ckHits.push({...h,mesh:tog});ck.switches=(ck.switches||[]);ck.switches.push(h);};
+ sw('splr',-0.47,0.13,'SPD BRK',()=>ac.splr,()=>toggleSplr(),'Speed brake (Space)');
+ sw('brk',-0.38,0.13,'BRAKES',()=>ac.brk,()=>toggleBrk(),'Wheel brakes (B)');
+ sw('atrim',0.38,-0.55,'A-TRIM',()=>autoTrim,()=>toggleAutoTrim(),'Auto-trim, holds the flight path with the stick centred (T)');
+ sw('arud',0.47,-0.55,'A-RUD',()=>autoRudder,()=>toggleAutoRudder(),'Auto-rudder, keeps turns coordinated');
+ // throttle: grab the grip and drag
+ const tg=ck.thr.children[1];ckHits.push({mesh:tg,drag:'thr',tip(){return 'Throttle '+Math.round(sim.throttle*100)+'%: drag forward or back (PgUp / PgDn)';}});
+ ckHits.push({mesh:ck.thr.children[0],drag:'thr',tip(){return 'Throttle: drag the grip';}});
+ cockpit.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;if(!o.renderOrder)o.renderOrder=2;}});}
+function drawMCP(){const d=ckTex.mcp,g=d.g;const key=JSON.stringify([ap.sel,ap.on,ap.athr,ap.lat,ap.vert,ap.app,ap.loc,ap.gs]);if(key===d.key)return;d.key=key;
+  g.fillStyle='#14181d';g.fillRect(0,0,1024,128);g.strokeStyle='#2c343e';g.lineWidth=2;g.strokeRect(2,2,1020,124);
+  const win=(k,l,x0,val,dim)=>{g.fillStyle='#8b9aab';g.font='700 22px Rajdhani, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(l,x0+70,22);
+    g.fillStyle='#05080b';g.fillRect(x0+18,38,104,52);g.strokeStyle='#2a3442';g.strokeRect(x0+18,38,104,52);
+    g.fillStyle=dim?'#5f6d7d':'#ffb432';g.font='600 38px IBM Plex Mono, monospace';g.fillText(val,x0+70,66);
+    g.fillStyle='#cfd8e2';g.font='700 30px IBM Plex Mono, monospace';g.fillText('−',x0+8,64);g.fillText('+',x0+132,64);
+    g.fillStyle='#5f6d7d';g.font='600 14px Rajdhani, sans-serif';g.fillText('click / scroll',x0+70,108);};
+  win('ias','SPD',16,String(ap.sel.ias));win('hdg','HDG',166,String(ap.sel.hdg).padStart(3,'0'));win('alt','ALT',316,String(ap.sel.alt));win('vs','V/S',466,(ap.sel.vs>0?'+':'')+ap.sel.vs,!(ap.on&&ap.vert==='VS'));
+  const lit={AP:ap.on,ATHR:ap.athr,HDG:ap.on&&ap.lat==='HDG',ALT:ap.on&&ap.vert==='ALT',VS:ap.on&&ap.vert==='VS',APP:ap.app&&(ap.loc||ap.gs)};const arm={APP:ap.app&&!ap.loc};
+  [['AP','AP'],['ATHR','A/THR'],['HDG','HDG'],['ALT','ALT'],['VS','V/S'],['APP','APP']].forEach(([m,l],i)=>{const x=620+i*68;const gr=g.createLinearGradient(0,30,0,104);gr.addColorStop(0,'#2a3440');gr.addColorStop(1,'#161d26');g.fillStyle=gr;g.fillRect(x,30,60,74);g.strokeStyle='#3a4859';g.strokeRect(x,30,60,74);
+    g.fillStyle=lit[m]?'#55db8e':arm[m]?'#e3eaf2':'#26313d';g.fillRect(x+16,38,28,7);g.fillStyle='#e3eaf2';g.font='700 '+(l.length>3?19:24)+'px Rajdhani, sans-serif';g.textAlign='center';g.fillText(l,x+30,76);});
+  d.t.needsUpdate=true;}
+function updateCockpitControls(){drawMCP();
+  ck.gearArm.rotation.x=lerp(-0.45,0.45,ac.gear?1:0);ck.gearArm.position.y=ac.gear?-0.045:0.045;
+  ['N','L','R'].forEach(n=>ckLights['gear'+n].material.color.setHex(ac.gearT>0.97?0x37e36e:ac.gearT>0.03?0xff3b30:0x1c2228));
+  ck.flapArm.position.z=-0.05+ac.flaps*0.05;
+  (ck.switches||[]).forEach(s=>{const on=s.get();s.tog.rotation.x=on?-0.5:0.5;});
+  ckLights.splr.material.color.setHex(ac.splr?0xffb432:0x1c2228);ckLights.brk.material.color.setHex(ac.brk?0xffb432:0x1c2228);ckLights.atrim.material.color.setHex(autoTrim?0x37e36e:0x1c2228);ckLights.arud.material.color.setHex(autoRudder?0x37e36e:0x1c2228);}
+const ckRay=new THREE.Raycaster(),ckNdc=new THREE.Vector2();const ckTip=document.createElement('div');ckTip.id='ckTip';ckTip.hidden=true;view.appendChild(ckTip);
+function ckPick(e){const r=canvas.getBoundingClientRect();ckNdc.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);ckRay.setFromCamera(ckNdc,camera);
+  const hits=ckRay.intersectObjects(ckHits.map(h=>h.mesh),false);if(!hits.length)return null;const h=ckHits.find(x=>x.mesh===hits[0].object);return h?{h,uv:hits[0].uv||new THREE.Vector2()}:null;}
 /* camera */
 let camMode='chase';const camPos=new THREE.Vector3(),camLook=new THREE.Vector3();let shake=0;
 function updateCamera(dt){
@@ -1321,7 +1404,7 @@ function frame(now){
   updateHUD(dt);updateRunwaySymbol();if((now/100|0)%2===0)drawMap();updatePanel(dt);renderLever();
 }
 syncSys();updateThrOut();resetFlight();ac.phase='standby';
-window.__hawk={ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
+window.__hawk={ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
 requestAnimationFrame(frame);
 })();
 </script>

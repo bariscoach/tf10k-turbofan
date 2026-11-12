@@ -9,3 +9,5 @@ Interactive 3D simulator of a 10,000 lbf high-bypass turbofan, built with three.
 - Numbered hotspots open a card for each component with live numbers
 
 Open `index.html` in a browser, or serve the folder with any static host. Deployed with Vercel.
+
+Made by Baris Hiz.

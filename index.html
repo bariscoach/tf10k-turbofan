@@ -997,20 +997,54 @@ let exhaust,navL,navR,strobe,gearGroup,gearUnits=[],ctrlSurf=[],canards=[];
  // detailed gear: oleo cylinder + chrome piston that slides with compression, torque links, axle, twin wheels with hubs, leg door; mains in side pods
  const mChrome=std({color:0xe8edf2,metalness:1,roughness:0.12}),mStrut=std({color:0x59616b,metalness:0.7,roughness:0.4}),mTyre=std({color:0x121315,roughness:0.95}),mHub=std({color:0xb8bec6,metalness:0.8,roughness:0.3}),mDoor=std({color:0xd3d8de,metalness:0.3,roughness:0.5,side:THREE.DoubleSide});
 
+ // realistic aircraft wheel: radial tyre (lathe profile) with grooved tread, dished alloy rim, bolts, hub cap, valve, brake stack
+ const treadTex=(()=>{const c=document.createElement('canvas');c.width=64;c.height=128;const g=c.getContext('2d');g.fillStyle='#2a2b2e';g.fillRect(0,0,64,128);
+   for(let i=0;i<900;i++){g.fillStyle=`rgba(${20+Math.random()*30|0},${20+Math.random()*30|0},${22+Math.random()*30|0},.6)`;g.fillRect(Math.random()*64,Math.random()*128,1,1);}
+   g.fillStyle='#0b0b0c';[30,58,70,98].forEach(y=>g.fillRect(0,y,64,5));g.fillStyle='rgba(255,255,255,0.05)';for(let x=0;x<64;x+=16)g.fillRect(x,0,1,128);
+   const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;return t;})();
+ const sideTex=(()=>{const c=document.createElement('canvas');c.width=512;c.height=64;const g=c.getContext('2d');g.fillStyle='#202124';g.fillRect(0,0,512,64);
+   g.fillStyle='rgba(255,255,255,0.13)';g.font='700 26px Rajdhani, Arial Narrow, sans-serif';g.textBaseline='middle';for(let k=0;k<2;k++){g.fillText('RADIAL  ·  28×9.0R15  ·  22 PR',10+k*256,32);}
+   const t=new THREE.CanvasTexture(c);t.wrapS=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;return t;})();
+ const mTread=std({color:0xffffff,map:treadTex,roughness:0.93,metalness:0}),mSide=std({color:0xffffff,map:sideTex,roughness:0.9}),mRim=std({color:0xc4cad1,metalness:0.92,roughness:0.28}),
+   mRimDark=std({color:0x6f767e,metalness:0.8,roughness:0.4}),mBrake=std({color:0x2b2d31,metalness:0.4,roughness:0.7}),mBolt=std({color:0xe6eaee,metalness:1,roughness:0.2});
+ const makeWheel=(R,W,brakeSide)=>{const w=new THREE.Group();
+   const P=(a)=>a.map(([r,y])=>new THREE.Vector2(r*R,y*W));
+   // tyre: sidewalls from the lathe profile, tread as a grooved band on top
+   const side=new THREE.LatheGeometry(P([[0.57,-0.42],[0.63,-0.5],[0.76,-0.53],[0.88,-0.49],[0.96,-0.4],[0.995,-0.3],[0.995,0.3],[0.96,0.4],[0.88,0.49],[0.76,0.53],[0.63,0.5],[0.57,0.42]]),40);side.rotateZ(PI/2);
+   w.add(new THREE.Mesh(side,mSide));
+   const tread=new THREE.CylinderGeometry(R,R,W*0.62,40,1,true);tread.rotateZ(PI/2);treadTex.repeat.set(1,6);w.add(new THREE.Mesh(tread,mTread));
+   // rim: dished alloy wheel with flange lip (both halves)
+   const rim=new THREE.LatheGeometry(P([[0.08,-0.2],[0.22,-0.24],[0.42,-0.33],[0.5,-0.36],[0.56,-0.4],[0.6,-0.46],[0.6,-0.41],[0.57,-0.36],[0.57,0.36],[0.6,0.41],[0.6,0.46],[0.56,0.4],[0.5,0.36],[0.42,0.33],[0.22,0.24],[0.08,0.2]]),36);rim.rotateZ(PI/2);
+   w.add(new THREE.Mesh(rim,mRim));
+   for(const sd of[-1,1]){const cap=new THREE.Mesh(new THREE.CylinderGeometry(R*0.12,R*0.14,W*0.08,18).rotateZ(PI/2),mRimDark);cap.position.x=sd*W*0.24;w.add(cap);
+     const nut=new THREE.Mesh(new THREE.CylinderGeometry(R*0.06,R*0.06,W*0.06,6).rotateZ(PI/2),mBolt);nut.position.x=sd*W*0.29;w.add(nut);
+     for(let i=0;i<8;i++){const an=i/8*2*PI;const b=new THREE.Mesh(new THREE.CylinderGeometry(R*0.025,R*0.025,W*0.05,6).rotateZ(PI/2),mBolt);b.position.set(sd*W*0.33,cos(an)*R*0.3,sin(an)*R*0.3);w.add(b);}}
+   const valve=new THREE.Mesh(new THREE.CylinderGeometry(R*0.018,R*0.018,W*0.14,6).rotateZ(PI/2),mBolt);valve.position.set(W*0.36,R*0.47,0);w.add(valve);
+   // brake: carbon stack inside the rim on the inboard side (does not spin: added to the parent below)
+   let brake=null;if(brakeSide){brake=new THREE.Group();const stack=new THREE.Mesh(new THREE.CylinderGeometry(R*0.46,R*0.46,W*0.5,24).rotateZ(PI/2),mBrake);brake.add(stack);
+     for(let i=0;i<5;i++){const disk=new THREE.Mesh(new THREE.CylinderGeometry(R*0.47,R*0.47,W*0.03,24).rotateZ(PI/2),mRimDark);disk.position.x=-W*0.2+i*W*0.1;brake.add(disk);}
+     const housing=new THREE.Mesh(new THREE.CylinderGeometry(R*0.3,R*0.3,W*0.18,18).rotateZ(PI/2),mRimDark);housing.position.x=brakeSide*W*0.42;brake.add(housing);
+     const arm=new THREE.Mesh(new THREE.BoxGeometry(W*0.12,R*0.18,R*0.9),mStrut);arm.position.set(brakeSide*W*0.5,R*0.05,-R*0.4);arm.rotation.x=0.35;brake.add(arm);}
+   w.traverse(o=>{if(o.isMesh){o.castShadow=true;}});return {w,brake};};
  const mkGear=(x,z,wr,ww,pivotY,twin,isNose)=>{
    const pivot=new THREE.Group();pivot.position.set(x,pivotY,z);gearGroup.add(pivot);
    const axleY=-(GX.ext-wr)-pivotY;const len=-axleY;
    const cyl=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.11,len*0.58,14),mStrut);cyl.position.y=-len*0.29;pivot.add(cyl);
    const collar=new THREE.Mesh(new THREE.CylinderGeometry(0.125,0.125,0.06,14),mStrut);collar.position.y=-len*0.58;pivot.add(collar);
    const slide=new THREE.Group();slide.position.y=axleY;pivot.add(slide);
-   const piston=new THREE.Mesh(new THREE.CylinderGeometry(0.066,0.066,len*0.62,12),mChrome);piston.position.y=len*0.31;slide.add(piston);
-   const axle=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,twin?0.62:0.5,10).rotateZ(PI/2),mStrut);slide.add(axle);
-   const tl1=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.32,0.07),mStrut);tl1.position.set(0,0.22,isNose?-0.12:0.12);tl1.rotation.x=isNose?0.5:-0.5;slide.add(tl1);
+   const pBase=isNose?wr+0.1:0;const piston=new THREE.Mesh(new THREE.CylinderGeometry(0.066,0.066,len*0.62,12),mChrome);piston.position.y=pBase+len*0.31;slide.add(piston);
+   if(isNose){const axle=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,ww+0.12,10).rotateZ(PI/2),mStrut);slide.add(axle);}
+   const tl1=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.32,0.07),mStrut);tl1.position.set(0,0.22+pBase,isNose?-0.12:0.12);tl1.rotation.x=isNose?0.5:-0.5;slide.add(tl1);
    const tl2=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.32,0.07),mStrut);tl2.position.set(0,len*0.42-len*0.0,isNose?-0.12:0.12);tl2.rotation.x=isNose?-0.5:0.5;pivot.add(tl2);tl2.position.y=axleY+0.5;
-   const wheels=[];for(const side of(twin?[-1,1]:[0])){const w=new THREE.Group();w.position.x=side*(twin?0.24:0);slide.add(w);
-     const tyre=new THREE.Mesh(new THREE.TorusGeometry(wr*0.72,wr*0.28,10,22).rotateY(PI/2),mTyre);w.add(tyre);
-     const hub=new THREE.Mesh(new THREE.CylinderGeometry(wr*0.5,wr*0.5,ww*0.8,16).rotateZ(PI/2),mHub);w.add(hub);
-     const spoke=new THREE.Mesh(new THREE.BoxGeometry(ww*0.82,wr*0.85,0.05),mStrut);w.add(spoke);wheels.push(w);}
+   const wheels=[];
+   if(isNose){const {w}=makeWheel(wr,ww,0);slide.add(w);wheels.push(w);
+     for(const sd of[-1,1]){const arm=new THREE.Mesh(new THREE.BoxGeometry(0.03,wr+0.1,0.06),mStrut);arm.position.set(sd*(ww*0.5+0.035),(wr+0.1)/2,0);slide.add(arm);}
+     const crown=new THREE.Mesh(new THREE.BoxGeometry(ww+0.1,0.05,0.09),mStrut);crown.position.y=wr+0.1;slide.add(crown);
+     const fender=new THREE.Mesh(new THREE.CylinderGeometry(wr+0.04,wr+0.04,ww*0.8,16,1,true,-0.9,1.8).rotateZ(PI/2),mStrut);slide.add(fender);fender.material=mStrut;
+     const lamp=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.035,0.05,12).rotateX(PI/2),std({color:0xfff6dc,emissive:0xfff2c8,emissiveIntensity:0.6}));lamp.position.set(0,wr+0.16,-0.06);slide.add(lamp);}
+   else{const out=Math.sign(x)||1;const off=out*(ww*0.5+0.09);const {w,brake}=makeWheel(wr,ww,-out);w.position.x=off;slide.add(w);wheels.push(w);
+     if(brake){brake.position.x=off;slide.add(brake);}
+     const stub=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.05,Math.abs(off)+ww*0.3,12).rotateZ(PI/2),mStrut);stub.position.x=off/2;slide.add(stub);}
    const door=new THREE.Mesh(new THREE.BoxGeometry(0.03,len*0.55,isNose?0.36:0.5),mDoor);door.position.set(isNose?0.16:x>0?0.15:-0.15,-len*0.3,0);pivot.add(door);
    pivot.traverse(o=>{if(o.isMesh)o.castShadow=true;});
    return {pivot,slide,wheels,axleY,wr,isNose,spin:0};};
@@ -1253,6 +1287,7 @@ function updateCamera(dt){
     ck.glP+=((ck.glance?-0.62:0)-ck.glP)*(1-exp(-dt/0.15));
     camera.quaternion.copy(q).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(ck.glance?ck.glP:ck.headP+ck.autoP+ck.glP,ck.glance?0:ck.headY,0,'YXZ')));
     camera.fov=ck.fov;camera.near=0.03;camera.updateProjectionMatrix();return;}
+  else if(camMode==='inspect'){drone.updateMatrixWorld(true);want=new THREE.Vector3(ck.insp?ck.insp[0]:3.2,ck.insp?ck.insp[1]:-0.9,ck.insp?ck.insp[2]:4.2).applyMatrix4(drone.matrixWorld);look=new THREE.Vector3(ck.insp?ck.insp[3]:1.5,-1.25,ck.insp?ck.insp[4]:2.0).applyMatrix4(drone.matrixWorld);camPos.copy(want);camLook.copy(look);camera.position.copy(want);camera.up.set(0,1,0);camera.fov=40;camera.near=0.05;camera.updateProjectionMatrix();camera.lookAt(look);return;}
   else{want=target.ap.tower.clone();look=a.pos.clone();}
   camera.near=1;
   const k=camMode==='nose'?1:1-exp(-dt/0.18);camPos.lerp(want,k);camLook.lerp(look,k);
@@ -1540,7 +1575,7 @@ function frame(now){
   updateHUD(dt);updateRunwaySymbol();if((now/100|0)%2===0)drawMap();updatePanel(dt);renderLever();
 }
 syncSys();updateThrOut();resetFlight();ac.phase='standby';
-window.__hawk={ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
+window.__hawk={setCam:(m)=>{camMode=m;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
 requestAnimationFrame(frame);
 })();
 </script>

@@ -1,13 +1,11 @@
-# TF-10K Turbofan Test Cell
+# Hawk UAV Landing · TF-10K Turbofan Test Cell
 
-Interactive 3D simulator of a 10,000 lbf high-bypass turbofan, built with three.js and the Web Audio API in a single HTML file.
+Two single-file three.js + Web Audio apps built around the same simulated engine, the TF-10K, a fictional 10,000 lbf high-bypass turbofan.
 
-- FADEC-style auto start, Boeing-style 3D thrust lever, fuel cutoff and spool-down
-- Live EICAS gauges (N1, N2, EGT, fuel flow) plus EPR, oil, vibration, P3/T3 and fuel consumption
-- Synthesized CFM56-style engine sound: air-turbine starter whine, igniters, light-off, fan whine and takeoff buzz-saw, compressor whine, jet roar, blade clacking at low rpm
-- Cutaway model with spinning spools, glowing hot section, exhaust plume and airflow particles
-- Numbered hotspots open a card for each component with live numbers
+**`index.html` — Hawk UAV landing trainer.** Land a 24,000 lb HALE drone (35 m wing, 9,000 lbf derated TF-10K-D) on a 3,000 m runway. Point-mass flight model with angle-of-attack stall, natural pitch and roll stability, flaps, gear, spoilers and brakes; ILS glideslope and localizer, PAPI, approach lights; calm, crosswind and gusty conditions; scoring on sink rate, touchdown point, centreline, speed and bank. Keyboard, mouse-dragged 3D thrust lever, or touch stick.
 
-Open `index.html` in a browser, or serve the folder with any static host. Deployed with Vercel.
+**`testcell.html` — TF-10K turbofan test cell.** Cutaway 3D engine with FADEC-style auto start, Boeing-style 3D thrust lever, fuel cutoff and spool-down; live EICAS gauges, fuel consumption; numbered hotspots explaining each component; CFM56-style synthesized sound.
+
+Open either file in a browser or serve the folder with any static host. Deployed with Vercel.
 
 Made by Baris Hiz.

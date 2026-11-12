@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Land a 24,000 lb jet drone powered by the TF-10K engine at one of four airfields: flight model with stall, ILS, PAPI, moving map, wind scenarios and scoring.">
+<meta name="description" content="Land a 24,000 lb jet drone powered by the TF-10K engine at one of four airfields: sim-style flight model with rudder and stall, autopilot with ILS autoland, moving map and scoring.">
 <meta name="author" content="Baris Hiz">
 <style>html{color-scheme:dark}body{margin:0}[hidden]{display:none!important}</style>
 <title>Hawk UAV Landing</title>
@@ -58,13 +58,16 @@ main{display:grid;grid-template-columns:1fr 340px;min-height:0}
 #hBot{left:50%;bottom:14px;transform:translateX(-50%);flex-direction:row;gap:16px;align-items:flex-end;white-space:nowrap}
 #hBot .sys{font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border:1px solid rgba(125,245,160,.5);border-radius:4px}
 #hBot .sys.off{opacity:.45} #hBot .sys.warn{color:var(--amber);border-color:var(--amber)}
-#ai{position:absolute;left:50%;top:50%;width:150px;height:150px;transform:translate(-50%,-50%);border-radius:50%;overflow:hidden;border:1px solid rgba(125,245,160,.35);background:rgba(0,0,0,.08)}
-#aiH{position:absolute;left:-100%;top:-100%;width:300%;height:300%;transform-origin:50% 50%;background:linear-gradient(180deg,rgba(60,120,200,.28) 0 50%,rgba(130,90,40,.32) 50% 100%)}
-#aiL{position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(125,245,160,.7)}
-#ai .ref{position:absolute;left:50%;top:50%;width:70px;height:12px;transform:translate(-50%,-50%);border:2px solid var(--hud);border-top:0;border-radius:0 0 6px 6px;box-shadow:0 0 6px rgba(0,0,0,.8)}
+#ai{position:relative;width:118px;height:118px;flex:0 0 auto;border-radius:50%;overflow:hidden;border:1px solid var(--line-2);background:#0c1117}
+#aiH{position:absolute;left:-100%;top:-100%;width:300%;height:300%;transform-origin:50% 50%;background:linear-gradient(180deg,#2f6fb0 0 50%,#7a5530 50% 100%)}
+#aiL{display:none}
+#ai .ref{position:absolute;left:50%;top:50%;width:64px;height:10px;transform:translate(-50%,-50%);border:3px solid #ffd23f;border-top:0;border-radius:0 0 5px 5px}
+#ai .ball{position:absolute;left:50%;bottom:6px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px #000}
+#fma{position:absolute;left:50%;top:62px;transform:translateX(-50%);display:flex;gap:0;border:1px solid rgba(125,245,160,.45);border-radius:4px;background:rgba(10,14,20,.55);font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:.08em;white-space:nowrap}
+#fma span{padding:2px 10px;border-right:1px solid rgba(125,245,160,.3);min-width:64px;text-align:center} #fma span:last-child{border-right:0}
+#fma .arm{color:#e3eaf2} #fma .act{color:var(--hud)} #fma .off{color:var(--fg-mute)} #fma .warn{color:var(--amber)}
 #rwySym{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-#fpv{position:absolute;left:50%;top:50%;width:18px;height:18px;border:2px solid var(--hud);border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 6px rgba(0,0,0,.8)}
-#fpv::before,#fpv::after{content:"";position:absolute;top:50%;width:10px;height:2px;background:var(--hud)} #fpv::before{left:-12px} #fpv::after{right:-12px}
+
 #cdi{position:absolute;left:50%;top:calc(50% + 110px);transform:translateX(-50%);width:170px;height:44px}
 #warn{position:absolute;left:50%;top:calc(50% - 118px);transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none}
 #warn span{font-family:var(--font-display);font-weight:700;font-size:20px;letter-spacing:.18em;text-transform:uppercase;padding:2px 12px;border:2px solid var(--red);color:var(--red);background:rgba(20,0,0,.55);border-radius:4px;animation:blink .5s steps(2) infinite}
@@ -126,7 +129,24 @@ a.btn{text-decoration:none;text-align:center;display:block}
 .sr{position:absolute;left:0;bottom:0;width:100%;height:4px;opacity:0;margin:0;pointer-events:none}
 .lever .note{font-size:11px;color:var(--fg-mute);margin-top:4px}
 .sysbtns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-#bTrim{display:block}
+.mcp{border:1px solid var(--line-2);border-radius:6px;padding:10px;background:#0f151d}
+.mcpRow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.knob{display:flex;flex-direction:column;gap:3px;min-width:0}
+.knob label{font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.12em;color:var(--fg-dim);text-align:center}
+.lcd{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:17px;font-weight:600;color:#ffb432;background:#05080b;border:1px solid #2a3442;border-radius:4px;padding:5px 2px;cursor:pointer;text-shadow:0 0 6px rgba(255,180,50,.5);min-width:0}
+.lcd.dash{color:var(--fg-mute);text-shadow:none}
+.ud{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.ud button{font-family:var(--font-mono);font-size:16px;line-height:1;padding:4px 0;border-radius:4px;border:1px solid var(--line-2);background:var(--panel-2);color:var(--fg);cursor:pointer}
+.ud button:hover{border-color:var(--fg-mute)}
+.mcpBtns{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-top:8px}
+.apb{position:relative;font-family:var(--font-display);font-weight:700;font-size:12px;letter-spacing:.06em;padding:12px 2px 7px;border-radius:4px;border:1px solid #39475a;background:linear-gradient(#222b36,#161d26);color:var(--fg);cursor:pointer}
+.apb::before{content:"";position:absolute;left:30%;right:30%;top:4px;height:3px;border-radius:2px;background:#26313d}
+.apb.on::before{background:var(--green);box-shadow:0 0 6px var(--green)} .apb.arm::before{background:#e3eaf2}
+.apb:focus-visible,.lcd:focus-visible,.ud button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.pfdRow{display:flex;gap:10px;align-items:center;margin-top:10px}
+.assist{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
+.assist .note{font-size:11px;color:var(--fg-mute);min-height:30px}
+.assist .note.warn{color:var(--amber)}
 .sysbtns .chip{padding:9px 4px;text-align:center}
 .spec{font-size:12px;color:var(--fg-dim);display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0}
 .spec dt{color:var(--fg-mute)} .spec dd{margin:0;font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg-dim)}
@@ -144,8 +164,8 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
   main{grid-template-columns:1fr;grid-template-rows:58vh minmax(0,1fr)}
   #panel{border-left:0;border-top:1px solid var(--line)}
   header h1{font-size:19px} header h1 small{display:block;margin:2px 0 0;font-size:12px}
-  .hb .v{font-size:20px} #ai{width:110px;height:110px} #cdi{top:calc(50% + 84px)} #warn{top:calc(50% - 96px)}
-  #hTop{top:46px} .scen{grid-template-columns:1fr}
+  .hb .v{font-size:20px} #cdi{top:calc(50% + 84px)} #warn{top:calc(50% - 96px)}
+  #hTop{top:46px} .scen{grid-template-columns:1fr} #fma{top:96px;font-size:11px} #fma span{min-width:44px;padding:2px 5px}
 }
 </style>
 
@@ -161,18 +181,17 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
       <canvas id="gl"></canvas>
       <div id="hud">
         <div class="hb" id="hTop">
-          <div class="hb sm" style="position:static"><span class="k">Track</span><span class="v" id="hHDG">000</span></div>
+          <div class="hb sm" style="position:static"><span class="k">Hdg</span><span class="v" id="hHDG">000</span></div>
           <div class="hb sm" style="position:static"><span class="k">To threshold</span><span class="v" id="hDIST">0.0 nm</span></div>
           <div class="hb sm" style="position:static"><span class="k">Dest</span><span class="v" id="hDEST">DLT 36</span></div>
           <div class="hb sm" style="position:static"><span class="k">Wind</span><span class="v" id="hWIND">calm</span></div>
           <div class="hb sm" style="position:static"><span class="k">N1</span><span class="v" id="hN1">0 %</span></div>
         </div>
+        <div id="fma"><span id="fmaA">—</span><span id="fmaL">—</span><span id="fmaV">—</span><span id="fmaS">AP OFF</span></div>
         <div class="hb" id="hIAS"><span class="k">IAS</span><span class="v" id="hIASv">0</span><span class="u">kt · Vref <span id="hVREF">112</span></span></div>
         <div class="hb" id="hALT"><span class="k">Alt</span><span class="v" id="hALTv">0</span><span class="u">ft AGL</span></div>
         <div class="hb sm" id="hVS"><span class="k">V/S</span><span class="v" id="hVSv">0</span><span class="u">fpm</span></div>
         <div class="hb sm" id="hAOA"><span class="k">AoA</span><span class="v" id="hAOAv">0.0°</span><span class="u">pitch <span id="hPITCH">0°</span> · bank <span id="hBANK">0°</span></span></div>
-        <div id="ai"><div id="aiH"></div><div id="aiL"></div><div class="ref"></div></div>
-        <div id="fpv"></div>
         <svg id="cdi" viewBox="0 0 170 44" aria-hidden="true">
           <g stroke="rgba(125,245,160,.5)" fill="none"><line x1="10" y1="22" x2="160" y2="22"/><line x1="85" y1="4" x2="85" y2="40"/>
             <circle cx="45" cy="22" r="2"/><circle cx="65" cy="22" r="2"/><circle cx="105" cy="22" r="2"/><circle cx="125" cy="22" r="2"/>
@@ -206,8 +225,10 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
           <h3>Controls</h3>
           <dl class="keys">
             <dt>↓ ↑ / S W</dt><dd>Pull back (nose up) / push forward (nose down), as in flight sims <button type="button" class="chip" id="chipInv" aria-pressed="false" style="margin-left:6px;padding:1px 6px;font-size:11px">Arcade pitch (↑ nose up)</button></dd>
-            <dt>[ ] · T</dt><dd>Trim nose down / up · auto-trim on or off (on: a centred yoke holds attitude)</dd>
-            <dt>← → / A D</dt><dd>Bank left / right (steer on the ground)</dd>
+            <dt>Q E</dt><dd>Rudder left / right (steers on the ground). Auto-rudder keeps turns coordinated unless you switch it off</dd>
+            <dt>[ ] · T</dt><dd>Trim nose down / up · auto-trim on or off (on: a centred yoke holds the flight path)</dd>
+            <dt>Z · panel</dt><dd>Autopilot on/off; set IAS, HDG, ALT, V/S and use A/THR, HDG, ALT, V/S, APP (ILS with autoland)</dd>
+            <dt>← → / A D</dt><dd>Roll left / right with the ailerons</dd>
             <dt>PgUp PgDn / + −</dt><dd>Thrust lever (or drag the 3D lever)</dd>
             <dt>F · G · B · Space</dt><dd>Flaps · Gear · Brakes · Spoilers</dd>
             <dt>V · R</dt><dd>Change camera · Restart</dd>
@@ -230,6 +251,23 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
     </section>
 
     <aside id="panel">
+      <div class="mcp">
+        <div class="sec-h">Autopilot <span>Z engages AP · yoke input disconnects</span></div>
+        <div class="mcpRow">
+          <div class="knob"><label>IAS</label><button type="button" class="lcd" data-k="ias" title="Click to sync to current"><output id="selIAS">140</output></button><div class="ud"><button type="button" data-k="ias" data-d="-1" aria-label="IAS down">−</button><button type="button" data-k="ias" data-d="1" aria-label="IAS up">+</button></div></div>
+          <div class="knob"><label>HDG</label><button type="button" class="lcd" data-k="hdg" title="Click to sync to current"><output id="selHDG">000</output></button><div class="ud"><button type="button" data-k="hdg" data-d="-1" aria-label="Heading left">−</button><button type="button" data-k="hdg" data-d="1" aria-label="Heading right">+</button></div></div>
+          <div class="knob"><label>ALT</label><button type="button" class="lcd" data-k="alt" title="Click to sync to current"><output id="selALT">1800</output></button><div class="ud"><button type="button" data-k="alt" data-d="-1" aria-label="Altitude down">−</button><button type="button" data-k="alt" data-d="1" aria-label="Altitude up">+</button></div></div>
+          <div class="knob"><label>V/S</label><button type="button" class="lcd" data-k="vs" title="Click to sync to current"><output id="selVS">-700</output></button><div class="ud"><button type="button" data-k="vs" data-d="-1" aria-label="Vertical speed down">−</button><button type="button" data-k="vs" data-d="1" aria-label="Vertical speed up">+</button></div></div>
+        </div>
+        <div class="mcpBtns">
+          <button type="button" class="apb" data-m="AP" id="mAP">AP</button><button type="button" class="apb" data-m="ATHR" id="mATHR">A/THR</button><button type="button" class="apb" data-m="HDG" id="mHDG">HDG</button>
+          <button type="button" class="apb" data-m="ALT" id="mALT">ALT</button><button type="button" class="apb" data-m="VS" id="mVS">V/S</button><button type="button" class="apb" data-m="APP" id="mAPP">APP</button>
+        </div>
+        <div class="pfdRow">
+          <div id="ai"><div id="aiH"></div><div id="aiL"></div><div class="ref"></div><div class="ball" id="aiBall"></div></div>
+          <div class="assist"><button class="chip on" id="bTrim" type="button">Auto-trim on</button><button class="chip on" id="bRud" type="button">Auto-rudder on</button><div class="note" id="apMsg">Hold Shift with − / + for big steps. Scroll over a window to dial.</div></div>
+        </div>
+      </div>
       <div>
         <div class="sec-h">TF-10K-D engine <span>derated 9,000 lbf · idle 60 % N2</span></div>
         <div class="gauges">
@@ -258,7 +296,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
           <button class="chip" id="bSplr" type="button">Spoilers</button>
           <button class="chip" id="bBrk" type="button">Brakes</button>
         </div>
-        <button class="chip on" id="bTrim" type="button" style="margin-top:6px;width:100%">Auto-trim on</button>
+
       </div>
       <div class="chips" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <button class="chip" id="chipSound" type="button" aria-pressed="true">Sound</button>
@@ -463,15 +501,76 @@ function worldAt(end,u,v,y){return new THREE.Vector3(end.thr.x+end.d.x*u+end.r.x
 function findRunway(p){for(const ap of AIRPORTS){const l=local(ap.ends[0],p);if(l.u>=0&&l.u<=ap.len&&abs(l.v)<=ap.w/2)return {ap,l};}return null;}
 function approachEnd(ap,p){return local(ap.ends[0],p).u<ap.len/2?ap.ends[0]:ap.ends[1];}
 const SCEN=[{name:'Calm',wind:[0,0,0],gust:0,label:'calm'},{name:'Crosswind',wind:[-6.2,0,0],gust:0,label:'12 kt from 090'},{name:'Gusty',wind:[-9.3,0,2],gust:1,label:'18 kt from 100, gusts'}];
-let scen=0,invert=true,autoTrim=true;
+let scen=0,invert=true,autoTrim=true,autoRudder=true;
 // pitch/roll model (normalised moments): trim AoA, AoA stiffness, elevator power, pitch damping, aileron power, roll damping, dihedral, auto-trim gain
-const PM={qref:0.5*1.225*61.7*61.7,a0:4*DEG,ka:6,kd:1.1,kq:3.2,la:0.8,lp:2.6,ld:0.25,at:1.6};
+const PM={qref:0.5*1.225*61.7*61.7,a0:4*DEG,ka:6,kd:1.1,kq:3.2,la:0.8,lp:2.6,ld:0.25,at:1.6,
+  // directional: weathercock stiffness, yaw damping, rudder power, adverse yaw, side force, dihedral effect (roll from sideslip)
+  nb:3.0,nr:2.4,ndr:0.45,nda:0.08,yb:0.9,lb:0.4,
+  // auto-trim flight-path hold gains
+  fk:1.4,fq:0.9};
+const wrapPI=x=>{while(x>PI)x-=2*PI;while(x<-PI)x+=2*PI;return x;};
+/* autopilot (mode control panel) */
+const ap={on:false,athr:false,lat:'HDG',vert:'VS',app:false,loc:false,gs:false,altArm:false,sel:{ias:140,hdg:0,alt:1800,vs:-700},I:0,athI:0,msg:'',msgT:0};
+let onApChange=()=>{};
+function apCurAlt(){return Math.round(max(0,ac.agl)/100)*100;}
+function apCurVs(){return clamp(Math.round(ac.vs/FT*60/100)*100,-4000,4000);}
+function apEngage(on){if(on===ap.on)return;ap.on=on;ap.I=0;if(on){if(ap.vert!=='ALT'&&!ap.gs){ap.vert='VS';ap.sel.vs=apCurVs();}ap.altArm=true;if(!ap.loc)ap.lat='HDG';}else{ap.app=false;ap.loc=false;ap.gs=false;ap.lat='HDG';ap.vert='VS';}onApChange();}
+function apDisconnect(why){if(!ap.on)return;apEngage(false);ap.msg=why||'AP OFF';ap.msgT=4;audio.apDisc&&audio.apDisc();onApChange();}
+function apMode(m){
+  if(m==='AP'){ap.on?apDisconnect('AP OFF'):apEngage(true);return;}
+  if(m==='ATHR'){ap.athr=!ap.athr;ap.athI=0;if(ap.athr)ap.sel.ias=Math.round(ac.ias);onApChange();return;}
+  if(!ap.on)apEngage(true);
+  if(m==='HDG'){ap.lat='HDG';ap.app=false;ap.loc=false;ap.gs=false;}
+  else if(m==='ALT'){ap.vert='ALT';ap.sel.alt=apCurAlt();ap.gs=false;}
+  else if(m==='VS'){ap.vert='VS';ap.sel.vs=apCurVs();ap.gs=false;ap.altArm=true;}
+  else if(m==='APP'){ap.app=!ap.app;if(!ap.app){ap.loc=false;ap.gs=false;if(ap.lat==='LOC')ap.lat='HDG';if(ap.vert==='GS'||ap.vert==='FLARE')ap.vert='VS';}}
+  onApChange();
+}
+function apSel(k,dir,big){const st={ias:big?10:1,hdg:big?10:1,alt:big?1000:100,vs:100}[k];ap.sel[k]+=dir*st;
+  if(k==='hdg')ap.sel.hdg=((ap.sel.hdg%360)+360)%360;if(k==='ias')ap.sel.ias=clamp(ap.sel.ias,90,220);if(k==='alt')ap.sel.alt=clamp(ap.sel.alt,0,20000);if(k==='vs')ap.sel.vs=clamp(ap.sel.vs,-4000,4000);
+  if(k==='alt'&&ap.on)ap.altArm=true;onApChange();}
+/* autopilot guidance: returns elevator, aileron, throttle commands (or null) */
+function apGuidance(a,dt){
+  if(!ap.on&&!ap.athr)return null;
+  const out={};const lt=local(target,a.pos);
+  const gsAng=atan2(a.pos.y-AC.gearH,max(1,target.aim-lt.u))/DEG;const gsDev=gsAng-3;
+  const locAng=atan2(lt.v,max(1,target.len-lt.u))/DEG;
+  const trk=a.psi;const hdgToRwy=abs(wrapPI(trk-target.hdg*DEG))/DEG;
+  if(ap.on){
+    // approach arming and capture
+    if(ap.app&&!ap.loc&&abs(locAng)<2.5&&lt.u<0&&lt.u>-40000&&hdgToRwy<70){ap.loc=true;ap.lat='LOC';onApChange();}
+    if(ap.app&&ap.loc&&!ap.gs&&abs(gsDev)<0.35&&lt.u<-300){ap.gs=true;ap.vert='GS';onApChange();}
+    if(ap.gs&&ap.vert==='GS'&&a.agl<50&&lt.u>-1500){ap.vert='FLARE';onApChange();}
+    // vertical
+    let gCmd;const V=max(a.V,30);
+    if(ap.vert==='ALT'){const vsC=clamp((ap.sel.alt-a.agl)*4,-1500,1500);gCmd=Math.asin(clamp(vsC*FT/60/V,-0.3,0.3));}
+    else if(ap.vert==='GS'){gCmd=(-3-gsDev*0.9)*DEG;}
+    else if(ap.vert==='FLARE'){gCmd=(a.agl<12?-0.5:-1.0)*DEG;}
+    else{gCmd=Math.asin(clamp(ap.sel.vs*FT/60/V,-0.3,0.3));
+      if(ap.altArm&&abs(ap.sel.alt-a.agl)<max(60,abs(ap.sel.vs)*0.12)&&Math.sign(ap.sel.alt-a.agl)===Math.sign(ap.sel.vs||1)){ap.vert='ALT';onApChange();}}
+    gCmd=clamp(gCmd,-8*DEG,12*DEG);
+    const thCmd=gCmd+a.alpha+(gCmd-a.gamma)*1.5;const e=thCmd-a.theta;ap.I=clamp(ap.I+e*0.8*dt,-0.6,0.6);
+    out.de=clamp(e*4-a.q*1.5+ap.I,-1,1);
+    // lateral
+    let bankCmd;
+    if(ap.lat==='LOC'||ap.lat==='ROLLOUT'){const vdot=a.V*sin(a.psi)*target.r.x-a.V*cos(a.psi)*target.r.z+(a.wind.x*target.r.x+a.wind.z*target.r.z);bankCmd=clamp(-lt.v*0.04-vdot*1.2,-20,20)*DEG;}
+    else{const err=wrapPI(ap.sel.hdg*DEG-a.psi)/DEG;bankCmd=clamp(err*1.2,-25,25)*DEG;}
+    out.da=clamp((bankCmd-a.phi)/(8*DEG)-a.p*0.5,-1,1);
+    if(a.onGround){out.da=0;out.steer=clamp(-lt.v*0.05-wrapPI(a.psiB-target.hdg*DEG)*3,-1,1);out.de=0;}
+  }
+  if(ap.athr){
+    if(ap.on&&ap.vert==='FLARE'&&a.agl<25&&lt.u>-1500)out.thr=0;
+    else{const vt=(ap.on&&ap.gs?max(ap.sel.ias,0):ap.sel.ias)*KT*sqrt(1.225/(1.225*exp(-a.pos.y/9000)));ap.athI=clamp(ap.athI+(vt-a.V)*0.6*dt,-30,30);out.thr=clamp(38+(vt-a.V)*10+ap.athI,0,100);}
+  }
+  return out;
+}
 const ac={pos:new THREE.Vector3(),V:70,gamma:0,psi:0,theta:0,phi:0,q:0,p:0,alpha:0,flaps:0,gear:1,gearT:1,splr:false,brk:false,onGround:false,stalled:false,stallW:false,vs:0,ias:0,agl:0,thrN:0,wind:new THREE.Vector3(),gustT:0,gustV:new THREE.Vector3(),fuel:2400,phase:'standby',td:null,maxBank:0,tdTime:0,stopDist:0,t:0,touch:0};
-const inp={pitch:0,roll:0,kUp:false,kDn:false,kL:false,kR:false,trimUp:false,trimDn:false};
+const inp={pitch:0,roll:0,kUp:false,kDn:false,kL:false,kR:false,kRudL:false,kRudR:false,trimUp:false,trimDn:false};
 
 function resetFlight(){
   const s=SCEN[scen];ac.wind.set(...s.wind);ac.gustV.set(0,0,0);
-  ac.pos.copy(worldAt(target,-9300,120,549));ac.V=72;ac.gamma=-2.5*DEG;ac.psi=target.hdg*DEG;ac.rwy=null;ac.de=0;ac.da=0;
+  ac.pos.copy(worldAt(target,-9300,120,549));ac.V=72;ac.gamma=-2.5*DEG;ac.psi=target.hdg*DEG;ac.psiB=ac.psi;ac.r=0;ac.beta=0;ac.dr=0;ac.psiDot=0;ac.fpHold=null;ac.drTot=0;ac.agl=(ac.pos.y-AC.gearH)/FT;ac.vs=-ac.V*sin(2.5*DEG);ac.ias=ac.V/KT;ac.rwy=null;ac.de=0;ac.da=0;
+  ap.on=false;ap.athr=false;ap.app=false;ap.loc=false;ap.gs=false;ap.lat='HDG';ap.vert='VS';ap.msg='';ap.sel={ias:140,hdg:target.hdg,alt:1800,vs:-700};onApChange();
   {const rho=1.225*exp(-ac.pos.y/9000);const clNeed=AC.mass*9.81*cos(ac.gamma)/(0.5*rho*ac.V*ac.V*AC.S);const aNeed=clNeed/AC.clA+AC.a0;ac.theta=ac.gamma+aNeed;ac.trim=(aNeed-PM.a0)*PM.ka/PM.kd;}ac.phi=0;ac.q=0;ac.p=0;ac.flaps=0;ac.gear=0;ac.gearT=0;ac.splr=false;ac.brk=false;ac.onGround=false;ac.stalled=false;ac.td=null;ac.maxBank=0;ac.phase='fly';ac.t=0;ac.stopDist=0;ac.fuel=3000;
   Object.assign(sim,{phase:'run',n1:40,n2:72,egt:520,ff:900,thrust:1800,lit:true,fuelOn:true,starter:false,ignition:false,throttle:0.3,fuelUsed:0});
   thr.value=30;updateThrOut();syncSys();
@@ -484,9 +583,19 @@ function flyStep(dt){
   const wind=a.wind.clone().addScaledVector(a.gustV,1-exp(-a.t));
   const rho=1.225*exp(-a.pos.y/9000);
   // controls: keyboard ramps the yoke like a sim; touch stick feeds it directly
-  const pIn=clamp(inp.pitch+(inp.kDn?1:0)-(inp.kUp?1:0),-1,1)*(invert?1:-1), rIn=clamp(inp.roll+(inp.kR?1:0)-(inp.kL?1:0),-1,1);
+  let pIn=clamp(inp.pitch+(inp.kDn?1:0)-(inp.kUp?1:0),-1,1)*(invert?1:-1), rIn=clamp(inp.roll+(inp.kR?1:0)-(inp.kL?1:0),-1,1), yIn=(inp.kRudR?1:0)-(inp.kRudL?1:0);
   const ramp=(cur,tgt,rate)=>cur+clamp(tgt-cur,-rate*dt,rate*dt);
-  a.de=ramp(a.de,pIn,abs(pIn)>abs(a.de)?(inp.pitch?6:1.0):3.0);a.da=ramp(a.da,rIn,abs(rIn)>abs(a.da)?(inp.roll?6:1.5):3.5);
+  // pilot input on the yoke disconnects the autopilot, as in the real thing
+  if(ap.on&&(abs(pIn)>0.05||abs(rIn)>0.05))apDisconnect('AP DISC · pilot input');
+  if(ap.on&&a.stalled)apDisconnect('AP DISC · stall');
+  const cmd=apGuidance(a,dt);let fast=false;
+  if(cmd&&ap.on){pIn=cmd.de;rIn=cmd.da;fast=true;}
+  if(cmd&&cmd.thr!=null)setThrottle(cmd.thr);
+  a.de=ramp(a.de,pIn,fast||inp.pitch?6:(abs(pIn)>abs(a.de)?1.0:3.0));a.da=ramp(a.da,rIn,fast||inp.roll?6:(abs(rIn)>abs(a.da)?1.5:3.5));
+  // rudder: pedals ramp; auto-rudder keeps the ball centred (sideslip zero) like the sims' assist
+  const drAuto=autoRudder||ap.on?clamp(-3*a.beta-0.8*(a.r-(a.psiDot||0)),-0.6,0.6):0;
+  a.dr=ramp(a.dr,clamp(yIn,-1,1),abs(yIn)>abs(a.dr)?1.5:3.0);a.drTot=clamp(a.dr+drAuto,-1,1);
+  a.steer=cmd&&cmd.steer!=null?cmd.steer:clamp(a.dr+(autoRudder?a.da:0),-1,1);
   if(inp.trimUp)a.trim=clamp(a.trim+0.22*dt,-1,1);if(inp.trimDn)a.trim=clamp(a.trim-0.22*dt,-1,1);
   // aero angles and dynamic pressure
   a.alpha=a.theta-a.gamma;const f=a.flaps;const st=AC.aStall[f];
@@ -497,10 +606,15 @@ function flyStep(dt){
   let qd=qn*(-PM.ka*(a.alpha-PM.a0)+PM.kd*dEl)-PM.kq*sq*a.q;
   if(a.stalled){const ex=(a.alpha-st)/DEG;qd-=ex*0.05*max(qn,0.3);a.p+=(Math.random()-0.5)*ex*0.9*DEG;}
   // rolling moment: aileron, roll damping, dihedral
-  let pd=qn*PM.la*a.da-PM.lp*sq*a.p-PM.ld*a.phi;
+  const bankHold=autoTrim&&!ap.on&&abs(rIn)<0.02;
+  let pd=qn*(PM.la*a.da+PM.lb*a.beta)-PM.lp*sq*a.p-(bankHold?(abs(a.phi)>33*DEG?1.2*(a.phi-Math.sign(a.phi)*33*DEG):0):PM.ld*a.phi);
+  // yawing moment: weathercock stability (sideslip), rudder, adverse yaw from aileron, yaw damping relative to the turn
+  const rd=qn*(-PM.nb*a.beta+PM.ndr*a.drTot-PM.nda*a.da)-PM.nr*sq*(a.r-(a.psiDot||0));
   // auto-trim: with the yoke centred the drone holds its attitude, like fly-by-wire
-  if(autoTrim&&!a.onGround&&!a.stalled&&abs(a.de)<0.03)a.trim=clamp(a.trim-PM.at*a.q*dt,-1,1);
-  const cl=CL(a.alpha,f);const cd=AC.cd0+AC.k*cl*cl+AC.cdFlap[f]+AC.cdGear*a.gearT+(a.splr?AC.cdSplr:0)+(a.stalled?0.015*(a.alpha-st)/DEG:0);
+  // auto-trim holds the flight path with the yoke centred and adds back-pressure in turns (fly-by-wire style)
+  if(abs(pIn)>0.02||a.onGround||ap.on)a.fpHold=null;else if(a.fpHold==null&&abs(a.de)<0.03)a.fpHold=a.gamma;
+  if(autoTrim&&!ap.on&&!a.onGround&&!a.stalled&&a.fpHold!=null)a.trim=clamp(a.trim+(PM.fk*(a.fpHold-a.gamma)-PM.fq*a.q)*dt,-1,1);
+  const cl=CL(a.alpha,f);const cd=AC.cd0+AC.k*cl*cl+AC.cdFlap[f]+AC.cdGear*a.gearT+(a.splr?AC.cdSplr:0)+(a.stalled?0.015*(a.alpha-st)/DEG:0)+0.6*a.beta*a.beta;
   const L=qbar*AC.S*cl,D=qbar*AC.S*cd;
   const m=AC.mass,g=9.81;
   // engine net thrust with ram-drag loss
@@ -513,18 +627,20 @@ function flyStep(dt){
     const W=m*g;const roll=0.03*W+(a.brk?0.33*W*clamp(a.V/8,0,1):0)+(a.splr?0.1*W*clamp(a.V/40,0,1):0);
     dV=(T-D-roll)/m;if(a.V<0.5&&dV<0){dV=0;a.V=0;}
     a.gamma=0;a.pos.y=AC.gearH;
-    a.psi+=a.da*14*DEG*clamp(a.V/25,0,1)*dt;a.phi+=(0-a.phi)*(1-exp(-dt/0.5));a.p=0;
+    a.r=a.steer*12*DEG*clamp(a.V/20,0,1)*clamp(1.4-a.V/80,0.35,1);a.psiB+=a.r*dt;a.psi=a.psiB;a.beta=0;a.psiDot=a.r;a.phi+=(0-a.phi)*(1-exp(-dt/0.5));a.p=0;
     qd-=(1-clamp(L/W,0,1))*(2.0*a.theta+1.5*a.q);
     a.q+=qd*dt;a.theta+=a.q*dt;
     if(a.theta<0){a.theta=0;a.q=max(0,a.q);}if(a.theta>12*DEG){a.theta=12*DEG;a.q=min(0,a.q);}
     if(L*cos(a.phi)+T*sin(a.alpha)>W*1.02&&a.theta>2*DEG&&!a.td){a.onGround=false;}
     dG=0;
-  }else{a.q+=qd*dt;a.p+=pd*dt;a.theta=clamp(a.theta+a.q*dt,-40*DEG,40*DEG);a.phi=clamp(a.phi+a.p*dt,-80*DEG,80*DEG);}
+  }else{a.q+=qd*dt;a.p+=pd*dt;a.r+=rd*dt;a.theta=clamp(a.theta+a.q*dt,-40*DEG,40*DEG);a.phi=clamp(a.phi+a.p*dt,-80*DEG,80*DEG);}
   a.V=max(0,a.V+dV*dt);a.gamma=clamp(a.gamma+dG*dt,-40*DEG,40*DEG);
-  if(!a.onGround&&a.V>5)a.psi+=(L*sin(a.phi))/(m*a.V)*dt;
+  if(!a.onGround&&a.V>5){
+    // path turns from the lift vector's horizontal part plus side force from sideslip; the nose yaws by its own yaw rate
+    a.psiDot=(L*sin(a.phi)+qbar*AC.S*PM.yb*a.beta)/(m*a.V*max(cos(a.gamma),0.3));a.psi=wrapPI(a.psi+a.psiDot*dt);a.psiB=wrapPI(a.psiB+a.r*dt);a.beta=clamp(wrapPI(a.psiB-a.psi),-0.5,0.5);}
   // position
   const dir=new THREE.Vector3(sin(a.psi),0,-cos(a.psi));
-  const vel=dir.multiplyScalar(a.V*cos(a.gamma));vel.y=a.V*sin(a.gamma);vel.add(wind);
+  const vel=dir.multiplyScalar(a.V*cos(a.gamma));vel.y=a.V*sin(a.gamma);if(!a.onGround)vel.add(wind);
   a.pos.addScaledVector(vel,dt);a.vs=vel.y;
   a.ias=a.V*sqrt(rho/1.225)/KT;a.agl=(a.pos.y-AC.gearH)/FT;
   a.gearT+=((a.gear?1:0)-a.gearT)*(1-exp(-dt/2.5));
@@ -545,7 +661,11 @@ function flyStep(dt){
     else if(rec.bank>7)fail='Wingtip strike: '+fmt(rec.bank,1)+'° of bank with a 35 m wing.';
     else if(rec.pitch>13)fail='Tail strike at '+fmt(rec.pitch,1)+'° nose-up.';
     else if(rec.pitch<-3)fail='Nose gear hit first and collapsed.';
+    else if(end&&abs(wrapPI(a.psiB-end.hdg*DEG))>14*DEG)fail='Touched down crabbed '+fmt(abs(wrapPI(a.psiB-end.hdg*DEG))/DEG,0)+'° to the runway. The gear failed under the side load.';
+    rec.crab=end?abs(wrapPI(a.psiB-end.hdg*DEG))/DEG:0;
     if(fail){crash(fail);return;}
+    a.psi=a.psiB;a.beta=0;
+    if(ap.on&&ap.loc){ap.lat='ROLLOUT';ap.vert='ROLLOUT';a.splr=true;a.brk=true;if(ap.athr){ap.athr=false;}setThrottle(0);onApChange();syncSys&&syncSys();}else if(ap.on)apDisconnect('AP OFF · touchdown');
     audio.thud(clamp(vsF/600,0.4,1.4));
     a.tdTime=a.t;
   }
@@ -574,6 +694,7 @@ function ensureGameAudio(){
     const sc=ctx.createBufferSource();sc.buffer=audio.white;const e2=g(0.0001);e2.gain.setValueAtTime(0.8,t);e2.gain.exponentialRampToValueAtTime(0.0005,t+1.2);sc.connect(e2).connect(audio.master);sc.start(t);sc.stop(t+1.3);};
 }
 audio.thud=()=>{};audio.crashSound=()=>{};
+audio.apDisc=()=>{const ctx=audio.ctx;if(!ctx||!audio.master)return;const t=ctx.currentTime;[0,0.32,0.64].forEach(o=>{const os=ctx.createOscillator();os.type='sine';os.frequency.setValueAtTime(880,t+o);os.frequency.linearRampToValueAtTime(660,t+o+0.25);const g=ctx.createGain();g.gain.setValueAtTime(0.0001,t+o);g.gain.exponentialRampToValueAtTime(0.12,t+o+0.02);g.gain.exponentialRampToValueAtTime(0.0005,t+o+0.28);os.connect(g).connect(audio.master);os.start(t+o);os.stop(t+o+0.3);});};
 function updateGameAudio(dt){
   if(!gameAudio.ready)return;const t=audio.ctx.currentTime;const v=clamp(ac.V/90,0,1.3);
   gameAudio.windG.gain.setTargetAtTime(0.02+0.35*v*v*(ac.gear?1.3:1)*(ac.splr?1.3:1),t,0.1);gameAudio.windBP.frequency.setTargetAtTime(300+900*v,t,0.1);
@@ -675,16 +796,16 @@ let exhaust,navL,navR,strobe,gearGroup;
 /* camera */
 let camMode='chase';const camPos=new THREE.Vector3(),camLook=new THREE.Vector3();let shake=0;
 function updateCamera(dt){
-  const a=ac;const dir=new THREE.Vector3(sin(a.psi),0,-cos(a.psi));const up=new THREE.Vector3(0,1,0);
+  const a=ac;const dir=new THREE.Vector3(sin(a.psiB),0,-cos(a.psiB));const up=new THREE.Vector3(0,1,0);
   let want,look;
   if(camMode==='chase'){want=a.pos.clone().addScaledVector(dir,-30).addScaledVector(up,8);look=a.pos.clone().addScaledVector(dir,40);want.y=max(want.y,2.5);}
-  else if(camMode==='nose'){want=a.pos.clone().addScaledVector(dir,7.6).addScaledVector(up,0.9);const fwd=new THREE.Vector3(sin(a.psi)*cos(a.theta),sin(a.theta),-cos(a.psi)*cos(a.theta));look=want.clone().addScaledVector(fwd,200);}
+  else if(camMode==='nose'){want=a.pos.clone().addScaledVector(dir,7.6).addScaledVector(up,0.9);const fwd=new THREE.Vector3(sin(a.psiB)*cos(a.theta),sin(a.theta),-cos(a.psiB)*cos(a.theta));look=want.clone().addScaledVector(fwd,200);}
   else{want=target.ap.tower.clone();look=a.pos.clone();}
   const k=camMode==='nose'?1:1-exp(-dt/0.18);camPos.lerp(want,k);camLook.lerp(look,k);
   camera.position.copy(camPos);
   if(shake>0){camera.position.x+=(Math.random()-0.5)*shake;camera.position.y+=(Math.random()-0.5)*shake;}
   camera.up.set(0,1,0);
-  if(camMode==='nose'){camera.up.set(-sin(a.phi)*cos(a.psi),cos(a.phi),-sin(a.phi)*sin(a.psi));camera.fov=60;}else camera.fov=camMode==='tower'?clamp(30000/max(50,a.pos.distanceTo(want)),4,50):55;
+  if(camMode==='nose'){camera.up.set(sin(a.phi)*cos(a.psiB),cos(a.phi),sin(a.phi)*sin(a.psiB));camera.fov=60;}else camera.fov=camMode==='tower'?clamp(30000/max(50,a.pos.distanceTo(want)),4,50):55;
   camera.updateProjectionMatrix();camera.lookAt(camLook);
 }
 document.querySelectorAll('.viewbar button').forEach(b=>b.addEventListener('click',()=>{camMode=b.dataset.view;}));
@@ -708,7 +829,7 @@ function leverAngle(){return lerp(0.52,-0.52,+thr.value/100);}
 function setThrottle(v){v=clamp(v,0,100);thr.value=v;sim.throttle=v/100;updateThrOut();}
 function updateThrOut(){const v=+thr.value;$('thrOut').textContent=v<=0?'Idle':v>=100?'TO/GA':v.toFixed(0)+' %';}
 let lvDrag=null;
-lvCanvas.addEventListener('pointerdown',e=>{lvCanvas.setPointerCapture(e.pointerId);lvDrag={y:e.clientY,v:+thr.value};quadEl.classList.add('drag');});
+lvCanvas.addEventListener('pointerdown',e=>{if(ap.athr){ap.athr=false;ap.msg='A/THR OFF · manual thrust';ap.msgT=3;onApChange();}lvCanvas.setPointerCapture(e.pointerId);lvDrag={y:e.clientY,v:+thr.value};quadEl.classList.add('drag');});
 lvCanvas.addEventListener('pointermove',e=>{if(!lvDrag)return;setThrottle(lvDrag.v-(e.clientY-lvDrag.y)*0.6);});
 const lvEnd=()=>{lvDrag=null;quadEl.classList.remove('drag');};lvCanvas.addEventListener('pointerup',lvEnd);lvCanvas.addEventListener('pointercancel',lvEnd);
 lvCanvas.addEventListener('wheel',e=>{e.preventDefault();setThrottle(+thr.value-e.deltaY*0.05);},{passive:false});
@@ -744,13 +865,15 @@ const gaFF=new Gauge('gFF',{min:0,max:4000,tick:500,every:2,amber:4000,red:4000,
 
 /* ================= Input ================= */
 window.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='BUTTON'&&e.key===' ')return;const k=e.key;
+  if(k==='q'||k==='Q'||k===','){inp.kRudL=true;e.preventDefault();return;}if(k==='e'||k==='E'||k==='.'){inp.kRudR=true;e.preventDefault();return;}
+  if(k==='z'||k==='Z'){apMode('AP');e.preventDefault();return;}
   if(k===']'||k==='Home'){inp.trimUp=true;e.preventDefault();return;}if(k==='['||k==='End'){inp.trimDn=true;e.preventDefault();return;}if(k==='t'||k==='T'){toggleAutoTrim();e.preventDefault();return;}
   if(k==='ArrowUp'||k==='w'||k==='W')inp.kUp=true;else if(k==='ArrowDown'||k==='s'||k==='S')inp.kDn=true;else if(k==='ArrowLeft'||k==='a'||k==='A')inp.kL=true;else if(k==='ArrowRight'||k==='d'||k==='D')inp.kR=true;
-  else if(k==='PageUp'||k==='+'||k==='=')setThrottle(+thr.value+4);else if(k==='PageDown'||k==='-'||k==='_')setThrottle(+thr.value-4);
+  else if(k==='PageUp'||k==='+'||k==='='||k==='PageDown'||k==='-'||k==='_'){if(ap.athr){ap.athr=false;ap.msg='A/THR OFF · manual thrust';ap.msgT=3;onApChange();}setThrottle(+thr.value+(k==='PageUp'||k==='+'||k==='='?4:-4));}
   else if(k==='f'||k==='F')cycleFlaps();else if(k==='g'||k==='G')toggleGear();else if(k==='b'||k==='B')toggleBrk();else if(k===' ')toggleSplr();
   else if(k==='m'||k==='M')$('mapRange').click();else if(k==='v'||k==='V')camMode=camMode==='chase'?'nose':camMode==='nose'?'tower':'chase';else if(k==='r'||k==='R')startGame();else return;
   e.preventDefault();});
-window.addEventListener('keyup',e=>{const k=e.key;if(k===']'||k==='Home')inp.trimUp=false;if(k==='['||k==='End')inp.trimDn=false;if(k==='ArrowUp'||k==='w'||k==='W')inp.kUp=false;else if(k==='ArrowDown'||k==='s'||k==='S')inp.kDn=false;else if(k==='ArrowLeft'||k==='a'||k==='A')inp.kL=false;else if(k==='ArrowRight'||k==='d'||k==='D')inp.kR=false;});
+window.addEventListener('keyup',e=>{const k=e.key;if(k==='q'||k==='Q'||k===',')inp.kRudL=false;if(k==='e'||k==='E'||k==='.')inp.kRudR=false;if(k===']'||k==='Home')inp.trimUp=false;if(k==='['||k==='End')inp.trimDn=false;if(k==='ArrowUp'||k==='w'||k==='W')inp.kUp=false;else if(k==='ArrowDown'||k==='s'||k==='S')inp.kDn=false;else if(k==='ArrowLeft'||k==='a'||k==='A')inp.kL=false;else if(k==='ArrowRight'||k==='d'||k==='D')inp.kR=false;});
 {const st=$('stick'),kn=st.querySelector('.knob');let id=null,cx=0,cy=0;
  st.addEventListener('pointerdown',e=>{id=e.pointerId;st.setPointerCapture(id);const r=st.getBoundingClientRect();cx=r.left+r.width/2;cy=r.top+r.height/2;});
  st.addEventListener('pointermove',e=>{if(e.pointerId!==id)return;const dx=clamp((e.clientX-cx)/50,-1,1),dy=clamp((e.clientY-cy)/50,-1,1);inp.roll=dx;inp.pitch=dy;kn.style.transform=`translate(calc(-50% + ${dx*40}px),calc(-50% + ${dy*40}px))`;});
@@ -762,12 +885,31 @@ function toggleSplr(){ac.splr=!ac.splr;syncSys();audio.clunk&&audio.clunk(0.3);}
 $('bFlap').addEventListener('click',cycleFlaps);$('bGear').addEventListener('click',toggleGear);$('bBrk').addEventListener('click',toggleBrk);$('bSplr').addEventListener('click',toggleSplr);
 function syncSys(){const F=['Flaps 0','Flaps 15','Flaps 30'][ac.flaps];$('bFlap').textContent=F;$('sFLAP').textContent=F;$('bFlap').classList.toggle('on',ac.flaps>0);
   $('sGEAR').textContent=ac.gear?'Gear down':'Gear up';$('sGEAR').classList.toggle('off',!ac.gear);$('bGear').classList.toggle('on',!!ac.gear);
-  $('bTrim').textContent=autoTrim?'Auto-trim on':'Auto-trim off · [ ] to trim';$('bTrim').classList.toggle('on',autoTrim);
+  $('bTrim').textContent=autoTrim?'Auto-trim on':'Auto-trim off · [ ]';$('bTrim').classList.toggle('on',autoTrim);$('bRud').textContent=autoRudder?'Auto-rudder on':'Auto-rudder off · Q E';$('bRud').classList.toggle('on',autoRudder);
   $('sSPLR').classList.toggle('off',!ac.splr);$('bSplr').classList.toggle('on',ac.splr);$('sBRK').classList.toggle('off',!ac.brk);$('bBrk').classList.toggle('on',ac.brk);}
 $('chipSound').addEventListener('click',e=>{audio.on=!audio.on;e.currentTarget.setAttribute('aria-pressed',String(audio.on));ensureGameAudio();applyVolume();});
 $('vol').addEventListener('input',e=>{audio.vol=+e.target.value/100;applyVolume();});
 $('chipInv').addEventListener('click',e=>{invert=!invert;e.currentTarget.setAttribute('aria-pressed',String(!invert));});
 function toggleAutoTrim(){autoTrim=!autoTrim;syncSys();}
+function toggleAutoRudder(){autoRudder=!autoRudder;syncSys();}
+$('bRud').addEventListener('click',toggleAutoRudder);
+document.querySelectorAll('.apb').forEach(b=>b.addEventListener('click',()=>{ensureGameAudio();apMode(b.dataset.m);}));
+document.querySelectorAll('.ud button').forEach(b=>b.addEventListener('click',e=>apSel(b.dataset.k,+b.dataset.d,e.shiftKey)));
+document.querySelectorAll('.lcd').forEach(b=>{b.addEventListener('click',()=>{const k=b.dataset.k;if(k==='ias')ap.sel.ias=Math.round(ac.ias);else if(k==='hdg')ap.sel.hdg=Math.round(((ac.psiB/DEG)%360+360)%360);else if(k==='alt')ap.sel.alt=apCurAlt();else ap.sel.vs=apCurVs();onApChange();});
+  b.addEventListener('wheel',e=>{e.preventDefault();apSel(b.dataset.k,e.deltaY<0?1:-1,e.shiftKey);},{passive:false});});
+const pad3=n=>String(Math.round(n)).padStart(3,'0');
+onApChange=function(){
+  setTxt($('selIAS'),String(ap.sel.ias));setTxt($('selHDG'),pad3(ap.sel.hdg));setTxt($('selALT'),String(ap.sel.alt));setTxt($('selVS'),(ap.sel.vs>0?'+':'')+ap.sel.vs);
+  const on=(id,v)=>{$(id).classList.toggle('on',!!v);};on('mAP',ap.on);on('mATHR',ap.athr);on('mHDG',ap.on&&ap.lat==='HDG');on('mALT',ap.on&&ap.vert==='ALT');on('mVS',ap.on&&ap.vert==='VS');on('mAPP',ap.app&&(ap.loc||ap.gs));
+  $('mAPP').classList.toggle('arm',ap.app&&!ap.loc);
+  $('selVS').parentElement.classList.toggle('dash',!(ap.on&&ap.vert==='VS'));
+  const F=H.fma;const lab=(el,t,c)=>{setTxt(el,t);el.className=c;};
+  lab(F.a,ap.athr?(ap.on&&ap.vert==='FLARE'&&ac.agl<25?'RETARD':'SPD '+ap.sel.ias):'MAN THR',ap.athr?'act':'off');
+  lab(F.l,!ap.on?'—':ap.lat==='ROLLOUT'?'ROLLOUT':ap.lat==='LOC'?'LOC':ap.app?'HDG · loc':'HDG '+pad3(ap.sel.hdg),!ap.on?'off':ap.app&&!ap.loc?'arm':'act');
+  lab(F.v,!ap.on?'—':ap.vert==='ROLLOUT'?'ROLLOUT':ap.vert==='FLARE'?'FLARE':ap.vert==='GS'?'G/S':ap.vert==='ALT'?'ALT '+ap.sel.alt:'V/S '+(ap.sel.vs>0?'+':'')+ap.sel.vs,!ap.on?'off':'act');
+  lab(F.s,ap.on?'AP1':(ap.msg||'AP OFF'),ap.on?'act':ap.msg?'warn':'off');
+  const m=$('apMsg');if(ap.msg){m.textContent=ap.msg;m.classList.add('warn');}else{m.textContent='Hold Shift with − / + for big steps. Scroll over a window to dial.';m.classList.remove('warn');}
+};
 $('bTrim').addEventListener('click',toggleAutoTrim);
 document.querySelectorAll('#scen button').forEach(b=>b.addEventListener('click',()=>{scen=+b.dataset.s;document.querySelectorAll('#scen button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}));
 $('btnGo').addEventListener('click',()=>{ensureGameAudio();startGame();});
@@ -795,7 +937,7 @@ function drawMap(){
     g.fillStyle=sel?'#3fd3e6':'#c9d2dc';g.font='600 10px Rajdhani, sans-serif';g.textAlign='left';const mx=(ax+bx)/2,my=(ay+by)/2;g.fillText(ap.id+' '+ap.num[0]+'/'+ap.num[1],mx+6,my+4);
     if(sel){const [tx,ty]=mapXY(target.thr.x,target.thr.z,S,sc);g.beginPath();g.arc(tx,ty,4,0,2*PI);g.fillStyle='#3fd3e6';g.fill();}}
   // aircraft
-  g.save();g.translate(S/2,S/2);g.rotate(ac.psi);g.fillStyle='#7df5a0';g.beginPath();g.moveTo(0,-8);g.lineTo(5,6);g.lineTo(0,3);g.lineTo(-5,6);g.closePath();g.fill();g.restore();
+  g.save();g.translate(S/2,S/2);g.rotate(ac.psiB);g.fillStyle='#7df5a0';g.beginPath();g.moveTo(0,-8);g.lineTo(5,6);g.lineTo(0,3);g.lineTo(-5,6);g.closePath();g.fill();g.restore();
 }
 function mapPick(e){const r=mapC.getBoundingClientRect();const S=r.width;const sc=(S/2)/(MAPR[mapRi]*1852);const px=e.clientX-r.left,py=e.clientY-r.top;let best=null,bd=22;
   for(const ap of AIRPORTS){const e0=ap.ends[0],e1=ap.ends[1];const [ax,ay]=mapXY(e0.thr.x,e0.thr.z,S,sc),[bx,by]=mapXY(e1.thr.x,e1.thr.z,S,sc);
@@ -845,20 +987,22 @@ function updateRunwaySymbol(){
     RS.arrow.setAttribute('points',`${ax},${ay} ${ax-dx*16+nx*8},${ay-dy*16+ny*8} ${ax-dx*16-nx*8},${ay-dy*16-ny*8}`);
     RS.txt.setAttribute('x',(ax-dx*30).toFixed(0));RS.txt.setAttribute('y',(ay-dy*30+4).toFixed(0));RS.txt.textContent=label;}
 }
-const H={dest:$('hDEST'),ias:$('hIASv'),alt:$('hALTv'),vs:$('hVSv'),aoa:$('hAOAv'),pitch:$('hPITCH'),bank:$('hBANK'),hdg:$('hHDG'),dist:$('hDIST'),wind:$('hWIND'),n1:$('hN1'),vref:$('hVREF'),thr:$('sTHR'),aiH:$('aiH'),fpv:$('fpv'),loc:$('cdiLoc'),gs:$('cdiGs'),warn:$('warn'),pill:$('pill'),clock:$('clock')};
+const H={dest:$('hDEST'),ball:$('aiBall'),fma:{a:$('fmaA'),l:$('fmaL'),v:$('fmaV'),s:$('fmaS')},ias:$('hIASv'),alt:$('hALTv'),vs:$('hVSv'),aoa:$('hAOAv'),pitch:$('hPITCH'),bank:$('hBANK'),hdg:$('hHDG'),dist:$('hDIST'),wind:$('hWIND'),n1:$('hN1'),vref:$('hVREF'),thr:$('sTHR'),aiH:$('aiH'),loc:$('cdiLoc'),gs:$('cdiGs'),warn:$('warn'),pill:$('pill'),clock:$('clock')};
 let warnKey='';
 function updateHUD(dt){
   const a=ac;setTxt(H.ias,fmt(a.ias));setTxt(H.alt,fmt(max(0,a.agl)));setTxt(H.vs,fmt(Math.round(a.vs/FT*60/10)*10));setTxt(H.aoa,fmt(a.alpha/DEG,1)+'°');setTxt(H.pitch,fmt(a.theta/DEG,0)+'°');setTxt(H.bank,fmt(a.phi/DEG,0)+'°');
-  let trk=((a.psi/DEG)%360+360)%360;setTxt(H.hdg,String(Math.round(trk)).padStart(3,'0'));
+  let trk=((a.psiB/DEG)%360+360)%360;setTxt(H.hdg,String(Math.round(trk)).padStart(3,'0'));
   const lt=local(target,a.pos);const distNm=max(0,-lt.u)/1852;setTxt(H.dist,lt.u<0?distNm.toFixed(1)+' nm':fmt(lt.u)+' m in');setTxt(H.dest,target.id+' · '+target.ap.name);
   const w=SCEN[scen];setTxt(H.wind,w.label);setTxt(H.n1,fmt(sim.n1)+' %');setTxt(H.vref,fmt(vref()));setTxt(H.thr,'Thr '+fmt(sim.throttle*100)+' %');setTxt($('sTRIM'),(autoTrim?'A-trim ':'Trim ')+(ac.trim>=0?'+':'')+(ac.trim||0).toFixed(2));
-  H.aiH.style.transform=`rotate(${(-a.phi/DEG).toFixed(1)}deg) translateY(${(a.theta/DEG*2.6).toFixed(1)}px)`;
-  H.fpv.style.transform=`translate(calc(-50% + ${(sin(a.phi)*0).toFixed(1)}px),calc(-50% + ${(-(a.gamma-a.theta)/DEG*2.6).toFixed(1)}px))`;
+  H.aiH.style.transform=`rotate(${(-a.phi/DEG).toFixed(1)}deg) translateY(${(a.theta/DEG*2.2).toFixed(1)}px)`;
+  H.ball.style.transform=`translateX(${clamp(-a.beta/DEG*4,-40,40).toFixed(1)}px)`;
   // ILS: glideslope to the aim point, localizer to the far end
   const gsAng=atan2(a.pos.y-AC.gearH,max(1,target.aim-lt.u))/DEG;const gsDev=clamp(3-gsAng,-0.7,0.7);
   const locAng=atan2(lt.v,max(1,target.len-lt.u))/DEG;const locDev=clamp(-locAng,-2.5,2.5);
   H.gs.setAttribute('y',String(20+gsDev/0.7*14));H.loc.setAttribute('x',String(83+locDev/2.5*40));
   // warnings
+  if(ap.msgT>0){ap.msgT-=dt;if(ap.msgT<=0){ap.msg='';onApChange();}}
+  if((a.t*4|0)!==(updateHUD.k||0)){updateHUD.k=a.t*4|0;onApChange();}
   const ws=[];
   if(a.phase==='fly'){if(a.stalled)ws.push(['STALL','']);else if(a.stallW)ws.push(['STALL','amb']);
     if(a.agl<500&&a.agl>5&&!a.gear)ws.push(['TOO LOW · GEAR','']);
@@ -882,7 +1026,7 @@ function frame(now){
   if(ac.phase==='fly'){step(dt);const n=2;for(let i=0;i<n;i++)flyStep(dt/n);}
   updateAudio(dt);updateGameAudio(dt);
   // drone pose
-  drone.position.copy(ac.pos);drone.rotation.set(0,0,0);drone.rotateY(-ac.psi);drone.rotateX(-ac.theta);drone.rotateZ(-ac.phi);
+  drone.position.copy(ac.pos);drone.rotation.set(0,0,0);drone.rotateY(-ac.psiB);drone.rotateX(ac.theta);drone.rotateZ(-ac.phi);
   gearGroup.scale.y=max(0.02,ac.gearT);gearGroup.position.y=(1-ac.gearT)*1.6;
   const th=sim.thrust/ENG.thrustMax;mGlow.opacity=sim.lit?0.05+0.5*th:0;exhaust.scale.z=0.3+2.5*th;
   strobe.visible=(Math.floor(now/120)%10)===0;
@@ -894,7 +1038,7 @@ function frame(now){
   updateHUD(dt);updateRunwaySymbol();if((now/100|0)%2===0)drawMap();updatePanel(dt);renderLever();
 }
 syncSys();updateThrOut();lever.rotation.x=leverAngle();resetFlight();ac.phase='standby';
-window.__hawk={ac,inp,sim,AC,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
+window.__hawk={ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
 requestAnimationFrame(frame);
 })();
 </script>

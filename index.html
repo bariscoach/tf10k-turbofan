@@ -223,7 +223,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
         <div class="sec-h">Type data</div>
         <dl class="spec">
           <dt>Layout</dt><dd>Two-spool, axial, high bypass</dd>
-          <dt>Fan</dt><dd>22 blades, 1.12 m, N1 max 7,400 rpm</dd>
+          <dt>Fan</dt><dd>24 blades, 1.12 m, N1 max 7,400 rpm</dd>
           <dt>Core</dt><dd>3 LPC + 10 HPC stages, N2 max 17,800 rpm</dd>
           <dt>Turbines</dt><dd>2 HPT + 4 LPT stages</dd>
           <dt>Bypass ratio</dt><dd>5.0 : 1</dd>
@@ -247,7 +247,7 @@ const clamp=(x,a,b)=>x<a?a:x>b?b:x, lerp=(a,b,t)=>a+(b-a)*t;
 const fmt=(n,d=0)=>Number(n).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
 const $=id=>document.getElementById(id);
 
-const ENG={thrustMax:10000,n1Max:7400,n2Max:17800,fanBlades:22,bpr:5,opr:22,egtMax:950,ffMax:3600,ffIdle:520,massFlow:330,fanR:0.56,ambient:15};
+const ENG={thrustMax:10000,n1Max:7400,n2Max:17800,fanBlades:24,bpr:5,opr:22,egtMax:950,ffMax:3600,ffIdle:520,massFlow:330,fanR:0.56,ambient:15};
 
 /* ================= Simulation ================= */
 const sim={phase:'off',t:0,n1:0,n2:0,egt:ENG.ambient,ff:0,thrust:0,epr:1,opr:1,p3:14.7,t3:15,oilP:0,oilT:15,vib:0,
@@ -339,9 +339,12 @@ function ensureAudio(){
   audio.rumLP=filt('lowpass',70,0.9);audio.rumG=g(0);src(brown).connect(audio.rumLP).connect(audio.rumG).connect(bus);
   {const lfo=osc('sine',7.5),lg=g(0.14);lfo.connect(lg).connect(audio.rumG.gain);}
   // fan: shaft-order buzz-saw (40 harmonics), blade-pass tones, low hum
-  {const real=new Float32Array(41),imag=new Float32Array(41);for(let n=1;n<=40;n++){imag[n]=pow(n,-0.55)*(n%2?1:0.75);}audio.sawWave=ctx.createPeriodicWave(real,imag);}
-  audio.buzz=osc(null,30);audio.buzz.setPeriodicWave(audio.sawWave);audio.buzzG=g(0);audio.buzz.connect(filt('lowpass',5000,0.7)).connect(audio.buzzG).connect(bus);
-  audio.bpf=osc('sine',600);audio.bpfG=g(0);audio.bpf.connect(audio.bpfG).connect(bus);
+  // CFM-style buzz-saw: ~60 shaft-order harmonics with blade-to-blade irregularity (multiple pure tones), two detuned copies beating
+  {const real=new Float32Array(61),imag=new Float32Array(61);for(let n=1;n<=60;n++){imag[n]=pow(n,-0.35)*(0.45+Math.random()*0.9)*(n<4?0.5:1);}audio.sawWave=ctx.createPeriodicWave(real,imag);}
+  audio.buzzLP=filt('lowpass',3000,0.9);audio.buzzG=g(0);audio.buzzLP.connect(audio.buzzG).connect(bus);
+  audio.buzz=osc(null,30);audio.buzz.setPeriodicWave(audio.sawWave);audio.buzz.connect(audio.buzzLP);
+  audio.buzzB=osc(null,30);audio.buzzB.setPeriodicWave(audio.sawWave);const bbg=g(0.6);audio.buzzB.connect(bbg).connect(audio.buzzLP);
+  audio.bpf=osc('sine',600);audio.bpfG=g(0);audio.bpf.connect(audio.bpfG).connect(bus);{const vb=osc('sine',5.3),vg=g(2.5);vb.connect(vg).connect(audio.bpf.frequency);}
   audio.bpf2=osc('sine',1200);audio.bpf2G=g(0);audio.bpf2.connect(audio.bpf2G).connect(bus);
   audio.fanLP=filt('lowpass',700,0.7);audio.fanG=g(0);audio.fan1=osc('sawtooth',40);audio.fan2=osc('sawtooth',41);audio.fan1.connect(audio.fanLP);audio.fan2.connect(audio.fanLP);audio.fanLP.connect(audio.fanG).connect(bus);
   // core: N2 shaft harmonics and HP compressor blade-pass whine with slight wander
@@ -350,8 +353,10 @@ function ensureAudio(){
   audio.hpc=osc('sine',3000);audio.hpcG=g(0);audio.hpc.connect(filt('lowpass',7500)).connect(audio.hpcG).connect(bus);
   {const vib=osc('sine',0.7),vg=g(6);vib.connect(vg).connect(audio.hpc.frequency);}
   // air-turbine starter: gear whine plus a sub harmonic
-  audio.st=osc('sawtooth',100);audio.stG=g(0);audio.st.connect(filt('lowpass',3800,2)).connect(audio.stG).connect(bus);
+  audio.st=osc('sawtooth',100);audio.stG=g(0);audio.st.connect(filt('bandpass',2200,1.2)).connect(audio.stG).connect(bus);
   audio.st2=osc('sine',50);audio.st2G=g(0);audio.st2.connect(audio.st2G).connect(bus);
+  audio.st3=osc('sine',200);audio.st3G=g(0);audio.st3.connect(audio.st3G).connect(bus);
+  audio.svG=g(0);src(white).connect(filt('bandpass',1400,0.6)).connect(audio.svG).connect(bus);
   // one-shots
   const burst=(buf,f,type,amp,dur)=>{const t=ctx.currentTime;const x=ctx.createBufferSource();x.buffer=buf;const fl=filt(type,f);const e=g(0.0001);e.gain.setValueAtTime(amp,t);e.gain.exponentialRampToValueAtTime(0.0005,t+dur);x.connect(fl).connect(e).connect(bus);x.start(t);x.stop(t+dur+0.05);};
   const ping=(f0,f1,amp,dur)=>{const t=ctx.currentTime;const o=ctx.createOscillator();o.frequency.setValueAtTime(f0,t);if(f1)o.frequency.exponentialRampToValueAtTime(f1,t+dur*0.8);const e=g(0.0001);e.gain.setValueAtTime(amp,t);e.gain.exponentialRampToValueAtTime(0.0005,t+dur);o.connect(e).connect(bus);o.start(t);o.stop(t+dur+0.05);};
@@ -359,6 +364,7 @@ function ensureAudio(){
   audio.whoomp=()=>{const t=ctx.currentTime;const x=ctx.createBufferSource();x.buffer=brown;const e=g(0.0001);e.gain.setValueAtTime(0.0001,t);e.gain.exponentialRampToValueAtTime(1.4,t+0.1);e.gain.exponentialRampToValueAtTime(0.0005,t+1.8);x.connect(filt('lowpass',140)).connect(e).connect(bus);x.start(t);x.stop(t+2);ping(70,35,0.5,1.5);};
   audio.clunk=(v)=>{v=v||1;burst(brown,400,'lowpass',0.8*v,0.18);ping(110,60,0.35*v,0.25);};
   audio.tick=()=>{ping(2500+Math.random()*3000,0,0.05+Math.random()*0.05,0.02);};
+  audio.clack=()=>{burst(white,700+Math.random()*500,'bandpass',0.35+Math.random()*0.25,0.05);ping(520+Math.random()*260,0,0.08,0.06);};
 }
 function updateAudio(dt){
   const a=audio,s=sim;if(!a.ctx)return;const t=a.ctx.currentTime,k=0.08;
@@ -366,21 +372,24 @@ function updateAudio(dt){
   const sh1=ENG.n1Max/60*n1,sh2=ENG.n2Max/60*n2;
   const set=(p,v)=>p.setTargetAtTime(v,t,k);
   // fan
-  set(a.fan1.frequency,max(20,sh1*4));set(a.fan2.frequency,max(20,sh1*4.02));set(a.fanG.gain,0.07*pow(n1,1.4));
-  const bz=clamp((n1-0.62)/0.38,0,1);set(a.buzz.frequency,max(20,sh1));set(a.buzzG.gain,0.09*bz*bz);
-  set(a.bpf.frequency,max(40,sh1*ENG.fanBlades));set(a.bpfG.gain,0.018*pow(n1,2));
-  set(a.bpf2.frequency,max(40,sh1*ENG.fanBlades*2));set(a.bpf2G.gain,0.006*pow(n1,2));
+  set(a.fan1.frequency,max(20,sh1*4));set(a.fan2.frequency,max(20,sh1*4.02));set(a.fanG.gain,0.06*pow(n1,1.4));
+  const bz=clamp((n1-0.72)/0.28,0,1);set(a.buzz.frequency,max(20,sh1));set(a.buzzB.frequency,max(20,sh1*1.004));set(a.buzzG.gain,0.13*bz*bz);set(a.buzzLP.frequency,1200+3500*bz);
+  const bpfF=sh1*ENG.fanBlades;set(a.bpf.frequency,max(40,bpfF));set(a.bpfG.gain,n1>0.05?0.012+0.016*pow(n1,2):0);
+  set(a.bpf2.frequency,max(40,bpfF*2));set(a.bpf2G.gain,n1>0.05?0.004+0.005*pow(n1,2):0);
+  // fan blades rocking in their dovetails at very low rpm (start and rundown)
+  if(n1>0.002&&n1<0.06){a.clT=(a.clT||0)-dt;if(a.clT<=0){a.clack();a.clT=(0.08+Math.random()*0.5)/max(0.25,n1/0.03);}}
   // core
   set(a.core1.frequency,max(30,sh2*8));set(a.core1G.gain,0.045*pow(n2,2));
   set(a.core2.frequency,max(30,sh2*16));set(a.core2G.gain,0.01*pow(n2,2));
-  set(a.hpc.frequency,max(100,min(9000,sh2*30)));set(a.hpcG.gain,0.0045*pow(n2,3));
+  set(a.hpc.frequency,max(100,min(9000,sh2*30)));set(a.hpcG.gain,n2>0.1?0.003+0.004*pow(n2,3):0);
   // jet
   set(a.roarLP.frequency,120+2200*pow(th,0.7));set(a.roarG.gain,s.lit?0.07+0.6*pow(th,0.8):0.03*n1);
   set(a.midBP.frequency,350+900*th);set(a.midG.gain,s.lit?0.05+0.45*pow(th,0.9):0.02*n1);
   set(a.hissG.gain,0.05*n1+0.3*pow(th,1.2));
   set(a.rumLP.frequency,55+70*th);set(a.rumG.gain,s.lit?0.16+0.5*th:0);
   // starter
-  set(a.st.frequency,max(40,sh2*26));set(a.stG.gain,s.starter?0.04:0);set(a.st2.frequency,max(30,sh2*13));set(a.st2G.gain,s.starter?0.05:0);
+  set(a.st.frequency,max(40,sh2*26));set(a.stG.gain,s.starter?0.05:0);set(a.st2.frequency,max(30,sh2*13));set(a.st2G.gain,s.starter?0.04:0);
+  set(a.st3.frequency,max(60,sh2*52));set(a.st3G.gain,s.starter?0.02:0);set(a.svG.gain,s.starter?0.035:0);
   if(s.ignition){a.igT-=dt;if(a.igT<=0){a.click();a.igT=0.5+Math.random()*0.15;}}
   // cooling metal ticks after shutdown
   if(!s.lit&&s.egt>120&&s.n2<40){a.tickT-=dt;if(a.tickT<=0){a.tick();a.tickT=0.15+Math.random()*1.8*(1-clamp((s.egt-120)/600,0,1));}}
@@ -468,7 +477,7 @@ function stage(parent,o){
 /* --- N1 spool: spinner, fan, booster, LP turbine, inner shaft --- */
 const gSpinner=pg('spinner',rotorN1);gSpinner.add(lathe([[0,-0.38],[0.07,-0.33],[0.14,-0.22],[0.195,-0.09],[0.22,0],[0.22,0.02]],M.spinner,48));
 const gFan=pg('fan',rotorN1);
-stage(gFan,{z:0.07,hub:0.22,tip:0.56,n:22,chord:0.19,stagger:0.78,twist:-0.5,taper:0.72,camber:0.1,mat:M.fanBlade,segs:14,disk:false});
+stage(gFan,{z:0.07,hub:0.22,tip:0.56,n:24,chord:0.19,stagger:0.78,twist:-0.5,taper:0.72,camber:0.1,mat:M.fanBlade,segs:14,disk:false});
 {const nut=cyl(0.03,0.045,-0.42,-0.37,M.disk,16);gSpinner.add(nut);}
 gFan.add(cyl(0.22,0.22,0,0.2,M.disk,48));gFan.add(cyl(0.25,0.22,0.2,0.3,M.shaft1,48));
 const gLpc=pg('lpc',rotorN1);
@@ -645,7 +654,7 @@ const PARTS={
     live:s=>[['Inlet airflow',fmt(ENG.massFlow*pow(s.n1/100,1.05))+' lb/s'],['Fan face speed',fmt(175*s.n1/100)+' m/s'],['Ambient',ENG.ambient+' °C'],['Bypass ratio','5.0 : 1']]},
   spinner:{name:'Spinner',sub:'Bolted to the fan disk · turns with N1',zoom:1.8,role:'A conical nose cone that guides air smoothly into the fan root and flexes to shed ice. It turns with the fan.',
     live:s=>[['Speed',rpm1(s)],['Spool','N1 (low pressure)']]},
-  fan:{name:'Fan',sub:'N1 rotor · 22 blades · 1.12 m diameter',zoom:2.4,role:'Wide-chord titanium blades accelerate the whole airstream. About four fifths of the air goes around the core through the bypass duct and produces most of the thrust; the rest enters the core.',
+  fan:{name:'Fan',sub:'N1 rotor · 24 wide-chord blades · 1.12 m diameter',zoom:2.4,role:'Wide-chord titanium blades accelerate the whole airstream. About four fifths of the air goes around the core through the bypass duct and produces most of the thrust; the rest enters the core.',
     live:s=>[['N1 speed',rpm1(s)+' ('+fmt(s.n1,1)+' %)'],['Tip speed',fmt(2*PI*ENG.fanR*s.n1/100*ENG.n1Max/60)+' m/s'],['Fan pressure ratio',(1+0.62*pow(s.n1/100,2)).toFixed(2)],['Bypass airflow',fmt(ENG.massFlow*pow(s.n1/100,1.05)*5/6)+' lb/s']]},
   ogv:{name:'Outlet guide vanes & bypass duct',sub:'Station 13 · 30 fixed vanes',zoom:2.4,role:'Fixed vanes take the swirl out of the fan’s bypass flow so it leaves the duct straight. Cold bypass air exits the back of the nacelle at about 300 m/s at takeoff and makes roughly three quarters of the total thrust.',
     live:s=>[['Bypass exit velocity',fmt(s.lit?60+250*pow(s.thrust/ENG.thrustMax,0.5):40*s.n1/100)+' m/s'],['Bypass thrust',fmt(s.thrust*0.78)+' lbf'],['Share of total','78 %']]},

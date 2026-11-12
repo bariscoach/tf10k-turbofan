@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Red Apple: land a canard-delta unmanned fighter powered by the TF-10K engine at one of four airfields, with a sim-style flight model, an interactive virtual cockpit, oleo-strut gear, autopilot with ILS autoland, moving map and scoring.">
+<meta name="description" content="Red Apple: land a canard-delta unmanned fighter powered by the TF-10K engine at one of four airfields, with a sim-style flight model, an interactive virtual cockpit with a live nose camera, oleo-strut gear, autopilot with ILS autoland, moving map and scoring.">
 <meta name="author" content="Baris Hiz">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22lgA%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ff6b5a%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23c3261c%22/%3E%3C/linearGradient%3E%3ClinearGradient%20id%3D%22lgS%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23f4f7fa%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23a9b4bf%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath%20d%3D%22M24%204.2%20C24.6%202.6%2025.6%201.6%2027%201.2%22%20stroke%3D%22%237a4a2a%22%20stroke-width%3D%221.6%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22/%3E%3Cpath%20d%3D%22M26.2%203.4%20C29.5%200.6%2033.4%201.2%2034.6%202.4%20C32.6%205.2%2028.8%205.6%2026.2%203.4%20Z%22%20fill%3D%22%234fbf6a%22/%3E%3Ccircle%20cx%3D%2224%22%20cy%3D%2225%22%20r%3D%2221.5%22%20fill%3D%22%23120c0d%22%20stroke%3D%22url%28%23lgA%29%22%20stroke-width%3D%222.6%22/%3E%3Cpath%20d%3D%22M5%2038%20L43%2026%22%20stroke%3D%22%23ffb432%22%20stroke-width%3D%221.6%22%20stroke-dasharray%3D%222.6%202%22%20fill%3D%22none%22%20opacity%3D%22.9%22/%3E%3Cpath%20fill%3D%22url%28%23lgS%29%22%20d%3D%22M24%207%20L26.3%2015%20L26.8%2020.5%20L39%2032%20L39%2034.4%20L27.8%2035.8%20L28.4%2040.4%20L31.2%2043.4%20L26.3%2042.6%20L24%2044.4%20L21.7%2042.6%20L16.8%2043.4%20L19.6%2040.4%20L20.2%2035.8%20L9%2034.4%20L9%2032%20L21.2%2020.5%20L21.7%2015%20Z%22/%3E%3Cpath%20fill%3D%22url%28%23lgS%29%22%20d%3D%22M21.6%2016.2%20L16.2%2020.2%20L16.2%2021.6%20L21.3%2020.6%20Z%20M26.4%2016.2%20L31.8%2020.2%20L31.8%2021.6%20L26.7%2020.6%20Z%22/%3E%3Ccircle%20cx%3D%2224%22%20cy%3D%2239.6%22%20r%3D%221.1%22%20fill%3D%22%23ff5a4a%22/%3E%3C/svg%3E">
 <style>html{color-scheme:dark}body{margin:0}[hidden]{display:none!important}</style>
@@ -323,7 +323,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
             <dt>← → / A D</dt><dd>Roll left / right with the ailerons</dd>
             <dt>PgUp PgDn / + −</dt><dd>Thrust (or drag anywhere on the throttle, or tap Idle, CLB, TO/GA)</dd>
             <dt>F · G · B · Space</dt><dd>Flaps · Gear · Brakes · Speed brake</dd>
-            <dt>C · V · R</dt><dd>Cockpit view · cycle cameras · restart. In the cockpit every control is clickable: autopilot on the glareshield, gear lever, flap lever, switches, and drag the throttle. Drag elsewhere to look around, scroll to zoom, double-click to look ahead</dd>
+            <dt>C · V · R</dt><dd>Cockpit view · cycle cameras · restart. Hold X in the cockpit to glance down at the displays. Every cockpit control is clickable: autopilot on the glareshield, gear lever, flap lever, switches, and drag the throttle. Drag elsewhere to look around, scroll to zoom, double-click to look ahead</dd>
             <dt>Touch</dt><dd>Stick at bottom-left for pitch and bank, buttons in the panel</dd>
           </dl>
             <div class="row"><button class="btn go" type="button" data-go="play">Play the game</button></div>
@@ -831,7 +831,7 @@ function updateGameAudio(dt){
 /* ================= 3D scene ================= */
 const view=$('view'),canvas=$('gl');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance',logarithmicDepthBuffer:true});
-renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;renderer.localClippingEnabled=true;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const scene=new THREE.Scene();scene.fog=new THREE.Fog(0xaebfd0,9000,42000);
 const camera=new THREE.PerspectiveCamera(55,1,1,60000);
 {const pm=new THREE.PMREMGenerator(renderer);const es=new THREE.Scene();es.add(new THREE.Mesh(new THREE.BoxGeometry(12,12,12),new THREE.MeshBasicMaterial({color:new THREE.Color(0.5,0.6,0.75),side:THREE.BackSide})));
@@ -929,7 +929,7 @@ let exhaust,navL,navR,strobe,gearGroup,gearUnits=[],ctrlSurf=[],canards=[];
   const secs=[{z:-7.45,w:0.02,t:0.02,b:0.02,n:1.6},{z:-6.9,w:0.26,t:0.17,b:0.14,n:1.6},{z:-6.0,w:0.52,t:0.34,b:0.26,n:1.8},{z:-4.8,w:0.8,t:0.52,b:0.38,n:2.0},{z:-3.4,w:1.05,t:0.64,b:0.45,n:2.3},
     {z:-1.6,w:1.3,t:0.68,b:0.5,n:2.6},{z:0.4,w:1.38,t:0.64,b:0.5,n:2.8},{z:2.6,w:1.25,t:0.56,b:0.46,n:2.8},{z:4.7,w:0.98,t:0.5,b:0.45,n:2.6},{z:6.3,w:0.66,t:0.46,b:0.45,n:2.3},{z:7.05,w:0.56,t:0.43,b:0.43,n:2.1}];
   const fusMat=mBody.clone();fusMat.side=THREE.DoubleSide;
-  const fus=new THREE.Mesh(loft(secs,2.4,40),fusMat);drone.add(fus);
+  const fus=new THREE.Mesh(loft(secs,2.4,40),fusMat);fus.name='fuselage';drone.add(fus);
   const tipC=new THREE.Mesh(new THREE.ConeGeometry(0.06,0.3,10).rotateX(-PI/2),std({color:0x2a2f35,roughness:0.6}));tipC.position.set(0,0,-7.55);drone.add(tipC);
   const sensor=new THREE.Mesh(new THREE.SphereGeometry(0.16,14,10),std({color:0x14181d,roughness:0.15,metalness:0.6}));sensor.scale.set(1,0.6,1.4);sensor.position.set(0,0.5,-4.6);sensor.name='sensor';drone.add(sensor);
   // wing (plan view in x,z → extruded thickness up)
@@ -993,9 +993,9 @@ onTouch=(a)=>{const back=new THREE.Vector3(-sin(a.psiB),0,cos(a.psiB));for(const
   for(let k=0;k<6;k++){const s=smoke[smokeI++%smoke.length];s.sp.position.copy(base).add(new THREE.Vector3((Math.random()-0.5)*0.8,Math.random()*0.4,(Math.random()-0.5)*0.8));s.vel.copy(back).multiplyScalar(4+Math.random()*6);s.vel.y=0.6+Math.random();s.life=1.6;s.sp.visible=true;s.sp.scale.setScalar(1);}}};
 function updateSmoke(dt){for(const s of smoke){if(s.life<=0)continue;s.life-=dt;s.sp.position.addScaledVector(s.vel,dt);s.vel.multiplyScalar(exp(-dt*1.5));const k=1-s.life/1.6;s.sp.scale.setScalar(1+k*5);s.sp.material.opacity=0.55*(1-k);if(s.life<=0)s.sp.visible=false;}}
 /* ================= Virtual cockpit (as if a pilot sat in the nose) ================= */
-const EYE=new THREE.Vector3(0,1.15,-3.9);
+const EYE=new THREE.Vector3(0,1.27,-3.9);
 const cockpit=new THREE.Group();cockpit.position.copy(EYE);cockpit.visible=false;drone.add(cockpit);
-const ck={headY:0,headP:-0.1,fov:62,drag:null,t:1,was:false};
+const ck={headY:0,headP:-0.08,fov:72,drag:null,t:1,was:false,autoP:0,eoT:0,eoDist:0,eoLos:0,eoLock:false,glance:false,glP:0};
 const ckTex={};
 {const mPanel=std({color:0x22272d,roughness:0.85,metalness:0.2}),mFrame=std({color:0x3b4148,roughness:0.6,metalness:0.4}),mBlack=std({color:0x0d0f12,roughness:0.9}),
   mGrip=std({color:0x1a1c1f,roughness:0.7}),mGlass=new THREE.MeshStandardMaterial({color:0xaed3e6,transparent:true,opacity:0.07,roughness:0.05,metalness:0.1,depthWrite:false,side:THREE.DoubleSide});
@@ -1006,24 +1006,27 @@ const ckTex={};
  for(const sd of[-1,1]){add(new THREE.Mesh(new THREE.BoxGeometry(0.07,0.09,2.2),mFrame),0.62*sd,-0.3,-0.05);}
  add(new THREE.Mesh(new THREE.BoxGeometry(0.04,0.03,0.9),mFrame),0,0.21,-0.32).rotation.x=0.12;
  // glareshield and instrument panel
- const gs=add(new THREE.Mesh(new THREE.BoxGeometry(1.1,0.05,0.3),mPanel),0,-0.21,-0.84);gs.rotation.x=0.08;
- add(new THREE.Mesh(new THREE.BoxGeometry(1.1,0.025,0.03),mBlack),0,-0.195,-0.69);
- const panel=new THREE.Group();panel.position.set(0,-0.52,-0.86);panel.rotation.x=-0.32;cockpit.add(panel);
+ const gs=add(new THREE.Mesh(new THREE.BoxGeometry(1.1,0.05,0.3),mPanel),0,-0.33,-0.84);gs.rotation.x=0.08;
+ add(new THREE.Mesh(new THREE.BoxGeometry(1.1,0.025,0.03),mBlack),0,-0.315,-0.69);
+ const panel=new THREE.Group();panel.position.set(0,-0.79,-0.8);panel.rotation.x=-0.32;cockpit.add(panel);
  add(new THREE.Mesh(new THREE.BoxGeometry(1.12,0.46,0.05),mPanel),0,0,-0.03,panel);
  const mkScreen=(name,x,w,h)=>{const c=document.createElement('canvas');c.width=512;c.height=Math.round(512*h/w);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;
    add(new THREE.Mesh(new THREE.BoxGeometry(w+0.03,h+0.03,0.02),mBlack),x,0.01,0,panel);
    const scr=add(new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:t,toneMapped:false})),x,0.01,0.012,panel);ckTex[name]={c,g:c.getContext('2d'),t,W:512,H:c.height};return scr;};
- mkScreen('eng',-0.37,0.3,0.3);mkScreen('pfd',0,0.34,0.34);mkScreen('nd',0.37,0.3,0.3);
+ mkScreen('eng',-0.37,0.3,0.3);mkScreen('pfd',0,0.34,0.34);ck.ndScr=mkScreen('nd',0.37,0.3,0.3);
+ {const oc=document.createElement('canvas');oc.width=oc.height=512;const ot=new THREE.CanvasTexture(oc);ckTex.eo={c:oc,g:oc.getContext('2d'),t:ot,W:512,H:512};
+  ck.eoOv=add(new THREE.Mesh(new THREE.PlaneGeometry(0.3,0.3),new THREE.MeshBasicMaterial({map:ot,transparent:true,depthWrite:false,toneMapped:false})),0.37,0.01,0.014,panel);ck.eoOv.renderOrder=4;}
  for(let i=0;i<6;i++){add(new THREE.Mesh(new THREE.BoxGeometry(0.035,0.02,0.015),std({color:0x5d666f,roughness:0.5})),-0.5+i*0.2,-0.205,0.01,panel);}
  // HUD combiner glass
  const hc=document.createElement('canvas');hc.width=hc.height=512;const ht=new THREE.CanvasTexture(hc);ckTex.hud={c:hc,g:hc.getContext('2d'),t:ht,W:512,H:512};
  const hud=add(new THREE.Mesh(new THREE.PlaneGeometry(0.27,0.27),new THREE.MeshBasicMaterial({map:ht,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false})),0,-0.05,-0.74);hud.rotation.x=-0.05;
  const hglass=add(new THREE.Mesh(new THREE.PlaneGeometry(0.29,0.29),new THREE.MeshBasicMaterial({color:0x9fd8c0,transparent:true,opacity:0.06,depthWrite:false})),0,-0.05,-0.745);hglass.rotation.x=-0.05;
- for(const sd of[-1,1])add(new THREE.Mesh(new THREE.BoxGeometry(0.015,0.2,0.015),mFrame),0.15*sd,-0.12,-0.75);
+ for(const sd of[-1,1])add(new THREE.Mesh(new THREE.BoxGeometry(0.007,0.3,0.007),mFrame),0.15*sd,-0.18,-0.75);
  // cockpit tub: floor and side walls so the outer skin isn't seen from inside
- add(new THREE.Mesh(new THREE.BoxGeometry(1.0,0.04,1.9),mPanel),0,-0.72,-0.2);
- for(const sd of[-1,1])add(new THREE.Mesh(new THREE.BoxGeometry(0.04,0.42,1.9),mPanel),0.55*sd,-0.5,-0.2);
- add(new THREE.Mesh(new THREE.BoxGeometry(1.0,0.42,0.04),mPanel),0,-0.5,-1.05);
+ add(new THREE.Mesh(new THREE.BoxGeometry(1.1,0.04,1.9),mPanel),0,-1.0,-0.2);
+ for(const sd of[-1,1])add(new THREE.Mesh(new THREE.BoxGeometry(0.04,0.72,1.9),mPanel),0.55*sd,-0.64,-0.2);
+ add(new THREE.Mesh(new THREE.BoxGeometry(1.1,0.68,0.04),mPanel),0,-0.66,-1.12);
+ add(new THREE.Mesh(new THREE.BoxGeometry(1.1,0.72,0.04),mPanel),0,-0.64,0.75);
  // side consoles
  for(const sd of[-1,1]){add(new THREE.Mesh(new THREE.BoxGeometry(0.24,0.1,0.95),mPanel),0.43*sd,-0.56,-0.2);
    for(let i=0;i<5;i++)add(new THREE.Mesh(new THREE.BoxGeometry(0.03,0.015,0.02),std({color:i%2?0x6b7480:0xc23b2f,roughness:0.5})),0.43*sd+(i%2?0.05:-0.05),-0.5,-0.55+i*0.1);}
@@ -1061,7 +1064,7 @@ function drawCockpitDisplays(a){
    g.fillStyle='#8b9aab';g.font='600 18px IBM Plex Mono, monospace';g.textAlign='center';g.fillText('THR '+Math.round(sim.throttle*100)+'%  FUEL '+fmt(ac.fuel)+' LB',256,250);
    g.fillText('FLAPS '+['0','15','30'][a.flaps]+'   '+(a.gearT>0.97?'GEAR DN':a.gearT<0.03?'GEAR UP':'GEAR TRANSIT'),256,490);d.t.needsUpdate=true;}
   // nav display
-  {const d=ckTex.nd,g=ckBg(d,'#04070a');mapCore(g,512,MAPR[mapRi],14);d.t.needsUpdate=true;}
+  if(ndMode!=='cam'){const d=ckTex.nd,g=ckBg(d,'#04070a');mapCore(g,512,MAPR[mapRi],14);d.t.needsUpdate=true;}
 }
 function drawHUD(a){const d=ckTex.hud,g=d.g;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,512,512);const C='#7dff9f';g.strokeStyle=C;g.fillStyle=C;g.lineWidth=3;const ppd=25,c=256;
   g.save();g.beginPath();g.rect(40,40,432,432);g.clip();g.translate(c,c);g.rotate(-a.phi);g.translate(0,a.theta/DEG*ppd);
@@ -1078,7 +1081,11 @@ function drawHUD(a){const d=ckTex.hud,g=d.g;g.setTransform(1,0,0,1,0,0);g.clearR
   if(a.stallW){g.font='700 32px Rajdhani, sans-serif';g.fillText('STALL',256,140);}
   if(!a.gear&&a.agl<1000){g.font='700 24px Rajdhani, sans-serif';g.fillText('GEAR',256,420);}
   d.t.needsUpdate=true;}
-function updateCockpit(dt){const on=camMode==='cockpit';cockpit.visible=on;view.classList.toggle('ckView',on);if(on!==ck.was){ck.t=1;const sn=drone.getObjectByName('sensor');if(sn)sn.visible=!on;$('app').classList.toggle('ckFull',on);if(!on){ckTip.hidden=true;canvas.style.cursor='';}}ck.was=on;if(!on)return;updateCockpitControls();
+const tubPlanes=[[1,0,0,-0.55],[-1,0,0,-0.55],[0,0,-1,-4.95],[0,0,1,2.9],[0,-1,0,0.15]].map(v=>new THREE.Plane(new THREE.Vector3(v[0],v[1],v[2]),v[3]));
+const tubWorld=tubPlanes.map(p=>p.clone());
+function setTubClip(on){const f=drone.getObjectByName('fuselage');if(!f)return;f.material.clippingPlanes=on?tubWorld:[];f.material.clipIntersection=true;f.material.needsUpdate=true;}
+function updateTubClip(){drone.updateMatrixWorld(true);tubPlanes.forEach((p,i)=>tubWorld[i].copy(p).applyMatrix4(drone.matrixWorld));}
+function updateCockpit(dt){const on=camMode==='cockpit';cockpit.visible=on;view.classList.toggle('ckView',on);if(on!==ck.was){ck.t=1;setTubClip(on);const sn=drone.getObjectByName('sensor');if(sn)sn.visible=!on;$('app').classList.toggle('ckFull',on);if(!on){ckTip.hidden=true;canvas.style.cursor='';}}ck.was=on;if(!on)return;updateTubClip();updateCockpitControls();
   ck.stick.rotation.x=(ac.de||0)*0.3;ck.stick.rotation.z=-(ac.da||0)*0.3;ck.thr.position.z=-0.2+0.15-sim.throttle*0.3;
   ck.ped[0].position.z=-0.92-(ac.drTot||0)*0.05;ck.ped[1].position.z=-0.92+(ac.drTot||0)*0.05;
   drawHUD(ac);ck.t+=dt;if(ck.t>0.1){ck.t=0;drawCockpitDisplays(ac);}}
@@ -1092,7 +1099,7 @@ canvas.addEventListener('pointermove',e=>{if(camMode!=='cockpit'){ckTip.hidden=t
 canvas.addEventListener('pointerup',()=>{ck.drag=null;canvas.style.cursor='grab';});canvas.addEventListener('pointercancel',()=>{ck.drag=null;});
 canvas.addEventListener('pointerleave',()=>{ckTip.hidden=true;});
 canvas.addEventListener('wheel',e=>{if(camMode!=='cockpit')return;e.preventDefault();const p=ckPick(e);if(p&&p.h.wheel&&p.h.wheel(p.uv,e.deltaY,e))return;ck.fov=clamp(ck.fov+e.deltaY*0.03,28,85);},{passive:false});
-canvas.addEventListener('dblclick',()=>{ck.headY=0;ck.headP=-0.1;ck.fov=62;});
+canvas.addEventListener('dblclick',()=>{ck.headY=0;ck.headP=-0.08;ck.fov=72;});
 /* ================= Cockpit controls: glareshield autopilot, gear and flap levers, switches, draggable throttle ================= */
 const ckHits=[];const ckLights={};
 {const mPlate=std({color:0x1b1f24,roughness:0.8,metalness:0.2}),mMetal=std({color:0x7d8690,roughness:0.4,metalness:0.7}),mBlack=std({color:0x0d0f12,roughness:0.9});
@@ -1102,7 +1109,7 @@ const ckHits=[];const ckLights={};
  const light=(name,x,y,z,parent,rx)=>{const m=add(new THREE.Mesh(new THREE.PlaneGeometry(0.018,0.018),new THREE.MeshBasicMaterial({color:0x1c2228,toneMapped:false})),x,y,z,parent);m.rotation.x=rx||0;ckLights[name]=m;return m;};
  // glareshield autopilot panel (canvas display + hit regions)
  const mc=document.createElement('canvas');mc.width=1024;mc.height=128;const mt=new THREE.CanvasTexture(mc);mt.colorSpace=THREE.SRGBColorSpace;mt.anisotropy=8;ckTex.mcp={c:mc,g:mc.getContext('2d'),t:mt,key:''};
- const mcpG=new THREE.Group();mcpG.position.set(0,-0.245,-0.655);mcpG.rotation.x=-0.22;cockpit.add(mcpG);
+ const mcpG=new THREE.Group();mcpG.position.set(0,-0.375,-0.66);mcpG.rotation.x=-0.22;cockpit.add(mcpG);
  add(new THREE.Mesh(new THREE.BoxGeometry(1.02,0.13,0.03),mPlate),0,0,-0.016,mcpG);
  const mcpMesh=add(new THREE.Mesh(new THREE.PlaneGeometry(1.0,0.125),new THREE.MeshBasicMaterial({map:mt,toneMapped:false})),0,0,0.001,mcpG);
  const WIN=[['ias','SPD',16],['hdg','HDG',166],['alt','ALT',316],['vs','V/S',466]],BTN=[['AP','AP'],['ATHR','A/THR'],['HDG','HDG'],['ALT','ALT'],['VS','V/S'],['APP','APP']];
@@ -1113,7 +1120,7 @@ const ckHits=[];const ckLights={};
    wheel(uv,dy,e){const r=this.region(uv);if(r&&r.t==='win'){apSel(r.k,dy<0?1:-1,e.shiftKey);return true;}return false;},
    tip(uv){const r=this.region(uv);if(!r)return'';return r.t==='win'?r.l+': click left to decrease, right to increase, or scroll (Shift for big steps)':r.l+': '+({AP:'autopilot on/off',ATHR:'auto-thrust holds the SPD window',HDG:'fly the HDG window',ALT:'hold altitude',VS:'climb or descend at the V/S window',APP:'arm ILS approach and autoland'}[r.m]);}});
  // gear lever with wheel knob + three lights (left of the main panel)
- const gearG=new THREE.Group();gearG.position.set(-0.59,-0.41,-0.79);gearG.rotation.x=-0.32;cockpit.add(gearG);
+ const gearG=new THREE.Group();gearG.position.set(-0.66,-0.66,-0.74);gearG.rotation.x=-0.32;cockpit.add(gearG);
  add(new THREE.Mesh(new THREE.BoxGeometry(0.1,0.2,0.02),mPlate),0,0,-0.01,gearG);
  add(new THREE.Mesh(new THREE.BoxGeometry(0.012,0.13,0.012),mBlack),0,0,0.002,gearG);
  ck.gearArm=new THREE.Group();gearG.add(ck.gearArm);
@@ -1168,6 +1175,33 @@ function updateCockpitControls(){drawMCP();
 const ckRay=new THREE.Raycaster(),ckNdc=new THREE.Vector2();const ckTip=document.createElement('div');ckTip.id='ckTip';ckTip.hidden=true;view.appendChild(ckTip);
 function ckPick(e){const r=canvas.getBoundingClientRect();ckNdc.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);ckRay.setFromCamera(ckNdc,camera);
   const hits=ckRay.intersectObjects(ckHits.map(h=>h.mesh),false);if(!hits.length)return null;const h=ckHits.find(x=>x.mesh===hits[0].object);return h?{h,uv:hits[0].uv||new THREE.Vector2()}:null;}
+/* ================= Nose sensor camera (live feed on the right display) ================= */
+const eoCam=new THREE.PerspectiveCamera(20,1,2,60000);const eoRT=new THREE.WebGLRenderTarget(512,512,{samples:2});eoRT.texture.colorSpace=THREE.SRGBColorSpace;
+let ndMode='cam';const eoMat=new THREE.MeshBasicMaterial({map:eoRT.texture,toneMapped:true});let ndMatCanvas=null;
+const EOPOS=new THREE.Vector3(0,-0.42,-7.75);
+function eoAim(){return worldAt(target,target.aim,0,0.5);}
+function renderEO(){drone.updateMatrixWorld(true);const p=EOPOS.clone().applyMatrix4(drone.matrixWorld);eoCam.position.copy(p);
+  const aim=eoAim();const toA=aim.clone().sub(p);const dist=toA.length();const fwd=new THREE.Vector3(0,0,-1).applyQuaternion(drone.getWorldQuaternion(new THREE.Quaternion()));
+  const off=fwd.angleTo(toA);ck.eoLock=off<75*DEG&&dist<40000;eoCam.up.set(0,1,0);
+  if(ck.eoLock){eoCam.lookAt(aim);eoCam.fov=clamp(2*Math.atan(320/dist)/DEG,3,40);}else{eoCam.lookAt(p.clone().add(fwd.clone().multiplyScalar(1000)).add(new THREE.Vector3(0,-80,0)));eoCam.fov=40;}
+  eoCam.updateProjectionMatrix();ck.eoDist=dist;ck.eoLos=Math.asin(clamp(toA.y/max(dist,1),-1,1))/DEG;
+  const dv=drone.visible,cv=cockpit.visible;drone.visible=false;cockpit.visible=false;skyMesh.position.copy(p);
+  renderer.setRenderTarget(eoRT);renderer.render(scene,eoCam);renderer.setRenderTarget(null);drone.visible=dv;cockpit.visible=cv;}
+function drawEOOverlay(now){const d=ckTex.eo,g=d.g;g.clearRect(0,0,512,512);if(ndMode!=='cam'){d.t.needsUpdate=true;return;}
+  const C='rgba(235,255,240,0.95)';g.strokeStyle=C;g.fillStyle=C;g.lineWidth=2.5;
+  const br=(x,y,sx,sy)=>{g.beginPath();g.moveTo(x,y+sy*40);g.lineTo(x,y);g.lineTo(x+sx*40,y);g.stroke();};br(24,24,1,1);br(488,24,-1,1);br(24,488,1,-1);br(488,488,-1,-1);
+  if(ck.eoLock){g.beginPath();g.moveTo(256,214);g.lineTo(256,240);g.moveTo(256,272);g.lineTo(256,298);g.moveTo(214,256);g.lineTo(240,256);g.moveTo(272,256);g.lineTo(298,256);g.stroke();g.strokeRect(236,236,40,40);}
+  else{g.beginPath();g.moveTo(206,256);g.lineTo(306,256);g.moveTo(256,206);g.lineTo(256,306);g.stroke();}
+  g.font='700 24px IBM Plex Mono, monospace';g.textBaseline='top';g.textAlign='left';g.fillText('EO  '+(ck.eoLock?'TRK':'FWD'),40,40);
+  g.textAlign='right';g.fillText(ck.eoLock?'NFOV':'WFOV',472,40);
+  g.textBaseline='bottom';g.textAlign='left';g.fillText(target.id,40,472);g.textAlign='right';g.fillText((ck.eoDist/1852).toFixed(1)+' NM',472,472);
+  g.font='600 20px IBM Plex Mono, monospace';g.textAlign='left';g.fillText('LOS '+(ck.eoLos>=0?'+':'')+ck.eoLos.toFixed(1)+'°',40,440);
+  if((now/600|0)%2){g.fillStyle='#ff4a3d';g.beginPath();g.arc(452,82,8,0,2*PI);g.fill();g.fillStyle=C;g.textAlign='right';g.textBaseline='middle';g.font='600 18px IBM Plex Mono, monospace';g.fillText('REC',436,82);}
+  g.textAlign='center';g.textBaseline='bottom';g.font='600 16px IBM Plex Mono, monospace';g.fillStyle='rgba(235,255,240,0.6)';g.fillText('click: map',256,500);
+  d.t.needsUpdate=true;}
+function setNdMode(m){ndMode=m;if(!ndMatCanvas)ndMatCanvas=ck.ndScr.material;ck.ndScr.material=m==='cam'?eoMat:ndMatCanvas;ck.eoOv.visible=m==='cam';}
+ckHits.push({mesh:ck.ndScr,click(){setNdMode(ndMode==='cam'?'map':'cam');audio.click&&audio.click();},tip(){return ndMode==='cam'?'Nose camera, locked on '+target.id+': click for the map':'Map: click for the nose camera';}});
+setNdMode('cam');
 /* camera */
 let camMode='chase';const camPos=new THREE.Vector3(),camLook=new THREE.Vector3();let shake=0;
 function updateCamera(dt){
@@ -1178,7 +1212,9 @@ function updateCamera(dt){
   else if(camMode==='cockpit'){
     drone.updateMatrixWorld(true);const eye=EYE.clone().applyMatrix4(drone.matrixWorld);camPos.copy(eye);camera.position.copy(eye);
     if(shake>0){camera.position.x+=(Math.random()-0.5)*shake*0.25;camera.position.y+=(Math.random()-0.5)*shake*0.25;}
-    const q=drone.getWorldQuaternion(new THREE.Quaternion());camera.quaternion.copy(q).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(ck.headP,ck.headY,0,'YXZ')));
+    const q=drone.getWorldQuaternion(new THREE.Quaternion());{const want=(!a.onGround&&a.agl<2500&&abs(ck.headY)<0.6)?clamp(-(a.theta-1*DEG)*0.55,-0.14,0):0;ck.autoP+=(want-ck.autoP)*(1-exp(-dt/1.2));}
+    ck.glP+=((ck.glance?-0.62:0)-ck.glP)*(1-exp(-dt/0.15));
+    camera.quaternion.copy(q).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(ck.glance?ck.glP:ck.headP+ck.autoP+ck.glP,ck.glance?0:ck.headY,0,'YXZ')));
     camera.fov=ck.fov;camera.near=0.03;camera.updateProjectionMatrix();return;}
   else{want=target.ap.tower.clone();look=a.pos.clone();}
   camera.near=1;
@@ -1269,13 +1305,14 @@ const gaFF=new Gauge('gFF',{min:0,max:4000,tick:500,every:2,amber:4000,red:4000,
 window.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='BUTTON'&&e.key===' ')return;const k=e.key;
   if(k==='q'||k==='Q'||k===','){inp.kRudL=true;e.preventDefault();return;}if(k==='e'||k==='E'||k==='.'){inp.kRudR=true;e.preventDefault();return;}
   if(k==='z'||k==='Z'){apMode('AP');e.preventDefault();return;}
+  if((k==='x'||k==='X')&&camMode==='cockpit'){ck.glance=true;e.preventDefault();return;}
   if(k===']'||k==='Home'){inp.trimUp=true;e.preventDefault();return;}if(k==='['||k==='End'){inp.trimDn=true;e.preventDefault();return;}if(k==='t'||k==='T'){toggleAutoTrim();e.preventDefault();return;}
   if(k==='ArrowUp'||k==='w'||k==='W')inp.kUp=true;else if(k==='ArrowDown'||k==='s'||k==='S')inp.kDn=true;else if(k==='ArrowLeft'||k==='a'||k==='A')inp.kL=true;else if(k==='ArrowRight'||k==='d'||k==='D')inp.kR=true;
   else if(k==='PageUp'||k==='+'||k==='='||k==='PageDown'||k==='-'||k==='_'){if(ap.athr){ap.athr=false;ap.msg='A/THR OFF · manual thrust';ap.msgT=3;onApChange();}setThrottle(+thr.value+(k==='PageUp'||k==='+'||k==='='?4:-4));}
   else if(k==='f'||k==='F')cycleFlaps();else if(k==='g'||k==='G')toggleGear();else if(k==='b'||k==='B')toggleBrk();else if(k===' ')toggleSplr();
   else if(k==='m'||k==='M')$('mapRange').click();else if(k==='v'||k==='V')camMode=camMode==='chase'?'cockpit':camMode==='cockpit'?'nose':camMode==='nose'?'tower':'chase';else if(k==='c'||k==='C')camMode=camMode==='cockpit'?'chase':'cockpit';else if(k==='r'||k==='R')startGame();else return;
   e.preventDefault();});
-window.addEventListener('keyup',e=>{const k=e.key;if(k==='q'||k==='Q'||k===',')inp.kRudL=false;if(k==='e'||k==='E'||k==='.')inp.kRudR=false;if(k===']'||k==='Home')inp.trimUp=false;if(k==='['||k==='End')inp.trimDn=false;if(k==='ArrowUp'||k==='w'||k==='W')inp.kUp=false;else if(k==='ArrowDown'||k==='s'||k==='S')inp.kDn=false;else if(k==='ArrowLeft'||k==='a'||k==='A')inp.kL=false;else if(k==='ArrowRight'||k==='d'||k==='D')inp.kR=false;});
+window.addEventListener('keyup',e=>{const k=e.key;if(k==='x'||k==='X')ck.glance=false;if(k==='q'||k==='Q'||k===',')inp.kRudL=false;if(k==='e'||k==='E'||k==='.')inp.kRudR=false;if(k===']'||k==='Home')inp.trimUp=false;if(k==='['||k==='End')inp.trimDn=false;if(k==='ArrowUp'||k==='w'||k==='W')inp.kUp=false;else if(k==='ArrowDown'||k==='s'||k==='S')inp.kDn=false;else if(k==='ArrowLeft'||k==='a'||k==='A')inp.kL=false;else if(k==='ArrowRight'||k==='d'||k==='D')inp.kR=false;});
 {const st=$('stick'),kn=st.querySelector('.knob');let id=null,cx=0,cy=0;
  st.addEventListener('pointerdown',e=>{id=e.pointerId;st.setPointerCapture(id);const r=st.getBoundingClientRect();cx=r.left+r.width/2;cy=r.top+r.height/2;});
  st.addEventListener('pointermove',e=>{if(e.pointerId!==id)return;const dx=clamp((e.clientX-cx)/50,-1,1),dy=clamp((e.clientY-cy)/50,-1,1);inp.roll=dx;inp.pitch=dy;kn.style.transform=`translate(calc(-50% + ${dx*40}px),calc(-50% + ${dy*40}px))`;});
@@ -1453,12 +1490,14 @@ function frame(now){
   ac.jolt=(ac.jolt||0)*exp(-dtFrame*6);
   {const gl=$('bGear');gl.classList.toggle('down',ac.gearT>0.97);gl.classList.toggle('transit',ac.gearT>0.03&&ac.gearT<0.97);}
   shake=(ac.stalled&&!ac.onGround?0.5:0)+(ac.onGround&&ac.V>3?(ac.surf==='grass'?0.18:0.025)*clamp(ac.V/60,0,1):0)+ac.jolt*0.35;
-  updateCockpit(dt);updateCamera(dt);skyMesh.position.copy(camera.position);clouds.forEach(c=>{c.position.x+=SCEN[scen].wind[0]*0.3*dt;});renderer.render(scene,camera);
+  updateCockpit(dt);updateCamera(dt);
+  if(camMode==='cockpit'&&ndMode==='cam'){ck.eoT=(ck.eoT||0)+1;if(ck.eoT%2===1)renderEO();drawEOOverlay(now);}
+  skyMesh.position.copy(camera.position);clouds.forEach(c=>{c.position.x+=SCEN[scen].wind[0]*0.3*dt;});renderer.render(scene,camera);
   {const m=!$('title').hidden;if(m!==frame.menu){frame.menu=m;$('app').classList.toggle('menu',m);}}
   updateHUD(dt);updateRunwaySymbol();if((now/100|0)%2===0)drawMap();updatePanel(dt);renderLever();
 }
 syncSys();updateThrOut();resetFlight();ac.phase='standby';
-window.__hawk={ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
+window.__hawk={ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
 requestAnimationFrame(frame);
 })();
 </script>

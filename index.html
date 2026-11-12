@@ -92,8 +92,10 @@ main{display:grid;grid-template-columns:1fr 340px;min-height:0}
 .keys{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:12px;color:var(--fg-dim);margin:0}
 .keys dt{font-family:var(--font-mono);color:var(--fg);white-space:nowrap} .keys dd{margin:0}
 .btn{font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:.1em;text-transform:uppercase;padding:12px 10px;border-radius:6px;border:1px solid var(--line-2);background:var(--panel-2);color:var(--fg);cursor:pointer}
-.btn.go{border-color:rgba(85,219,142,.6);color:var(--green)} .btn.go:hover{background:rgba(85,219,142,.12)}
-.btn:focus-visible,.chip:focus-visible,.viewbar button:focus-visible,.scen button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.btn.go{border-color:rgba(85,219,142,.6);color:var(--green)}
+a.btn{text-decoration:none;text-align:center;display:block}
+.btn.eng{border-color:rgba(63,211,230,.6);color:var(--cyan)} .btn.eng:hover{background:rgba(63,211,230,.12)} .btn.go:hover{background:rgba(85,219,142,.12)}
+.btn:focus-visible,a.btn:focus-visible,.chip:focus-visible,.viewbar button:focus-visible,.scen button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .row .btn{flex:1 1 140px}
 .res{display:grid;grid-template-columns:1fr auto;gap:4px 14px;font-size:13px;margin:0}
@@ -124,6 +126,7 @@ main{display:grid;grid-template-columns:1fr 340px;min-height:0}
 .sr{position:absolute;left:0;bottom:0;width:100%;height:4px;opacity:0;margin:0;pointer-events:none}
 .lever .note{font-size:11px;color:var(--fg-mute);margin-top:4px}
 .sysbtns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+#bTrim{display:block}
 .sysbtns .chip{padding:9px 4px;text-align:center}
 .spec{font-size:12px;color:var(--fg-dim);display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0}
 .spec dt{color:var(--fg-mute)} .spec dd{margin:0;font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg-dim)}
@@ -178,7 +181,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
           <rect id="cdiGs" x="8" y="20" width="154" height="4" rx="1" fill="#ff4fd8"/>
         </svg>
         <div class="hb" id="hBot">
-          <span class="sys" id="sFLAP">Flaps 0</span><span class="sys off" id="sGEAR">Gear up</span><span class="sys off" id="sSPLR">Spoilers</span><span class="sys off" id="sBRK">Brakes</span><span class="sys" id="sTHR">Thr 0 %</span>
+          <span class="sys" id="sFLAP">Flaps 0</span><span class="sys off" id="sGEAR">Gear up</span><span class="sys off" id="sSPLR">Spoilers</span><span class="sys off" id="sBRK">Brakes</span><span class="sys" id="sTHR">Thr 0 %</span><span class="sys" id="sTRIM">Trim 0.00</span>
         </div>
         <div id="warn"></div>
         <svg id="rwySym" aria-hidden="true"><polygon id="rwyPoly" points="" fill="rgba(63,211,230,.12)" stroke="#3fd3e6" stroke-width="1.5"/><polygon id="rwyArrow" points="" fill="#3fd3e6"/><rect id="rwyBox" x="-100" y="-100" width="22" height="22" fill="none" stroke="#3fd3e6" stroke-width="1.5"/><text id="rwyTxt" x="0" y="0" fill="#3fd3e6" font-size="13" font-weight="600" font-family="IBM Plex Mono, monospace" text-anchor="middle" style="paint-order:stroke;stroke:rgba(0,0,0,.8);stroke-width:3px"></text></svg>
@@ -202,14 +205,16 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
           </div>
           <h3>Controls</h3>
           <dl class="keys">
-            <dt>↑ ↓ / W S</dt><dd>Pitch nose up / down <button type="button" class="chip" id="chipInv" aria-pressed="false" style="margin-left:6px;padding:1px 6px;font-size:11px">Flight-stick (↓ pulls up)</button></dd>
+            <dt>↓ ↑ / S W</dt><dd>Pull back (nose up) / push forward (nose down), as in flight sims <button type="button" class="chip" id="chipInv" aria-pressed="false" style="margin-left:6px;padding:1px 6px;font-size:11px">Arcade pitch (↑ nose up)</button></dd>
+            <dt>[ ] · T</dt><dd>Trim nose down / up · auto-trim on or off (on: a centred yoke holds attitude)</dd>
             <dt>← → / A D</dt><dd>Bank left / right (steer on the ground)</dd>
             <dt>PgUp PgDn / + −</dt><dd>Thrust lever (or drag the 3D lever)</dd>
             <dt>F · G · B · Space</dt><dd>Flaps · Gear · Brakes · Spoilers</dd>
             <dt>V · R</dt><dd>Change camera · Restart</dd>
             <dt>Touch</dt><dd>Stick at bottom-left for pitch and bank, buttons in the panel</dd>
           </dl>
-          <div class="row"><button class="btn go" id="btnGo" type="button">Start approach</button></div>
+          <div class="row"><button class="btn go" id="btnGo" type="button">Start approach</button><a class="btn eng" id="btnEngine" href="testcell">Test the engine</a></div>
+          <div class="sub" style="margin:8px 0 0">Test the engine opens the TF-10K test cell: a 3D cutaway you can start, throttle and shut down, with live gauges and sound.</div>
         </div>
       </div>
 
@@ -253,6 +258,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
           <button class="chip" id="bSplr" type="button">Spoilers</button>
           <button class="chip" id="bBrk" type="button">Brakes</button>
         </div>
+        <button class="chip on" id="bTrim" type="button" style="margin-top:6px;width:100%">Auto-trim on</button>
       </div>
       <div class="chips" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <button class="chip" id="chipSound" type="button" aria-pressed="true">Sound</button>
@@ -457,13 +463,16 @@ function worldAt(end,u,v,y){return new THREE.Vector3(end.thr.x+end.d.x*u+end.r.x
 function findRunway(p){for(const ap of AIRPORTS){const l=local(ap.ends[0],p);if(l.u>=0&&l.u<=ap.len&&abs(l.v)<=ap.w/2)return {ap,l};}return null;}
 function approachEnd(ap,p){return local(ap.ends[0],p).u<ap.len/2?ap.ends[0]:ap.ends[1];}
 const SCEN=[{name:'Calm',wind:[0,0,0],gust:0,label:'calm'},{name:'Crosswind',wind:[-6.2,0,0],gust:0,label:'12 kt from 090'},{name:'Gusty',wind:[-9.3,0,2],gust:1,label:'18 kt from 100, gusts'}];
-let scen=0,invert=false;
+let scen=0,invert=true,autoTrim=true;
+// pitch/roll model (normalised moments): trim AoA, AoA stiffness, elevator power, pitch damping, aileron power, roll damping, dihedral, auto-trim gain
+const PM={qref:0.5*1.225*61.7*61.7,a0:4*DEG,ka:6,kd:1.1,kq:3.2,la:0.8,lp:2.6,ld:0.25,at:1.6};
 const ac={pos:new THREE.Vector3(),V:70,gamma:0,psi:0,theta:0,phi:0,q:0,p:0,alpha:0,flaps:0,gear:1,gearT:1,splr:false,brk:false,onGround:false,stalled:false,stallW:false,vs:0,ias:0,agl:0,thrN:0,wind:new THREE.Vector3(),gustT:0,gustV:new THREE.Vector3(),fuel:2400,phase:'standby',td:null,maxBank:0,tdTime:0,stopDist:0,t:0,touch:0};
-const inp={pitch:0,roll:0,kUp:false,kDn:false,kL:false,kR:false};
+const inp={pitch:0,roll:0,kUp:false,kDn:false,kL:false,kR:false,trimUp:false,trimDn:false};
 
 function resetFlight(){
   const s=SCEN[scen];ac.wind.set(...s.wind);ac.gustV.set(0,0,0);
-  ac.pos.copy(worldAt(target,-9300,120,549));ac.V=72;ac.gamma=-2.5*DEG;ac.psi=target.hdg*DEG;ac.theta=3.5*DEG;ac.rwy=null;ac.phi=0;ac.q=0;ac.p=0;ac.flaps=0;ac.gear=0;ac.gearT=0;ac.splr=false;ac.brk=false;ac.onGround=false;ac.stalled=false;ac.td=null;ac.maxBank=0;ac.phase='fly';ac.t=0;ac.stopDist=0;ac.fuel=3000;
+  ac.pos.copy(worldAt(target,-9300,120,549));ac.V=72;ac.gamma=-2.5*DEG;ac.psi=target.hdg*DEG;ac.rwy=null;ac.de=0;ac.da=0;
+  {const rho=1.225*exp(-ac.pos.y/9000);const clNeed=AC.mass*9.81*cos(ac.gamma)/(0.5*rho*ac.V*ac.V*AC.S);const aNeed=clNeed/AC.clA+AC.a0;ac.theta=ac.gamma+aNeed;ac.trim=(aNeed-PM.a0)*PM.ka/PM.kd;}ac.phi=0;ac.q=0;ac.p=0;ac.flaps=0;ac.gear=0;ac.gearT=0;ac.splr=false;ac.brk=false;ac.onGround=false;ac.stalled=false;ac.td=null;ac.maxBank=0;ac.phase='fly';ac.t=0;ac.stopDist=0;ac.fuel=3000;
   Object.assign(sim,{phase:'run',n1:40,n2:72,egt:520,ff:900,thrust:1800,lit:true,fuelOn:true,starter:false,ignition:false,throttle:0.3,fuelUsed:0});
   thr.value=30;updateThrOut();syncSys();
 }
@@ -474,34 +483,43 @@ function flyStep(dt){
   if(SCEN[scen].gust){a.gustT-=dt;if(a.gustT<=0){a.gustT=1.2+Math.random()*2;a.gustV.set((Math.random()-0.5)*7,(Math.random()-0.5)*2.5,(Math.random()-0.5)*5);}}
   const wind=a.wind.clone().addScaledVector(a.gustV,1-exp(-a.t));
   const rho=1.225*exp(-a.pos.y/9000);
-  // controls → rates
-  const pc=clamp(inp.pitch+(inp.kUp?1:0)-(inp.kDn?1:0),-1,1)*(invert?-1:1), rc=clamp(inp.roll+(inp.kR?1:0)-(inp.kL?1:0),-1,1);
-  // aero
+  // controls: keyboard ramps the yoke like a sim; touch stick feeds it directly
+  const pIn=clamp(inp.pitch+(inp.kDn?1:0)-(inp.kUp?1:0),-1,1)*(invert?1:-1), rIn=clamp(inp.roll+(inp.kR?1:0)-(inp.kL?1:0),-1,1);
+  const ramp=(cur,tgt,rate)=>cur+clamp(tgt-cur,-rate*dt,rate*dt);
+  a.de=ramp(a.de,pIn,abs(pIn)>abs(a.de)?(inp.pitch?6:1.0):3.0);a.da=ramp(a.da,rIn,abs(rIn)>abs(a.da)?(inp.roll?6:1.5):3.5);
+  if(inp.trimUp)a.trim=clamp(a.trim+0.22*dt,-1,1);if(inp.trimDn)a.trim=clamp(a.trim-0.22*dt,-1,1);
+  // aero angles and dynamic pressure
   a.alpha=a.theta-a.gamma;const f=a.flaps;const st=AC.aStall[f];
-  // natural stability: pitch returns toward trim AoA, dihedral levels the wings; elevator loses authority in the stall
-  const stabQ=-(a.alpha-4*DEG)*0.35, stabP=-a.phi*0.15;
-  a.q+=((pc*AC.qMax*(a.alpha>st?0.5:1)+stabQ)-a.q)*(1-exp(-dt/0.35));a.p+=((rc*AC.pMax+stabP)-a.p)*(1-exp(-dt/0.3));
-  a.stalled=a.alpha>st;a.stallW=a.alpha>st-3*DEG&&!a.onGround;
-  const cl=CL(a.alpha,f);const cd=AC.cd0+AC.k*cl*cl+AC.cdFlap[f]+AC.cdGear*a.gearT+(a.splr?AC.cdSplr:0)+(a.stalled?0.05*(a.alpha-st)/DEG*0.3:0);
-  const qb=0.5*rho*a.V*a.V;const L=qb*AC.S*cl,D=qb*AC.S*cd;
+  const qbar=0.5*rho*a.V*a.V,qn=qbar/PM.qref,sq=sqrt(max(qn,0.04));
+  a.stalled=a.alpha>st&&!a.onGround;a.stallW=a.alpha>st-3*DEG&&!a.onGround;
+  // pitching moment: static stability about trim AoA, elevator (+trim), pitch damping; elevator weaker when stalled
+  const dEl=clamp(a.de+a.trim,-1.4,1.4)*(a.stalled?0.55:1);
+  let qd=qn*(-PM.ka*(a.alpha-PM.a0)+PM.kd*dEl)-PM.kq*sq*a.q;
+  if(a.stalled){const ex=(a.alpha-st)/DEG;qd-=ex*0.05*max(qn,0.3);a.p+=(Math.random()-0.5)*ex*0.9*DEG;}
+  // rolling moment: aileron, roll damping, dihedral
+  let pd=qn*PM.la*a.da-PM.lp*sq*a.p-PM.ld*a.phi;
+  // auto-trim: with the yoke centred the drone holds its attitude, like fly-by-wire
+  if(autoTrim&&!a.onGround&&!a.stalled&&abs(a.de)<0.03)a.trim=clamp(a.trim-PM.at*a.q*dt,-1,1);
+  const cl=CL(a.alpha,f);const cd=AC.cd0+AC.k*cl*cl+AC.cdFlap[f]+AC.cdGear*a.gearT+(a.splr?AC.cdSplr:0)+(a.stalled?0.015*(a.alpha-st)/DEG:0);
+  const L=qbar*AC.S*cl,D=qbar*AC.S*cd;
   const m=AC.mass,g=9.81;
   // engine net thrust with ram-drag loss
   a.thrN=sim.thrust*LBF*(1-0.35*clamp(a.V/170,0,1));
   const T=a.thrN;
   let dV=(T*cos(a.alpha)-D)/m-g*sin(a.gamma);
   let dG=(L*cos(a.phi)+T*sin(a.alpha)-m*g*cos(a.gamma))/(m*a.V);
-  // stall behaviour: nose drops, wing drops, buffet
-  if(a.stalled&&!a.onGround){const ex=(a.alpha-st)/DEG;a.q-=ex*12*DEG*dt;a.p+=(Math.random()-0.5)*ex*30*DEG*dt;}
   if(a.onGround){
-    // rolling: friction, brakes, steering; lift-off if lift exceeds weight
+    // rolling: friction, brakes, spoilers, nosewheel steering; weight on the nose gear pushes the nose down
     const W=m*g;const roll=0.03*W+(a.brk?0.33*W*clamp(a.V/8,0,1):0)+(a.splr?0.1*W*clamp(a.V/40,0,1):0);
     dV=(T-D-roll)/m;if(a.V<0.5&&dV<0){dV=0;a.V=0;}
     a.gamma=0;a.pos.y=AC.gearH;
-    a.psi+=rc*14*DEG*clamp(a.V/25,0,1)*dt;a.phi+=(0-a.phi)*(1-exp(-dt/0.5));
-    a.theta+=((a.V>35&&pc>0?6*DEG:0)-a.theta)*(1-exp(-dt/0.8));
-    if(L*cos(a.phi)+T*sin(a.alpha)>W*1.02&&a.theta>2*DEG){a.onGround=false;}
+    a.psi+=a.da*14*DEG*clamp(a.V/25,0,1)*dt;a.phi+=(0-a.phi)*(1-exp(-dt/0.5));a.p=0;
+    qd-=(1-clamp(L/W,0,1))*(2.0*a.theta+1.5*a.q);
+    a.q+=qd*dt;a.theta+=a.q*dt;
+    if(a.theta<0){a.theta=0;a.q=max(0,a.q);}if(a.theta>12*DEG){a.theta=12*DEG;a.q=min(0,a.q);}
+    if(L*cos(a.phi)+T*sin(a.alpha)>W*1.02&&a.theta>2*DEG&&!a.td){a.onGround=false;}
     dG=0;
-  }else{a.theta=clamp(a.theta+a.q*dt,-25*DEG,30*DEG);a.phi=clamp(a.phi+a.p*dt,-70*DEG,70*DEG);}
+  }else{a.q+=qd*dt;a.p+=pd*dt;a.theta=clamp(a.theta+a.q*dt,-40*DEG,40*DEG);a.phi=clamp(a.phi+a.p*dt,-80*DEG,80*DEG);}
   a.V=max(0,a.V+dV*dt);a.gamma=clamp(a.gamma+dG*dt,-40*DEG,40*DEG);
   if(!a.onGround&&a.V>5)a.psi+=(L*sin(a.phi))/(m*a.V)*dt;
   // position
@@ -726,15 +744,16 @@ const gaFF=new Gauge('gFF',{min:0,max:4000,tick:500,every:2,amber:4000,red:4000,
 
 /* ================= Input ================= */
 window.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='BUTTON'&&e.key===' ')return;const k=e.key;
+  if(k===']'||k==='Home'){inp.trimUp=true;e.preventDefault();return;}if(k==='['||k==='End'){inp.trimDn=true;e.preventDefault();return;}if(k==='t'||k==='T'){toggleAutoTrim();e.preventDefault();return;}
   if(k==='ArrowUp'||k==='w'||k==='W')inp.kUp=true;else if(k==='ArrowDown'||k==='s'||k==='S')inp.kDn=true;else if(k==='ArrowLeft'||k==='a'||k==='A')inp.kL=true;else if(k==='ArrowRight'||k==='d'||k==='D')inp.kR=true;
   else if(k==='PageUp'||k==='+'||k==='=')setThrottle(+thr.value+4);else if(k==='PageDown'||k==='-'||k==='_')setThrottle(+thr.value-4);
   else if(k==='f'||k==='F')cycleFlaps();else if(k==='g'||k==='G')toggleGear();else if(k==='b'||k==='B')toggleBrk();else if(k===' ')toggleSplr();
   else if(k==='m'||k==='M')$('mapRange').click();else if(k==='v'||k==='V')camMode=camMode==='chase'?'nose':camMode==='nose'?'tower':'chase';else if(k==='r'||k==='R')startGame();else return;
   e.preventDefault();});
-window.addEventListener('keyup',e=>{const k=e.key;if(k==='ArrowUp'||k==='w'||k==='W')inp.kUp=false;else if(k==='ArrowDown'||k==='s'||k==='S')inp.kDn=false;else if(k==='ArrowLeft'||k==='a'||k==='A')inp.kL=false;else if(k==='ArrowRight'||k==='d'||k==='D')inp.kR=false;});
+window.addEventListener('keyup',e=>{const k=e.key;if(k===']'||k==='Home')inp.trimUp=false;if(k==='['||k==='End')inp.trimDn=false;if(k==='ArrowUp'||k==='w'||k==='W')inp.kUp=false;else if(k==='ArrowDown'||k==='s'||k==='S')inp.kDn=false;else if(k==='ArrowLeft'||k==='a'||k==='A')inp.kL=false;else if(k==='ArrowRight'||k==='d'||k==='D')inp.kR=false;});
 {const st=$('stick'),kn=st.querySelector('.knob');let id=null,cx=0,cy=0;
  st.addEventListener('pointerdown',e=>{id=e.pointerId;st.setPointerCapture(id);const r=st.getBoundingClientRect();cx=r.left+r.width/2;cy=r.top+r.height/2;});
- st.addEventListener('pointermove',e=>{if(e.pointerId!==id)return;const dx=clamp((e.clientX-cx)/50,-1,1),dy=clamp((e.clientY-cy)/50,-1,1);inp.roll=dx;inp.pitch=-dy;kn.style.transform=`translate(calc(-50% + ${dx*40}px),calc(-50% + ${dy*40}px))`;});
+ st.addEventListener('pointermove',e=>{if(e.pointerId!==id)return;const dx=clamp((e.clientX-cx)/50,-1,1),dy=clamp((e.clientY-cy)/50,-1,1);inp.roll=dx;inp.pitch=dy;kn.style.transform=`translate(calc(-50% + ${dx*40}px),calc(-50% + ${dy*40}px))`;});
  const end=e=>{if(e.pointerId!==id)return;id=null;inp.roll=0;inp.pitch=0;kn.style.transform='translate(-50%,-50%)';};st.addEventListener('pointerup',end);st.addEventListener('pointercancel',end);}
 function cycleFlaps(){ac.flaps=(ac.flaps+1)%3;syncSys();audio.clunk&&audio.clunk(0.3);}
 function toggleGear(){ac.gear=ac.gear?0:1;syncSys();audio.clunk&&audio.clunk(0.8);}
@@ -743,10 +762,13 @@ function toggleSplr(){ac.splr=!ac.splr;syncSys();audio.clunk&&audio.clunk(0.3);}
 $('bFlap').addEventListener('click',cycleFlaps);$('bGear').addEventListener('click',toggleGear);$('bBrk').addEventListener('click',toggleBrk);$('bSplr').addEventListener('click',toggleSplr);
 function syncSys(){const F=['Flaps 0','Flaps 15','Flaps 30'][ac.flaps];$('bFlap').textContent=F;$('sFLAP').textContent=F;$('bFlap').classList.toggle('on',ac.flaps>0);
   $('sGEAR').textContent=ac.gear?'Gear down':'Gear up';$('sGEAR').classList.toggle('off',!ac.gear);$('bGear').classList.toggle('on',!!ac.gear);
+  $('bTrim').textContent=autoTrim?'Auto-trim on':'Auto-trim off · [ ] to trim';$('bTrim').classList.toggle('on',autoTrim);
   $('sSPLR').classList.toggle('off',!ac.splr);$('bSplr').classList.toggle('on',ac.splr);$('sBRK').classList.toggle('off',!ac.brk);$('bBrk').classList.toggle('on',ac.brk);}
 $('chipSound').addEventListener('click',e=>{audio.on=!audio.on;e.currentTarget.setAttribute('aria-pressed',String(audio.on));ensureGameAudio();applyVolume();});
 $('vol').addEventListener('input',e=>{audio.vol=+e.target.value/100;applyVolume();});
-$('chipInv').addEventListener('click',e=>{invert=!invert;e.currentTarget.setAttribute('aria-pressed',String(invert));});
+$('chipInv').addEventListener('click',e=>{invert=!invert;e.currentTarget.setAttribute('aria-pressed',String(!invert));});
+function toggleAutoTrim(){autoTrim=!autoTrim;syncSys();}
+$('bTrim').addEventListener('click',toggleAutoTrim);
 document.querySelectorAll('#scen button').forEach(b=>b.addEventListener('click',()=>{scen=+b.dataset.s;document.querySelectorAll('#scen button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}));
 $('btnGo').addEventListener('click',()=>{ensureGameAudio();startGame();});
 $('btnAgain').addEventListener('click',()=>{startGame();});
@@ -829,7 +851,7 @@ function updateHUD(dt){
   const a=ac;setTxt(H.ias,fmt(a.ias));setTxt(H.alt,fmt(max(0,a.agl)));setTxt(H.vs,fmt(Math.round(a.vs/FT*60/10)*10));setTxt(H.aoa,fmt(a.alpha/DEG,1)+'°');setTxt(H.pitch,fmt(a.theta/DEG,0)+'°');setTxt(H.bank,fmt(a.phi/DEG,0)+'°');
   let trk=((a.psi/DEG)%360+360)%360;setTxt(H.hdg,String(Math.round(trk)).padStart(3,'0'));
   const lt=local(target,a.pos);const distNm=max(0,-lt.u)/1852;setTxt(H.dist,lt.u<0?distNm.toFixed(1)+' nm':fmt(lt.u)+' m in');setTxt(H.dest,target.id+' · '+target.ap.name);
-  const w=SCEN[scen];setTxt(H.wind,w.label);setTxt(H.n1,fmt(sim.n1)+' %');setTxt(H.vref,fmt(vref()));setTxt(H.thr,'Thr '+fmt(sim.throttle*100)+' %');
+  const w=SCEN[scen];setTxt(H.wind,w.label);setTxt(H.n1,fmt(sim.n1)+' %');setTxt(H.vref,fmt(vref()));setTxt(H.thr,'Thr '+fmt(sim.throttle*100)+' %');setTxt($('sTRIM'),(autoTrim?'A-trim ':'Trim ')+(ac.trim>=0?'+':'')+(ac.trim||0).toFixed(2));
   H.aiH.style.transform=`rotate(${(-a.phi/DEG).toFixed(1)}deg) translateY(${(a.theta/DEG*2.6).toFixed(1)}px)`;
   H.fpv.style.transform=`translate(calc(-50% + ${(sin(a.phi)*0).toFixed(1)}px),calc(-50% + ${(-(a.gamma-a.theta)/DEG*2.6).toFixed(1)}px))`;
   // ILS: glideslope to the aim point, localizer to the far end

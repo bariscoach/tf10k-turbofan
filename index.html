@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Land a 24,000 lb jet drone powered by the TF-10K engine at one of four airfields: sim-style flight model with rudder and stall, oleo-strut landing gear, autopilot with ILS autoland, moving map and scoring.">
+<meta name="description" content="Land a canard-delta unmanned fighter powered by the TF-10K engine at one of four airfields: sim-style flight model with rudder and stall, oleo-strut landing gear, autopilot with ILS autoland, moving map and scoring.">
 <meta name="author" content="Baris Hiz">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22lgA%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%237ff0ff%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%232bb3c8%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle%20cx%3D%2224%22%20cy%3D%2224%22%20r%3D%2222.5%22%20fill%3D%22%230c1218%22%20stroke%3D%22url%28%23lgA%29%22%20stroke-width%3D%222%22/%3E%3Cpath%20d%3D%22M4%2037%20L44%2025%22%20stroke%3D%22%23ffb432%22%20stroke-width%3D%221.6%22%20stroke-dasharray%3D%222.6%202%22%20fill%3D%22none%22%20opacity%3D%22.9%22/%3E%3Cpath%20fill%3D%22url%28%23lgA%29%22%20d%3D%22M24%206%20L26.3%2014%20L26.8%2019.5%20L39%2031%20L39%2033.4%20L27.8%2034.8%20L28.4%2039.4%20L31.2%2042.4%20L26.3%2041.6%20L24%2043.4%20L21.7%2041.6%20L16.8%2042.4%20L19.6%2039.4%20L20.2%2034.8%20L9%2033.4%20L9%2031%20L21.2%2019.5%20L21.7%2014%20Z%22/%3E%3Cpath%20fill%3D%22url%28%23lgA%29%22%20d%3D%22M21.6%2015.2%20L16.2%2019.2%20L16.2%2020.6%20L21.3%2019.6%20Z%20M26.4%2015.2%20L31.8%2019.2%20L31.8%2020.6%20L26.7%2019.6%20Z%22/%3E%3Ccircle%20cx%3D%2224%22%20cy%3D%2238.6%22%20r%3D%221.1%22%20fill%3D%22%23ffb432%22/%3E%3C/svg%3E">
 <style>html{color-scheme:dark}body{margin:0}[hidden]{display:none!important}</style>
 <title>Hawk UAV Landing</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,6 +29,13 @@ button{font:inherit;color:inherit}
 #app{height:100%;display:grid;grid-template-rows:auto 1fr;min-height:0}
 header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);background:var(--panel)}
 header h1{margin:0;font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:.04em;line-height:1.1;text-wrap:balance}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{display:flex;align-items:center;gap:9px;padding:2px 8px 2px 2px;margin:0;border:1px solid transparent;border-radius:28px;background:transparent;color:var(--fg);cursor:pointer;transition:border-color .15s,background .15s}
+.logo:hover{border-color:rgba(63,211,230,.45);background:rgba(63,211,230,.07)} .logo:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.logoMark{width:38px;height:38px;flex:0 0 auto;filter:drop-shadow(0 0 6px rgba(63,211,230,.35))}
+.wm{display:flex;flex-direction:column;line-height:1;text-align:left}
+.wm b{font-family:var(--font-display);font-weight:700;font-size:23px;letter-spacing:.2em;color:var(--fg)}
+.wm i{font-style:normal;font-family:var(--font-display);font-weight:600;font-size:10px;letter-spacing:.32em;color:var(--cyan);margin-top:2px}
 header h1 small{font-weight:500;color:var(--fg-dim);font-size:15px;letter-spacing:.06em;margin-left:10px}
 .status{display:flex;align-items:center;gap:10px;font-family:var(--font-mono);font-size:12px;color:var(--fg-dim);font-variant-numeric:tabular-nums}
 .status a{color:var(--fg-dim);text-decoration:none;border-bottom:1px solid var(--line-2)} .status a:hover{color:var(--fg)}
@@ -201,7 +209,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
 <body>
 <div id="app">
   <header>
-    <h1>Hawk UAV <small>H-10 HALE drone · TF-10K-D engine · Landing trainer</small></h1>
+    <h1 class="brand"><button type="button" class="logo" id="logoHome" title="Home: back to the start menu" aria-label="Hawk UAV Landing, home"><svg class="logoMark" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="lgA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7ff0ff"/><stop offset="1" stop-color="#2bb3c8"/></linearGradient></defs><circle cx="24" cy="24" r="22.5" fill="#0c1218" stroke="url(#lgA)" stroke-width="2"/><path d="M4 37 L44 25" stroke="#ffb432" stroke-width="1.6" stroke-dasharray="2.6 2" fill="none" opacity=".9"/><path fill="url(#lgA)" d="M24 6 L26.3 14 L26.8 19.5 L39 31 L39 33.4 L27.8 34.8 L28.4 39.4 L31.2 42.4 L26.3 41.6 L24 43.4 L21.7 41.6 L16.8 42.4 L19.6 39.4 L20.2 34.8 L9 33.4 L9 31 L21.2 19.5 L21.7 14 Z"/><path fill="url(#lgA)" d="M21.6 15.2 L16.2 19.2 L16.2 20.6 L21.3 19.6 Z M26.4 15.2 L31.8 19.2 L31.8 20.6 L26.7 19.6 Z"/><circle cx="24" cy="38.6" r="1.1" fill="#ffb432"/></svg><span class="wm"><b>HAWK</b><i>UAV LANDING</i></span></button><small>H-20 unmanned fighter · TF-10K engine</small></h1>
     <div class="status"><span class="credit">Made by Baris Hiz</span><a href="testcell" id="tcLink">Engine test cell</a><span id="pill" class="pill done">Standby</span><span id="clock">T+00:00</span></div>
   </header>
   <main>
@@ -228,7 +236,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
           <rect id="cdiGs" x="8" y="20" width="154" height="4" rx="1" fill="#ff4fd8"/>
         </svg>
         <div class="hb" id="hBot">
-          <span class="sys" id="sFLAP">Flaps 0</span><span class="sys off" id="sGEAR">Gear up</span><span class="sys off" id="sSPLR">Spoilers</span><span class="sys off" id="sBRK">Brakes</span><span class="sys" id="sTHR">Thr 0 %</span><span class="sys" id="sTRIM">Trim 0.00</span>
+          <span class="sys" id="sFLAP">Flaps 0</span><span class="sys off" id="sGEAR">Gear up</span><span class="sys off" id="sSPLR">Speed brake</span><span class="sys off" id="sBRK">Brakes</span><span class="sys" id="sTHR">Thr 0 %</span><span class="sys" id="sTRIM">Trim 0.00</span>
         </div>
         <div id="warn"></div>
         <svg id="rwySym" aria-hidden="true"><polygon id="rwyPoly" points="" fill="rgba(63,211,230,.12)" stroke="#3fd3e6" stroke-width="1.5"/><polygon id="rwyArrow" points="" fill="#3fd3e6"/><rect id="rwyBox" x="-100" y="-100" width="22" height="22" fill="none" stroke="#3fd3e6" stroke-width="1.5"/><text id="rwyTxt" x="0" y="0" fill="#3fd3e6" font-size="13" font-weight="600" font-family="IBM Plex Mono, monospace" text-anchor="middle" style="paint-order:stroke;stroke:rgba(0,0,0,.8);stroke-width:3px"></text></svg>
@@ -241,7 +249,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
       <div class="overlay" id="title">
         <div class="card">
           <h2>Hawk UAV landing trainer</h2>
-          <div class="sub">Bring a 24,000 lb HALE drone down at one of four airfields. You start 5 nm out on final at 1,800 ft and 140 kt; the map in the corner shows every runway and you can retarget mid-flight by clicking one. Configure flaps and gear, slow to Vref, hold the 3° glideslope, flare, and stop before the end. The TF-10K-D takes about eight seconds from idle to full thrust, so keep the engine spooled.</div>
+          <div class="sub">Bring a 12,800 lb canard-delta unmanned fighter down at one of four airfields. You start 5 nm out on final at 1,800 ft and 160 kt; the map in the corner shows every runway and you can retarget mid-flight by clicking one. Configure flaps and gear, slow to Vref, hold the 3° glideslope, flare, and stop before the end. The delta wing approaches at about 10° angle of attack, so a big flare scrapes the tail. The TF-10K takes about eight seconds from idle to full thrust.</div>
           <h3>Destination runway</h3>
           <div class="scen dest" id="dest"></div>
           <h3>Conditions</h3>
@@ -258,7 +266,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
             <dt>Z · panel</dt><dd>Autopilot on/off; set IAS, HDG, ALT, V/S and use A/THR, HDG, ALT, V/S, APP (ILS with autoland)</dd>
             <dt>← → / A D</dt><dd>Roll left / right with the ailerons</dd>
             <dt>PgUp PgDn / + −</dt><dd>Thrust (or drag anywhere on the throttle, or tap Idle, CLB, TO/GA)</dd>
-            <dt>F · G · B · Space</dt><dd>Flaps · Gear · Brakes · Spoilers</dd>
+            <dt>F · G · B · Space</dt><dd>Flaps · Gear · Brakes · Speed brake</dd>
             <dt>V · R</dt><dd>Change camera · Restart</dd>
             <dt>Touch</dt><dd>Stick at bottom-left for pitch and bank, buttons in the panel</dd>
           </dl>
@@ -280,7 +288,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
 
     <aside id="panel">
       <div class="eng">
-        <div class="sec-h">TF-10K-D engine <span>9,000 lbf · ~8 s idle to full</span></div>
+        <div class="sec-h">TF-10K engine <span>10,000 lbf · ~8 s idle to full</span></div>
         <div class="gauges4">
           <div class="gauge"><canvas id="gN1"></canvas></div>
           <div class="gauge"><canvas id="gEGT"></canvas></div>
@@ -312,7 +320,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
         <div class="sysgrid">
           <div class="flapsel"><label>Flaps</label><div class="seg" role="group" aria-label="Flaps"><button type="button" data-f="0" id="f0">0</button><button type="button" data-f="1" id="f1">15</button><button type="button" data-f="2" id="f2">30</button></div></div>
           <button type="button" class="glever" id="bGear"><span class="glights"><i></i><i></i><i></i></span><b id="gearTxt">Gear up</b></button>
-          <button class="chip" id="bSplr" type="button">Spoilers</button>
+          <button class="chip" id="bSplr" type="button">Speed brake</button>
           <button class="chip" id="bBrk" type="button">Brakes</button>
           <button class="chip on" id="bTrim" type="button">Auto-trim on</button>
           <button class="chip on" id="bRud" type="button">Auto-rudder on</button>
@@ -338,12 +346,14 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
       <div>
         <div class="sec-h">Aircraft data</div>
         <dl class="spec">
-          <dt>Type</dt><dd>H-10 Hawk, high-altitude long-endurance UAV</dd>
-          <dt>Landing weight</dt><dd>24,000 lb</dd>
-          <dt>Wing</dt><dd>35.4 m span · 50 m² · AR 25</dd>
-          <dt>Stall, flaps 30</dt><dd>86 kt · Vref 112 kt</dd>
-          <dt>Stall, clean</dt><dd>96 kt</dd>
-          <dt>Engine</dt><dd>TF-10K-D, 9,000 lbf flat-rated</dd>
+          <dt>Type</dt><dd>H-20 Hawk, canard-delta unmanned fighter</dd>
+          <dt>Landing weight</dt><dd>12,800 lb (5,800 kg)</dd>
+          <dt>Wing</dt><dd>10.0 m span · 26 m² · AR 3.9 · cranked delta</dd>
+          <dt>Length</dt><dd>14.9 m · twin canted tails</dd>
+          <dt>Stall, flaps 30</dt><dd>98 kt at 21° AoA · Vref 127 kt</dd>
+          <dt>Stall, clean</dt><dd>103 kt at 24° AoA</dd>
+          <dt>Engine</dt><dd>TF-10K, 10,000 lbf · T/W 0.78</dd>
+          <dt>Tail clearance</dt><dd>about 13° nose-up on the mains</dd>
           <dt>Airfields</dt><dd>Delta 36/18 3,000 m · Harbor 09/27 2,400 m · Ridge 14/32 1,800 m · Oasis 05/23 1,200 m</dd>
         </dl>
       </div>
@@ -364,7 +374,7 @@ const $=id=>document.getElementById(id);
 const KT=0.5144, FT=0.3048, LBF=4.44822;
 
 /* engine: the TF-10K core, derated for the drone installation */
-const ENG={thrustMax:9000,n1Max:7400,n2Max:17800,fanBlades:24,bpr:5,opr:22,egtMax:950,ffMax:3300,ffIdle:520,massFlow:330,fanR:0.56,ambient:15};
+const ENG={thrustMax:10000,n1Max:7400,n2Max:17800,fanBlades:24,bpr:5,opr:22,egtMax:950,ffMax:3300,ffIdle:520,massFlow:330,fanR:0.56,ambient:15};
 function syncUI(){}
 function tcode(t){const mm=Math.floor(t/60),ss=Math.floor(t%60);return (mm<10?'0':'')+mm+':'+(ss<10?'0':'')+ss;}
 /* ================= Simulation ================= */
@@ -518,7 +528,9 @@ function applyVolume(){if(audio.volNode)audio.volNode.gain.setTargetAtTime(audio
 
 
 /* ================= Aircraft ================= */
-const AC={mass:10900,S:50,span:35.4,cd0:0.022,k:1/(PI*0.8*25),clA:4.8,a0:-2*DEG,aStall:[15*DEG,13*DEG,12*DEG],clFlap:[0,0.35,0.6],cdFlap:[0,0.012,0.03],cdGear:0.018,cdSplr:0.035,clSplr:-0.12,gearH:2.2,qMax:5*DEG,pMax:22*DEG};
+// H-20 canard-delta unmanned fighter: 5,800 kg landing weight, low-aspect-ratio cranked delta (AR 3.9), delta-style gentle stall at high AoA, flaperons, speed brake
+const AC={mass:5800,S:26,span:10,cd0:0.024,k:1/(PI*0.75*3.85),clA:2.9,a0:-1*DEG,aStall:[24*DEG,22*DEG,21*DEG],cls:1.5,clFlap:[0,0.15,0.3],cdFlap:[0,0.01,0.025],cdGear:0.02,cdSplr:0.06,clSplr:-0.05,gearH:1.62,
+  tipY:5.0,tipL:-2.9,tipZ:-0.15,tailL:-7.3,tailZ:-0.45};
 const AIRPORTS=[
   {id:'DLT',name:'Test Range Delta',x:0,z:0,hdg:0,len:3000,w:45,num:['36','18']},
   {id:'HBR',name:'Harbor Point',x:-14000,z:-5200,hdg:90,len:2400,w:45,num:['09','27']},
@@ -530,8 +542,8 @@ AIRPORTS.forEach(ap=>{const h=ap.hdg*DEG;ap.d=new THREE.Vector3(sin(h),0,-cos(h)
            {ap,idx:1,id:ap.id+' '+ap.num[1],thr:t1,d:ap.d.clone().negate(),r:ap.r.clone().negate(),hdg:(ap.hdg+180)%360,len:ap.len,w:ap.w,aim:ap.len>=2000?300:200}];});
 let target=AIRPORTS[0].ends[0];
 /* landing gear: nose + two mains as oleo struts (spring + damper). l = metres forward of CG, y = metres right */
-const GEAR=[{id:'N',l:3.6,y:0,f:0.12},{id:'L',l:-0.9,y:-1.4,f:0.44},{id:'R',l:-0.9,y:1.4,f:0.44}];
-const GX={ext:2.35,stroke:0.45,stat:0.15,Iy:60000,Ix:220000};
+const GEAR=[{id:'N',l:4.6,y:0,f:0.30},{id:'L',l:-2.0,y:-1.4,f:0.35},{id:'R',l:-2.0,y:1.4,f:0.35}];
+const GX={ext:1.72,stroke:0.3,stat:0.1,Iy:38000,Ix:9000};
 GEAR.forEach(gr=>{gr.k=gr.f*AC.mass*9.81/GX.stat;gr.b=2*0.65*sqrt(gr.k*gr.f*AC.mass);});
 function gearForces(a){const o={F:[0,0,0],c:[0,0,0],Fz:0,M:0,Lr:0,any:false,mains:false,bottom:false,nose:false};if(a.gearT<0.95)return o;
   const st=sin(a.theta),sp=sin(a.phi),ct=cos(a.theta),cp=cos(a.phi);
@@ -549,14 +561,14 @@ function approachEnd(ap,p){return local(ap.ends[0],p).u<ap.len/2?ap.ends[0]:ap.e
 const SCEN=[{name:'Calm',wind:[0,0,0],gust:0,label:'calm'},{name:'Crosswind',wind:[-6.2,0,0],gust:0,label:'12 kt from 090'},{name:'Gusty',wind:[-9.3,0,2],gust:1,label:'18 kt from 100, gusts'}];
 let scen=0,invert=true,autoTrim=true,autoRudder=true;
 // pitch/roll model (normalised moments): trim AoA, AoA stiffness, elevator power, pitch damping, aileron power, roll damping, dihedral, auto-trim gain
-const PM={qref:0.5*1.225*61.7*61.7,a0:4*DEG,ka:6,kd:1.1,kq:3.2,la:0.8,lp:2.6,ld:0.25,at:1.6,
+const PM={qref:0.5*1.225*61.7*61.7,a0:6*DEG,ka:6,kd:1.3,kq:3.2,la:1.3,lp:2.4,ld:0.12,at:1.6,
   // directional: weathercock stiffness, yaw damping, rudder power, adverse yaw, side force, dihedral effect (roll from sideslip)
-  nb:3.0,nr:2.4,ndr:0.45,nda:0.08,yb:0.9,lb:0.4,
+  nb:4.0,nr:2.6,ndr:0.5,nda:0.04,yb:0.6,lb:0.25,
   // auto-trim flight-path hold gains
   fk:1.4,fq:0.9};
 const wrapPI=x=>{while(x>PI)x-=2*PI;while(x<-PI)x+=2*PI;return x;};
 /* autopilot (mode control panel) */
-const ap={on:false,athr:false,lat:'HDG',vert:'VS',app:false,loc:false,gs:false,altArm:false,sel:{ias:140,hdg:0,alt:1800,vs:-700},I:0,athI:0,msg:'',msgT:0};
+const ap={on:false,athr:false,lat:'HDG',vert:'VS',app:false,loc:false,gs:false,altArm:false,sel:{ias:160,hdg:0,alt:1800,vs:-700},I:0,athI:0,msg:'',msgT:0};
 let onApChange=()=>{};
 function apCurAlt(){return Math.round(max(0,ac.agl)/100)*100;}
 function apCurVs(){return clamp(Math.round(ac.vs/FT*60/100)*100,-4000,4000);}
@@ -585,7 +597,7 @@ function apGuidance(a,dt){
   if(ap.on){
     // approach arming and capture
     if(ap.app&&!ap.loc&&abs(locAng)<2.5&&lt.u<0&&lt.u>-40000&&hdgToRwy<70){ap.loc=true;ap.lat='LOC';onApChange();}
-    if(ap.app&&ap.loc&&!ap.gs&&abs(gsDev)<0.35&&lt.u<-300){ap.gs=true;ap.vert='GS';onApChange();}
+    if(ap.app&&ap.loc&&!ap.gs&&abs(gsDev)<0.35&&lt.u<-300){ap.gs=true;ap.vert='GS';if(ap.athr)ap.sel.ias=Math.round(vrefCalc()+5);onApChange();}
     if(ap.gs&&ap.vert==='GS'&&a.agl<50&&lt.u>-1500){ap.vert='FLARE';onApChange();}
     // vertical
     let gCmd;const V=max(a.V,30);
@@ -616,13 +628,14 @@ const inp={pitch:0,roll:0,kUp:false,kDn:false,kL:false,kR:false,kRudL:false,kRud
 
 function resetFlight(){
   const s=SCEN[scen];ac.wind.set(...s.wind);ac.gustV.set(0,0,0);
-  ac.pos.copy(worldAt(target,-9300,120,549));ac.V=72;ac.gamma=-2.5*DEG;ac.psi=target.hdg*DEG;ac.psiB=ac.psi;ac.r=0;ac.beta=0;ac.dr=0;ac.psiDot=0;ac.fpHold=null;ac.drTot=0;ac.gc=[0,0,0];ac.wasC=false;ac.settleT=0;ac.jolt=0;ac.surf='grass';ac.stopSurf='';ac.agl=(ac.pos.y-AC.gearH)/FT;ac.vs=-ac.V*sin(2.5*DEG);ac.ias=ac.V/KT;ac.rwy=null;ac.de=0;ac.da=0;
-  ap.on=false;ap.athr=false;ap.app=false;ap.loc=false;ap.gs=false;ap.lat='HDG';ap.vert='VS';ap.msg='';ap.sel={ias:140,hdg:target.hdg,alt:1800,vs:-700};onApChange();
-  {const rho=1.225*exp(-ac.pos.y/9000);const clNeed=AC.mass*9.81*cos(ac.gamma)/(0.5*rho*ac.V*ac.V*AC.S);const aNeed=clNeed/AC.clA+AC.a0;ac.theta=ac.gamma+aNeed;ac.trim=(aNeed-PM.a0)*PM.ka/PM.kd;}ac.phi=0;ac.q=0;ac.p=0;ac.flaps=0;ac.gear=0;ac.gearT=0;ac.splr=false;ac.brk=false;ac.onGround=false;ac.stalled=false;ac.td=null;ac.maxBank=0;ac.phase='fly';ac.t=0;ac.stopDist=0;ac.fuel=3000;
+  ac.pos.copy(worldAt(target,-9300,120,549));ac.V=82;ac.gamma=-2.5*DEG;ac.psi=target.hdg*DEG;ac.psiB=ac.psi;ac.r=0;ac.beta=0;ac.dr=0;ac.psiDot=0;ac.fpHold=null;ac.drTot=0;ac.gc=[0,0,0];ac.wasC=false;ac.settleT=0;ac.jolt=0;ac.surf='grass';ac.stopSurf='';ac.agl=(ac.pos.y-AC.gearH)/FT;ac.vs=-ac.V*sin(2.5*DEG);ac.ias=ac.V/KT;ac.rwy=null;ac.de=0;ac.da=0;
+  ap.on=false;ap.athr=false;ap.app=false;ap.loc=false;ap.gs=false;ap.lat='HDG';ap.vert='VS';ap.msg='';ap.sel={ias:160,hdg:target.hdg,alt:1800,vs:-700};onApChange();
+  {const rho=1.225*exp(-ac.pos.y/9000);const clNeed=AC.mass*9.81*cos(ac.gamma)/(0.5*rho*ac.V*ac.V*AC.S);const aNeed=clNeed/AC.clA+AC.a0;ac.theta=ac.gamma+aNeed;ac.trim=(aNeed-PM.a0)*PM.ka/PM.kd;}ac.phi=0;ac.q=0;ac.p=0;ac.flaps=0;ac.gear=0;ac.gearT=0;ac.splr=false;ac.brk=false;ac.onGround=false;ac.stalled=false;ac.td=null;ac.maxBank=0;ac.phase='fly';ac.t=0;ac.stopDist=0;ac.fuel=1500;
   Object.assign(sim,{phase:'run',n1:40,n2:72,egt:520,ff:900,thrust:1800,lit:true,fuelOn:true,starter:false,ignition:false,throttle:0.3,fuelUsed:0});
   thr.value=30;updateThrOut();syncSys();
 }
-function CL(a,f){const st=AC.aStall[f];const lin=AC.clA*(a-AC.a0)+AC.clFlap[f];if(a<=st)return lin+(ac.splr?AC.clSplr:0);const peak=AC.clA*(st-AC.a0)+AC.clFlap[f];return max(0.25,peak-(a-st)*4.5)+(ac.splr?AC.clSplr:0);}
+function CL(a,f){const st=AC.aStall[f];const lin=AC.clA*(a-AC.a0)+AC.clFlap[f];if(a<=st)return lin+(ac.splr?AC.clSplr:0);const peak=AC.clA*(st-AC.a0)+AC.clFlap[f];return max(0.3,peak-(a-st)*AC.cls)+(ac.splr?AC.clSplr:0);}
+function vrefCalc(f){f=f==null?ac.flaps:f;return 1.3*sqrt(2*AC.mass*9.81/(1.225*AC.S*CL(AC.aStall[f],f)))/KT;}
 function flyStep(dt){
   const a=ac;a.t+=dt;
   // gusts
@@ -709,9 +722,9 @@ function flyStep(dt){
       const hit=findRunway(a.pos);let end=null;if(hit)end=(dir.x*hit.ap.d.x+dir.z*hit.ap.d.z)>=0?hit.ap.ends[0]:hit.ap.ends[1];
       const ref=end||target;const loc=local(ref,a.pos);a.rwy=ref;
       const crab=abs(wrapPI(a.psiB-ref.hdg*DEG))/DEG;
-      a.td={vsFpm:sink,peak:sink,x:loc.v,dist:loc.u,ias:a.ias,bank:abs(a.phi)/DEG,pitch:a.theta/DEG,gear:true,onRwy:!!end,surf:surfaceAt(a.pos),flaps:a.flaps,rwy:end?end.id:'none',aim:ref.aim,planned:target.id,crab,bounces:0,tail:false,noseFirst:G.c[0]>0&&!(G.c[1]>0||G.c[2]>0),hard:sink>600};
+      a.td={vsFpm:sink,peak:sink,x:loc.v,dist:loc.u,ias:a.ias,bank:abs(a.phi)/DEG,pitch:a.theta/DEG,gear:true,onRwy:!!end,surf:surfaceAt(a.pos),flaps:a.flaps,rwy:end?end.id:'none',aim:ref.aim,planned:target.id,crab,bounces:0,tail:false,noseFirst:G.c[0]>0&&!(G.c[1]>0||G.c[2]>0),hard:sink>700};
       a.wasC=true;a.jolt=clamp(sink/900,0.1,1.2);
-      if(sink>1000){crash('Touched down at '+fmt(sink)+' fpm, beyond what the gear can take. The main gear collapsed.');return;}
+      if(sink>1200){crash('Touched down at '+fmt(sink)+' fpm, beyond what the gear can take. The main gear collapsed.');return;}
       if(crab>22){crash('Touched down crabbed '+fmt(crab)+'° to the runway. The gear failed under the side load.');return;}
       if(ap.on&&ap.loc){ap.lat='ROLLOUT';ap.vert='ROLLOUT';a.splr=true;a.brk=true;ap.athr=false;setThrottle(0);onApChange();syncSys&&syncSys();}else if(ap.on)apDisconnect('AP OFF · touchdown');
       audio.thud(clamp(sink/600,0.3,1.4));audio.chirp&&audio.chirp(clamp(a.V/60,0.4,1.2));onTouch(a);
@@ -723,8 +736,8 @@ function flyStep(dt){
       if(a.wasC&&!inC&&a.pos.y>GX.ext+0.25)a.td.bounces++;a.wasC=inC;
     }
     if(G&&G.bottom&&sink>950){crash((G.nose?'Nose gear':'Main gear')+' collapsed: '+fmt(sink)+' fpm drove the struts to the stops.');return;}
-    const tip=a.pos.y+1.05-17.7*abs(sin(a.phi))*cos(a.theta);if(tip<=0){crash('Wingtip strike at '+fmt(abs(a.phi)/DEG,1)+'° of bank. A 35 m wing has little room.');return;}
-    const tail=a.pos.y-0.6-6*sin(a.theta);if(tail<=0&&a.td)a.td.tail=true;if(tail<-0.35){crash('Heavy tail strike at '+fmt(a.theta/DEG,1)+'° nose-up.');return;}
+    const tip=a.pos.y+AC.tipZ*cos(a.theta)-AC.tipY*abs(sin(a.phi))+AC.tipL*sin(a.theta);if(tip<=0){crash('Wingtip strike at '+fmt(abs(a.phi)/DEG,1)+'° of bank.');return;}
+    const tail=a.pos.y+AC.tailZ*cos(a.theta)+AC.tailL*sin(a.theta);if(tail<=0&&a.td)a.td.tail=true;if(tail<-0.35){crash('Heavy tail strike at '+fmt(a.theta/DEG,1)+'° nose-up.');return;}
     // settle: both mains loaded and vertical motion damped out → rollout
     if(G&&G.mains&&abs(a.vs)<0.35){a.settleT=(a.settleT||0)+dt;if(a.settleT>0.25){a.onGround=true;a.pos.y=AC.gearH;a.gamma=0;a.psi=a.psiB;a.beta=0;a.vs=0;}}else a.settleT=0;
   }
@@ -850,20 +863,47 @@ AIRPORTS.forEach(buildAirport);
 const drone=new THREE.Group();scene.add(drone);
 const std=o=>new THREE.MeshStandardMaterial(o);
 const mBody=std({color:0xdadee3,metalness:0.3,roughness:0.5}),mDark=std({color:0x3a4048,metalness:0.6,roughness:0.5}),mWheel=std({color:0x15171a,roughness:0.9}),mGlow=new THREE.MeshBasicMaterial({color:0xff8a3a,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
-let exhaust,navL,navR,strobe,gearGroup,gearUnits=[];
-{const fus=new THREE.Mesh(new THREE.CapsuleGeometry(0.75,10.5,8,18).rotateX(PI/2),mBody);drone.add(fus);
- const nose=new THREE.Mesh(new THREE.SphereGeometry(1.05,18,12),mBody);nose.scale.set(1,0.95,1.5);nose.position.set(0,0.35,-4.3);drone.add(nose);
- const wingGeo=new THREE.BoxGeometry(AC.span/2,0.2,1.7);for(const s of[-1,1]){const w=new THREE.Mesh(wingGeo,mBody);w.position.set(s*AC.span/4,0.15,-0.2);w.rotation.z=s*3*DEG;w.rotation.y=-s*2*DEG;drone.add(w);}
- for(const s of[-1,1]){const t=new THREE.Mesh(new THREE.BoxGeometry(3.4,0.14,1.4),mBody);t.position.set(s*1.3,1.45,5.0);t.rotation.z=s*52*DEG;drone.add(t);}
- const nac=new THREE.Mesh(new THREE.CylinderGeometry(0.72,0.78,3.4,24).rotateX(PI/2),mDark);nac.position.set(0,1.45,2.2);drone.add(nac);
- const lip=new THREE.Mesh(new THREE.TorusGeometry(0.72,0.1,10,32),mBody);lip.position.set(0,1.45,0.5);drone.add(lip);
- const fan=new THREE.Mesh(new THREE.CircleGeometry(0.62,24),std({color:0x8a9099,metalness:0.8,roughness:0.4}));fan.position.set(0,1.45,0.55);fan.rotation.y=PI;drone.add(fan);
- const pylon=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.6,2.4),mBody);pylon.position.set(0,0.95,2.4);drone.add(pylon);
- exhaust=new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.5,1,16,1,true).rotateX(PI/2).translate(0,0,0.5),mGlow);exhaust.position.set(0,1.45,3.9);drone.add(exhaust);
+let exhaust,navL,navR,strobe,gearGroup,gearUnits=[],ctrlSurf=[],canards=[];
+{// H-20: lofted blended fuselage with chined nose, cranked delta wing, all-moving canards, twin canted tails, ventral intake, single nozzle
+  mBody.color.setHex(0x5d666f);mBody.roughness=0.55;mBody.metalness=0.35;mBody.side=THREE.DoubleSide;
+  const loft=(secs,n,N)=>{const pos=[],idx=[];const R=N;for(const sc of secs){for(let i=0;i<R;i++){const t=i/R*2*PI,c=cos(t),sn=sin(t);const e=2/(sc.n||n);
+      const x=sc.w*Math.sign(c)*pow(abs(c),e),y=(sn>=0?sc.t:sc.b)*Math.sign(sn)*pow(abs(sn),e);pos.push(x,y,sc.z);}}
+    for(let k=0;k<secs.length-1;k++)for(let i=0;i<R;i++){const a0=k*R+i,a1=k*R+(i+1)%R,b0=a0+R,b1=a1+R;idx.push(a0,a1,b0,a1,b1,b0);}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();return g;};
+  const secs=[{z:-7.45,w:0.02,t:0.02,b:0.02,n:1.6},{z:-6.9,w:0.26,t:0.17,b:0.14,n:1.6},{z:-6.0,w:0.52,t:0.34,b:0.26,n:1.8},{z:-4.8,w:0.8,t:0.52,b:0.38,n:2.0},{z:-3.4,w:1.05,t:0.64,b:0.45,n:2.3},
+    {z:-1.6,w:1.3,t:0.68,b:0.5,n:2.6},{z:0.4,w:1.38,t:0.64,b:0.5,n:2.8},{z:2.6,w:1.25,t:0.56,b:0.46,n:2.8},{z:4.7,w:0.98,t:0.5,b:0.45,n:2.6},{z:6.3,w:0.66,t:0.46,b:0.45,n:2.3},{z:7.05,w:0.56,t:0.43,b:0.43,n:2.1}];
+  const fusMat=mBody.clone();fusMat.side=THREE.DoubleSide;
+  const fus=new THREE.Mesh(loft(secs,2.4,40),fusMat);drone.add(fus);
+  const tipC=new THREE.Mesh(new THREE.ConeGeometry(0.06,0.3,10).rotateX(-PI/2),std({color:0x2a2f35,roughness:0.6}));tipC.position.set(0,0,-7.55);drone.add(tipC);
+  const sensor=new THREE.Mesh(new THREE.SphereGeometry(0.16,14,10),std({color:0x14181d,roughness:0.15,metalness:0.6}));sensor.scale.set(1,0.6,1.4);sensor.position.set(0,0.5,-4.6);drone.add(sensor);
+  // wing (plan view in x,z → extruded thickness up)
+  const wpts=[[1.15,-2.7],[3.0,0.6],[5.0,2.4],[5.0,3.25],[1.2,4.1],[-1.2,4.1],[-5.0,3.25],[-5.0,2.4],[-3.0,0.6],[-1.15,-2.7]];
+  const shp=new THREE.Shape();wpts.forEach(([x,z],i)=>i?shp.lineTo(x,-z):shp.moveTo(x,-z));
+  const wg=new THREE.ExtrudeGeometry(shp,{depth:0.12,bevelEnabled:true,bevelThickness:0.04,bevelSize:0.05,bevelSegments:2});wg.rotateX(-PI/2);
+  const wing=new THREE.Mesh(wg,mBody);wing.position.y=-0.2;drone.add(wing);
+  // flaperons along the trailing edge, deflected live by flaps, elevator and aileron
+  const mSurf=std({color:0x535b63,roughness:0.6,metalness:0.3});
+  for(const sd of[-1,1]){const x0=1.5*sd,z0=4.04,x1=4.8*sd,z1=3.3;const piv=new THREE.Group();piv.position.set((x0+x1)/2,-0.13,(z0+z1)/2);piv.rotation.order='YXZ';piv.rotation.y=-Math.atan2(z1-z0,x1-x0);
+    const len=Math.hypot(x1-x0,z1-z0);const fl=new THREE.Mesh(new THREE.BoxGeometry(len,0.06,0.62),mSurf);fl.position.z=0.31;piv.add(fl);drone.add(piv);ctrlSurf.push({piv,side:sd});}
+  // canards (all-moving)
+  for(const sd of[-1,1]){const c=new THREE.Shape();[[0,0.55],[1.75,-0.55],[1.75,-0.95],[0,-0.75]].forEach(([x,z],i)=>i?c.lineTo(x*sd,z):c.moveTo(x*sd,z));
+    const cg=new THREE.ExtrudeGeometry(c,{depth:0.06,bevelEnabled:false});cg.rotateX(-PI/2);const piv=new THREE.Group();piv.position.set(0.95*sd,0.12,-3.55);const m=new THREE.Mesh(cg,mBody);piv.add(m);drone.add(piv);canards.push(piv);}
+  // twin tails, canted outward
+  for(const sd of[-1,1]){const t=new THREE.Shape();[[3.0,0],[6.5,0],[6.75,1.85],[5.35,1.85]].forEach(([z,y],i)=>i?t.lineTo(z,y):t.moveTo(z,y));
+    const tg=new THREE.ExtrudeGeometry(t,{depth:0.09,bevelEnabled:true,bevelThickness:0.02,bevelSize:0.02,bevelSegments:1});tg.rotateY(-PI/2);
+    const fin=new THREE.Mesh(tg,mBody);fin.position.set(2.15*sd,0.3,0);fin.rotation.z=-sd*26*DEG;drone.add(fin);}
+  // ventral intake and nozzle
+  const intake=new THREE.Mesh(new THREE.BoxGeometry(1.15,0.5,3.4),mBody);intake.position.set(0,-0.62,-1.2);drone.add(intake);
+  const mouth=new THREE.Mesh(new THREE.PlaneGeometry(1.0,0.36),std({color:0x0b0d10,roughness:1}));mouth.position.set(0,-0.62,-2.91);mouth.rotation.y=PI;drone.add(mouth);
+  const lipI=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.06,0.12),mBody);lipI.position.set(0,-0.88,-2.88);drone.add(lipI);
+  const noz=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.56,0.7,24,1,true).rotateX(PI/2),std({color:0x3c3f44,metalness:0.8,roughness:0.35,side:THREE.DoubleSide}));noz.position.set(0,0,7.35);drone.add(noz);
+  const nozIn=new THREE.Mesh(new THREE.CircleGeometry(0.47,24),std({color:0x1a1b1e,roughness:0.8}));nozIn.position.set(0,0,7.15);drone.add(nozIn);
+  for(let i=0;i<12;i++){const pt=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.03,0.5),std({color:0x45484d,metalness:0.7,roughness:0.4}));const an=i/12*2*PI;pt.position.set(cos(an)*0.52,sin(an)*0.52,7.62);pt.rotation.z=an+PI/2;drone.add(pt);}
+  exhaust=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.28,1,16,1,true).rotateX(PI/2).translate(0,0,0.5),mGlow);exhaust.position.set(0,0,7.7);drone.add(exhaust);
  gearGroup=new THREE.Group();drone.add(gearGroup);
  // detailed gear: oleo cylinder + chrome piston that slides with compression, torque links, axle, twin wheels with hubs, leg door; mains in side pods
  const mChrome=std({color:0xe8edf2,metalness:1,roughness:0.12}),mStrut=std({color:0x59616b,metalness:0.7,roughness:0.4}),mTyre=std({color:0x121315,roughness:0.95}),mHub=std({color:0xb8bec6,metalness:0.8,roughness:0.3}),mDoor=std({color:0xd3d8de,metalness:0.3,roughness:0.5,side:THREE.DoubleSide});
- for(const s of[-1,1]){const pod=new THREE.Mesh(new THREE.CapsuleGeometry(0.34,1.9,6,14).rotateX(PI/2),mBody);pod.position.set(s*1.4,-0.5,0.5);drone.add(pod);}
+
  const mkGear=(x,z,wr,ww,pivotY,twin,isNose)=>{
    const pivot=new THREE.Group();pivot.position.set(x,pivotY,z);gearGroup.add(pivot);
    const axleY=-(GX.ext-wr)-pivotY;const len=-axleY;
@@ -881,10 +921,10 @@ let exhaust,navL,navR,strobe,gearGroup,gearUnits=[];
    const door=new THREE.Mesh(new THREE.BoxGeometry(0.03,len*0.55,isNose?0.36:0.5),mDoor);door.position.set(isNose?0.16:x>0?0.15:-0.15,-len*0.3,0);pivot.add(door);
    pivot.traverse(o=>{if(o.isMesh)o.castShadow=true;});
    return {pivot,slide,wheels,axleY,wr,isNose,spin:0};};
- gearUnits=[mkGear(0,-3.6,0.24,0.18,-0.62,true,true),mkGear(-1.4,0.9,0.32,0.22,-0.72,true,false),mkGear(1.4,0.9,0.32,0.22,-0.72,true,false)];
- navL=new THREE.Mesh(new THREE.SphereGeometry(0.18,6,6),lightMat(0xff2020));navL.position.set(-AC.span/2,0.15,-0.2);drone.add(navL);
- navR=new THREE.Mesh(new THREE.SphereGeometry(0.18,6,6),lightMat(0x20ff40));navR.position.set(AC.span/2,0.15,-0.2);drone.add(navR);
- strobe=new THREE.Mesh(new THREE.SphereGeometry(0.2,6,6),lightMat(0xffffff));strobe.position.set(0,0.4,5.6);drone.add(strobe);
+ gearUnits=[mkGear(0,-4.6,0.24,0.16,-0.42,false,true),mkGear(-1.4,2.0,0.33,0.2,-0.45,false,false),mkGear(1.4,2.0,0.33,0.2,-0.45,false,false)];
+ navL=new THREE.Mesh(new THREE.SphereGeometry(0.18,6,6),lightMat(0xff2020));navL.position.set(-AC.span/2,-0.1,2.85);drone.add(navL);
+ navR=new THREE.Mesh(new THREE.SphereGeometry(0.18,6,6),lightMat(0x20ff40));navR.position.set(AC.span/2,-0.1,2.85);drone.add(navR);
+ strobe=new THREE.Mesh(new THREE.SphereGeometry(0.2,6,6),lightMat(0xffffff));strobe.position.set(0,0.55,6.4);drone.add(strobe);
  drone.traverse(o=>{if(o.isMesh&&o.material!==mGlow){o.castShadow=true;}});
 }
 
@@ -901,8 +941,8 @@ let camMode='chase';const camPos=new THREE.Vector3(),camLook=new THREE.Vector3()
 function updateCamera(dt){
   const a=ac;const dir=new THREE.Vector3(sin(a.psiB),0,-cos(a.psiB));const up=new THREE.Vector3(0,1,0);
   let want,look;
-  if(camMode==='chase'){want=a.pos.clone().addScaledVector(dir,-30).addScaledVector(up,8);look=a.pos.clone().addScaledVector(dir,40);want.y=max(want.y,2.5);}
-  else if(camMode==='nose'){want=a.pos.clone().addScaledVector(dir,7.6).addScaledVector(up,0.9);const fwd=new THREE.Vector3(sin(a.psiB)*cos(a.theta),sin(a.theta),-cos(a.psiB)*cos(a.theta));look=want.clone().addScaledVector(fwd,200);}
+  if(camMode==='chase'){want=a.pos.clone().addScaledVector(dir,-20).addScaledVector(up,5.2);look=a.pos.clone().addScaledVector(dir,30);want.y=max(want.y,2.2);}
+  else if(camMode==='nose'){want=a.pos.clone().addScaledVector(dir,7.9).addScaledVector(up,0.35);const fwd=new THREE.Vector3(sin(a.psiB)*cos(a.theta),sin(a.theta),-cos(a.psiB)*cos(a.theta));look=want.clone().addScaledVector(fwd,200);}
   else{want=target.ap.tower.clone();look=a.pos.clone();}
   const k=camMode==='nose'?1:1-exp(-dt/0.18);camPos.lerp(want,k);camLook.lerp(look,k);
   camera.position.copy(camPos);
@@ -1036,6 +1076,8 @@ $('bTrim').addEventListener('click',toggleAutoTrim);
 document.querySelectorAll('#scen button').forEach(b=>b.addEventListener('click',()=>{scen=+b.dataset.s;document.querySelectorAll('#scen button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}));
 $('btnGo').addEventListener('click',()=>{ensureGameAudio();startGame();});
 $('btnAgain').addEventListener('click',()=>{startGame();});
+function goHome(){if(ap.on)apEngage(false);ap.athr=false;ac.phase='standby';$('result').hidden=true;$('title').hidden=false;inp.kUp=inp.kDn=inp.kL=inp.kR=false;onApChange();}
+$('logoHome').addEventListener('click',goHome);
 $('btnMenu').addEventListener('click',()=>{$('result').hidden=true;$('title').hidden=false;ac.phase='standby';});
 function startGame(){$('title').hidden=true;$('result').hidden=true;resetFlight();camPos.copy(ac.pos).add(new THREE.Vector3(0,8,30));camLook.copy(ac.pos);}
 
@@ -1068,7 +1110,7 @@ function mapPick(e){const r=mapC.getBoundingClientRect();const S=r.width;const s
 mapC.addEventListener('pointerdown',mapPick);
 
 /* ================= Results ================= */
-function vref(){return 1.3*sqrt(2*AC.mass*9.81/(1.225*AC.S*CL(AC.aStall[ac.flaps],ac.flaps)))/KT;}
+function vref(){return vrefCalc();}
 function showResult(ok,why){
   const t=ac.td;const list=$('resList');list.innerHTML='';const add=(k,v,cls)=>{const dt=document.createElement('dt');dt.textContent=k;const dd=document.createElement('dd');dd.textContent=v;if(cls)dd.className=cls;list.appendChild(dt);list.appendChild(dd);};
   let score=0,grade='—';
@@ -1157,6 +1199,8 @@ function frame(now){
     const rolling=ac.onGround||(ac.gc&&ac.gc[i]>0);u.spin=rolling?ac.V/u.wr:u.spin*exp(-dtFrame*0.6);u.wheels.forEach(w=>{w.rotation.x-=u.spin*dtFrame;});
     if(u.isNose&&ac.onGround)u.pivot.rotation.y=-(ac.steer||0)*0.35;else if(u.isNose)u.pivot.rotation.y=0;});
   updateSmoke(dtFrame);
+  ctrlSurf.forEach(c=>{c.piv.rotation.x=-(ac.flaps*0.18-(ac.de||0)*0.25-(ac.da||0)*0.3*c.side);});
+  canards.forEach(c=>{c.rotation.x=(ac.de||0)*0.3;});
   const th=sim.thrust/ENG.thrustMax;mGlow.opacity=sim.lit?0.05+0.5*th:0;exhaust.scale.z=0.3+2.5*th;
   strobe.visible=(Math.floor(now/120)%10)===0;
   sun.target.position.copy(ac.pos);sun.position.copy(ac.pos).add(new THREE.Vector3(-300,500,200));

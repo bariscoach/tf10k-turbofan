@@ -13,3 +13,10 @@ The flight model is 6-DOF with a quaternion attitude, so the H-20 can roll, fly 
 Open either file in a browser or serve the folder with any static host. Deployed with Vercel.
 
 Made by Baris Hiz.
+
+## Scenery assets
+
+The game loads photo textures from `assets/` and falls back to its generated scenery if they are missing.
+
+- Ground imagery: Sentinel-2 cloudless 2016 by EOX IT Services GmbH (https://s2maps.eu), contains modified Copernicus Sentinel data 2016, licensed CC BY 4.0. A 64 km square of the Mecklenburg lake district around the Müritz.
+- Sky panorama and surface photos (grass, asphalt, concrete, corrugated metal, aerial ground): Poly Haven (https://polyhaven.com), CC0.

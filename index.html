@@ -302,7 +302,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
         <div class="hb" id="hTop">
           <div class="hb sm" style="position:static"><span class="k">Hdg</span><span class="v" id="hHDG">000</span></div>
           <div class="hb sm" style="position:static"><span class="k">To threshold</span><span class="v" id="hDIST">0.0 nm</span></div>
-          <div class="hb sm" style="position:static"><span class="k">Dest</span><span class="v" id="hDEST">DLT 36</span></div>
+          <div class="hb sm" style="position:static"><span class="k">Dest</span><span class="v" id="hDEST">IST 16R</span></div>
           <div class="hb sm" style="position:static"><span class="k">Wind</span><span class="v" id="hWIND">calm</span></div>
           <div class="hb sm" style="position:static"><span class="k">N1</span><span class="v" id="hN1">0 %</span></div>
         </div>
@@ -356,7 +356,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
               <button type="button" class="opt" data-go="help"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 12 Q15 9 24 13 Q33 9 42 12 L42 37 Q33 34 24 38 Q15 34 6 37 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M24 13 L24 38" stroke="currentColor" stroke-width="2.5"/><path d="M11 18 Q15 17 19 18.5 M11 23 Q15 22 19 23.5 M29 18.5 Q33 17 37 18 M29 23.5 Q33 22 37 23" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg><b>How to play</b><span>Controls, the cockpit, taking off and landing.</span></button>
             </div>
             <p class="foot">Made by Baris Hiz</p>
-            <p class="foot" style="font-size:10.5px;opacity:.7;margin-top:2px">Ground imagery: Sentinel-2 cloudless 2016 by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2016), CC BY 4.0 · Sky and surface photos: Poly Haven, CC0</p>
+            <p class="foot" style="font-size:10.5px;opacity:.7;margin-top:2px">Istanbul imagery: Sentinel-2 cloudless 2017 by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2017), CC BY 4.0 · Runway, bridge and landmark positions © OpenStreetMap contributors · Sky and surface photos: Poly Haven, CC0</p>
           </section>
           <section class="scr" id="scrPlay" hidden>
             <button type="button" class="back" data-go="home">← Back</button>
@@ -396,6 +396,8 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
               <li><b>Clean up.</b> It lifts off around 140 kt. At "positive rate" raise the gear (G), then flaps up (F) above 180 kt.</li>
             </ol>
             <p class="lead">After a landing you can also add full power before you stop and rotate again for a touch-and-go.</p>
+            <h3>Istanbul</h3>
+            <p class="lead">The world is a 72 km square of real Istanbul satellite imagery. Land at Istanbul Airport (IST), Sabiha Gökçen (SAW), Atatürk (ISL) or the short strip at Samandıra (SMD). Fly the Bosphorus past the 15 July Martyrs, Fatih Sultan Mehmet and Yavuz Sultan Selim bridges; you can fly under them, but the decks, ramps and towers are solid. Look for Hagia Sophia, the Blue Mosque, Galata Tower, the Maiden's Tower, the Çamlıca tower and the Levent, Maslak and Ataşehir skylines. The map shows the same imagery.</p>
             <h3>Aerobatics</h3>
             <p class="lead">The H-20 flies like a fighter: roll it inverted, loop it, pull a 9 g turn. Climb to 8,000 ft at full power and over 350 kt first. A full-stick loop from 400 kt takes about 16 s. Pull too hard when slow and it stalls; hard turns bleed speed fast.</p>
             <h3>Controls</h3>
@@ -494,7 +496,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
           <dt>Stall, clean</dt><dd>103 kt at 24° AoA</dd>
           <dt>Engine</dt><dd>TF-10K, 10,000 lbf · T/W 0.78</dd>
           <dt>Tail clearance</dt><dd>about 13° nose-up on the mains</dd>
-          <dt>Airfields</dt><dd>Delta 36/18 3,000 m · Harbor 09/27 2,400 m · Ridge 14/32 1,800 m · Oasis 05/23 1,200 m</dd>
+          <dt>Airfields</dt><dd>Istanbul IST 16R/34L 3,758 m · Sabiha Gökçen SAW 06L/24R 2,991 m · Atatürk ISL 05/23 2,443 m · Samandıra SMD 18/36 1,417 m</dd>
         </dl>
       </div>
       <ul id="msgs"></ul>
@@ -673,13 +675,28 @@ function applyVolume(){if(audio.volNode)audio.volNode.gain.setTargetAtTime(audio
 // H-20 canard-delta unmanned fighter: 5,800 kg landing weight, low-aspect-ratio cranked delta (AR 3.9), delta-style gentle stall at high AoA, flaperons, speed brake
 const AC={mass:5800,S:26,span:10,cd0:0.024,k:1/(PI*0.75*3.85),clA:2.9,a0:-1*DEG,aStall:[24*DEG,22*DEG,21*DEG],cls:1.5,clFlap:[0,0.15,0.3],cdFlap:[0,0.01,0.025],cdGear:0.02,cdSplr:0.06,clSplr:-0.05,gearH:1.62,
   tipY:5.0,tipL:-2.9,tipZ:-0.15,tailL:-7.3,tailZ:-0.45};
+// world: a 72 km square of Istanbul centred on 41.07 N 29.00 E; x is east, z is south, metres. The ground is flat at sea level.
+const GEO={lat0:41.07,lon0:29.00,half:36000};
+const ll=(lat,lon)=>[(lon-GEO.lon0)*111320*cos(GEO.lat0*DEG),-(lat-GEO.lat0)*111320];
+// runways from their real threshold coordinates (OpenStreetMap); the first end is the default landing direction
+const rwy=(id,name,a,b,w,num,o)=>{const [x,z]=ll(a[0],a[1]),[x1,z1]=ll(b[0],b[1]);return Object.assign({id,name,x,z,hdg:(atan2(x1-x,-(z1-z))/DEG+360)%360,len:Math.round(Math.hypot(x1-x,z1-z)),w,num,real:true,ts:-1},o||{});};
 const AIRPORTS=[
-  {id:'DLT',name:'Test Range Delta',x:0,z:0,hdg:0,len:3000,w:45,num:['36','18']},
-  {id:'HBR',name:'Harbor Point',x:-14000,z:-5200,hdg:90,len:2400,w:45,num:['09','27']},
-  {id:'RDG',name:'Ridge Field',x:11500,z:-15500,hdg:140,len:1800,w:30,num:['14','32']},
-  {id:'OAS',name:'Oasis Strip',x:15500,z:6500,hdg:50,len:1200,w:30,num:['05','23']}];
+  rwy('IST','Istanbul Airport',[41.29859,28.70673],[41.26483,28.70739],60,['16R','34L'],{ts:1}),
+  rwy('SAW','Sabiha Gökçen',[40.89264,29.29321],[40.90444,29.32524],45,['06L','24R']),
+  rwy('ISL','Atatürk Airport',[40.96627,28.81131],[40.97773,28.83614],60,['05','23']),
+  rwy('SMD','Samandıra Air Base',[40.99912,29.21604],[40.98639,29.21601],30,['18','36'])];
+// Bosphorus bridges: ends of the structure (lat, lon), main span, deck and tower height in metres; s = suspension, c = cable-stayed hybrid
+const BRIDGE_RAMP=600;
+const BRIDGES=[
+  {name:'15 July Martyrs Bridge',a:[41.05095,29.02861],b:[41.03996,29.04005],span:1074,deck:64,tower:165,w:34,type:'s'},
+  {name:'Fatih Sultan Mehmet Bridge',a:[41.09106,29.05426],b:[41.09169,29.06806],span:1090,deck:64,tower:110,w:39,type:'s'},
+  {name:'Yavuz Sultan Selim Bridge',a:[41.20756,29.10156],b:[41.19838,29.12177],span:1408,deck:70,tower:322,w:59,type:'c'}];
+BRIDGES.forEach(b=>{const [ax,az]=ll(b.a[0],b.a[1]),[bx,bz]=ll(b.b[0],b.b[1]);b.cx=(ax+bx)/2;b.cz=(az+bz)/2;b.len=Math.hypot(bx-ax,bz-az);b.dx=(bx-ax)/b.len;b.dz=(bz-az)/b.len;});
+// true when a point hits a bridge deck, approach ramp or tower
+function bridgeHit(p){for(const b of BRIDGES){const ex=p.x-b.cx,ez=p.z-b.cz,u=ex*b.dx+ez*b.dz,v=-ex*b.dz+ez*b.dx,au=abs(u);if(abs(v)>b.w/2+9||au>b.len/2+BRIDGE_RAMP)continue;
+    const dk=au<=b.len/2?b.deck:b.deck*(1-(au-b.len/2)/BRIDGE_RAMP);if(abs(p.y-dk)<7||(abs(au-b.span/2)<10&&p.y<b.tower+3))return b;}return null;}
 AIRPORTS.forEach(ap=>{const h=ap.hdg*DEG;ap.d=new THREE.Vector3(sin(h),0,-cos(h));ap.r=new THREE.Vector3(cos(h),0,sin(h));const t0=new THREE.Vector3(ap.x,0,ap.z),t1=t0.clone().addScaledVector(ap.d,ap.len);
-  ap.tower=t0.clone().addScaledVector(ap.d,ap.len*0.3).addScaledVector(ap.r,-380);ap.tower.y=52;
+  ap.tower=t0.clone().addScaledVector(ap.d,ap.len*0.3).addScaledVector(ap.r,(ap.ts||-1)*380);ap.tower.y=52;
   ap.ends=[{ap,idx:0,id:ap.id+' '+ap.num[0],thr:t0,d:ap.d.clone(),r:ap.r.clone(),hdg:ap.hdg,len:ap.len,w:ap.w,aim:ap.len>=2000?300:200},
            {ap,idx:1,id:ap.id+' '+ap.num[1],thr:t1,d:ap.d.clone().negate(),r:ap.r.clone().negate(),hdg:(ap.hdg+180)%360,len:ap.len,w:ap.w,aim:ap.len>=2000?300:200}];});
 let target=AIRPORTS[0].ends[0];
@@ -785,7 +802,7 @@ const inp={pitch:0,roll:0,kUp:false,kDn:false,kL:false,kR:false,kRudL:false,kRud
 function resetFlight(){
   const s=SCEN[scen];ac.wind.set(...s.wind);ac.gustV.set(0,0,0);
   ac.pos.copy(worldAt(target,-9300,120,549));ac.V=82;ac.gamma=-2.5*DEG;ac.psi=target.hdg*DEG;ac.psiB=ac.psi;ac.r=0;ac.beta=0;ac.dr=0;ac.psiDot=0;ac.fpHold=null;ac.drTot=0;ac.gc=[0,0,0];ac.wasC=false;ac.settleT=0;ac.jolt=0;ac.surf='grass';ac.stopSurf='';ac.agl=(ac.pos.y-AC.gearH)/FT;ac.vs=-ac.V*sin(2.5*DEG);ac.ias=ac.V/KT;ac.rwy=null;ac.de=0;ac.da=0;
-  ap.on=false;ap.athr=false;ap.app=false;ap.loc=false;ap.gs=false;ap.lat='HDG';ap.vert='VS';ap.msg='';ap.sel={ias:160,hdg:target.hdg,alt:1800,vs:-700};onApChange();
+  ap.on=false;ap.athr=false;ap.app=false;ap.loc=false;ap.gs=false;ap.lat='HDG';ap.vert='VS';ap.msg='';ap.sel={ias:160,hdg:Math.round(target.hdg)%360,alt:1800,vs:-700};onApChange();
   {const rho=1.225*exp(-ac.pos.y/9000);const clNeed=AC.mass*9.81*cos(ac.gamma)/(0.5*rho*ac.V*ac.V*AC.S);const aNeed=clNeed/AC.clA+AC.a0;ac.theta=ac.gamma+aNeed;ac.trim=(aNeed-PM.a0)*PM.ka/PM.kd;}ac.phi=0;ac.q=0;ac.p=0;ac.flaps=0;ac.gear=0;ac.gearT=0;ac.splr=false;ac.brk=false;ac.onGround=false;ac.stalled=false;ac.td=null;ac.maxBank=0;ac.phase='fly';ac.t=0;ac.stopDist=0;ac.fuel=1500;
   Object.assign(sim,{phase:'run',n1:40,n2:72,egt:520,ff:900,thrust:1800,lit:true,fuelOn:true,starter:false,ignition:false,throttle:0.3,fuelUsed:0});
   thr.value=30;updateThrOut();syncSys();
@@ -905,6 +922,7 @@ function flyStep(dt){
   if(!a.onGround){
     const sink=-a.vs/FT*60;
     if(a.gearT<0.95&&a.pos.y<=0.9){a.td=a.td||{vsFpm:sink,x:0,dist:0,ias:a.ias,bank:abs(a.phi)/DEG,pitch:a.theta/DEG,gear:false,onRwy:false,flaps:a.flaps,rwy:'none',aim:300,planned:target.id};crash('Gear was up. The H-20 slid in on its belly.');return;}
+    {const bh=bridgeHit(a.pos);if(bh){a.td=a.td||{vsFpm:sink,x:0,dist:0,ias:a.ias,bank:abs(a.phi)/DEG,pitch:a.theta/DEG,gear:a.gearT>0.95,onRwy:false,flaps:a.flaps,rwy:'none',aim:300,planned:target.id};crash('Hit the '+bh.name+' at '+fmt(a.ias)+' kt.');return;}}
     if(a.agl>15)a.airHigh=true;
     if(a.pos.y<1.2&&(abs(a.phi)>75*DEG||a.theta<-25*DEG||a.pos.y<0.2)&&!(G&&G.any)){a.td=a.td||{vsFpm:sink,x:0,dist:0,ias:a.ias,bank:abs(a.phi)/DEG,pitch:a.theta/DEG,gear:a.gearT>0.95,onRwy:false,flaps:a.flaps,rwy:'none',aim:300,planned:target.id};crash('Flew into the ground at '+fmt(a.ias)+' kt, '+fmt(abs(a.phi)/DEG)+'° of bank.');return;}
     if(G&&G.any&&!a.td&&a.airHigh){
@@ -990,7 +1008,7 @@ function addDetail(mat,slot,o){const d=DET[slot];o=o||{};
       .replace('#include <map_fragment>',`#include <map_fragment>
       float wtr=0.0;
       ${o.sat?`{vec3 c0=diffuseColor.rgb;float l0=dot(c0,vec3(0.3,0.59,0.11));wtr=smoothstep(0.0,0.008,c0.b-c0.g*1.02)*(1.0-smoothstep(0.05,0.11,l0));
-        c0=mix(vec3(l0),c0,0.86);diffuseColor.rgb=pow(c0*${(o.gain||1).toFixed(2)},vec3(${(o.gamma||1).toFixed(2)}))*vec3(1.10,1.04,0.88);}`:''}
+        c0=mix(vec3(l0),c0,0.86);c0*=${(o.gain||1).toFixed(2)};c0=c0/(1.0+2.0*c0);diffuseColor.rgb=pow(c0,vec3(${(o.gamma||1).toFixed(2)}))*vec3(1.06,1.02,0.93);}`:''}
       if(detOn>0.5){float dd=length(vViewPosition);vec3 d1=texture2D(detMap,vWp*${(1/(o.s1||9)).toFixed(5)}).rgb,d2=texture2D(detMap,vWp.yx*${(1/(o.s2||83)).toFixed(5)}).rgb;
         vec3 dt=mix(d1,d2,smoothstep(${(o.n0||40).toFixed(1)},${(o.n1||400).toFixed(1)},dd))*detGain;dt=mix(vec3(dot(dt,vec3(0.3,0.59,0.11))),dt,${(o.tint==null?1:o.tint).toFixed(2)});
         float k=(1.0-smoothstep(${(o.f0||600).toFixed(1)},${(o.f1||5000).toFixed(1)},dd))*${(o.k||0.8).toFixed(2)}*(1.0-wtr);
@@ -1037,17 +1055,19 @@ Object.assign(sun.shadow.camera,{left:-45,right:45,top:45,bottom:-45,near:1,far:
  // fields: large darker patches
  const fm=new THREE.MeshStandardMaterial({color:0x8a7a4a,roughness:1});for(let i=0;i<220;i++){const w=300+Math.random()*900,d=300+Math.random()*900;const f=new THREE.Mesh(new THREE.PlaneGeometry(w,d),i%2?fm:new THREE.MeshStandardMaterial({color:0x3f5a30,roughness:1}));f.rotation.x=-PI/2;f.position.set((Math.random()-0.5)*44000,0.03,(Math.random()-0.5)*44000);if(AIRPORTS.some(ap=>Math.hypot(f.position.x-(ap.x+ap.d.x*ap.len/2),f.position.z-(ap.z+ap.d.z*ap.len/2))<2600))continue;f.position.y=0.03;scene.add(f);procScenery.push(f);}
 }
-// Sentinel-2 cloudless mosaic, 64 km square in four tiles (north is -z, east is +x), centred on Test Range Delta
-const SAT={half:32000,px:[],mask:null};
-{const far=new THREE.Mesh(new THREE.PlaneGeometry(400000,400000),new THREE.MeshStandardMaterial({color:0x4d5e45,roughness:1}));far.rotation.x=-PI/2;far.position.y=-3;far.visible=false;scene.add(far);
- for(let j=0;j<2;j++)for(let i=0;i<2;i++)loadTex('g'+i+j+(MOB?'_m':'')+'.jpg',t=>{
-   const m=new THREE.Mesh(new THREE.PlaneGeometry(SAT.half,SAT.half),addDetail(new THREE.MeshStandardMaterial({map:t,roughness:1,metalness:0,envMapIntensity:0.9}),'grass',{sat:1,gain:2.7,gamma:0.9,s1:5,s2:31,tint:0.35,k:0.85,f0:250,f1:2200,n0:25,n1:220,aer:210,ka:0.7}));
-   m.rotation.x=-PI/2;m.position.set((i-0.5)*SAT.half,0.01,(j-0.5)*SAT.half);m.receiveShadow=true;scene.add(m);
-   // keep a small copy of the pixels to plant trees on forest and keep them off water and fields
-   const c=document.createElement('canvas');c.width=c.height=512;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(t.image,0,0,512,512);SAT.px[i+j*2]=g.getImageData(0,0,512,512).data;
-   if(++PHOTO.ground===4){far.visible=true;procScenery.forEach(o=>{o.visible=false;});plantTrees&&plantTrees();}});}
-function satAt(x,z){const i=x<0?0:1,j=z<0?0:1,d=SAT.px[i+j*2];if(!d||abs(x)>=SAT.half||abs(z)>=SAT.half)return null;
-  const u=((x-(i-1)*SAT.half)/SAT.half*512)|0,v=((z-(j-1)*SAT.half)/SAT.half*512)|0;const k=(min(511,v)*512+min(511,u))*4;return [d[k],d[k+1],d[k+2]];}
+// Sentinel-2 cloudless 2017 mosaic of Istanbul, 72 km square in nine tiles (north is -z, east is +x)
+const SAT={half:GEO.half,N:3,P:MOB?512:1024,px:[],thumb:document.createElement('canvas'),ready:false};SAT.thumb.width=SAT.thumb.height=768;
+{const far=new THREE.Mesh(new THREE.PlaneGeometry(500000,500000),new THREE.MeshStandardMaterial({color:0x1d3048,roughness:0.5}));far.rotation.x=-PI/2;far.position.y=-3;far.visible=false;scene.add(far);
+ const N=SAT.N,T=2*SAT.half/N,P=SAT.P,tg=SAT.thumb.getContext('2d');
+ for(let j=0;j<N;j++)for(let i=0;i<N;i++)loadTex('g'+i+j+(MOB?'_m':'')+'.jpg',t=>{
+   const m=new THREE.Mesh(new THREE.PlaneGeometry(T,T),addDetail(new THREE.MeshStandardMaterial({map:t,roughness:1,metalness:0,envMapIntensity:0.9}),'grass',{sat:1,gain:2.7,gamma:0.95,s1:5,s2:31,tint:0.2,k:0.6,f0:250,f1:2200,n0:25,n1:220,aer:210,ka:0.45}));
+   m.rotation.x=-PI/2;m.position.set((i+0.5)*T-SAT.half,0.01,(j+0.5)*T-SAT.half);m.receiveShadow=true;scene.add(m);
+   // keep a copy of the pixels: trees go on forest, buildings on built-up land, and the moving map uses a thumbnail
+   const c=document.createElement('canvas');c.width=c.height=P;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(t.image,0,0,P,P);SAT.px[i+j*N]=g.getImageData(0,0,P,P).data;
+   tg.drawImage(t.image,i*256,j*256,256,256);
+   if(++PHOTO.ground===N*N){SAT.ready=true;far.visible=true;procScenery.forEach(o=>{o.visible=false;});plantTrees&&plantTrees();plantCity&&plantCity();}});}
+function satAt(x,z){if(abs(x)>=SAT.half||abs(z)>=SAT.half)return null;const N=SAT.N,T=2*SAT.half/N,P=SAT.P,i=min(N-1,Math.floor((x+SAT.half)/T)),j=min(N-1,Math.floor((z+SAT.half)/T)),d=SAT.px[i+j*N];if(!d)return null;
+  const u=min(P-1,((x+SAT.half-i*T)/T*P)|0),v=min(P-1,((z+SAT.half-j*T)/T*P)|0);const k=(v*P+u)*4;return [d[k],d[k+1],d[k+2]];}
 const lightMat=(c)=>new THREE.MeshBasicMaterial({color:c});
 /* scenery: Harbor lake, distant hills, forests, clouds */
 const nearAirport=(x,z,r)=>AIRPORTS.some(ap=>Math.hypot(x-(ap.x+ap.d.x*ap.len/2),z-(ap.z+ap.d.z*ap.len/2))<r+ap.len/2+400);
@@ -1092,7 +1112,7 @@ function buildAirport(ap){
   for(let e=0;e<2;e++){for(let i=0;i<stripes;i++){if(i===stripes/2-1||i===stripes/2)continue;const v=-ap.w/2+3+i*gap;const u=e?ap.len-36:6;g.fillRect(X(v),Y(u+30),sw*pxw,30*pxm);}}
   const zone=(u,wd,len)=>{g.fillRect(X(-ap.w/2+4.5),Y(u+len),wd*pxw,len*pxm);g.fillRect(X(ap.w/2-4.5-wd),Y(u+len),wd*pxw,len*pxm);};
   for(const e of ap.ends){const f=u=>e.idx?ap.len-u-45:u;zone(f(e.aim),ap.w>=45?10:6,45);[150,450,600].forEach(u=>{if(u+30<ap.len/2)zone(f(u),3,22.5);});}
-  g.font='700 150px Rajdhani, Arial Narrow, sans-serif';g.textAlign='center';
+  g.font='700 '+(ap.num[0].length>2?112:150)+'px Rajdhani, Arial Narrow, sans-serif';g.textAlign='center';
   g.save();g.translate(W/2,Y(60));g.scale(1,-1);g.fillText(ap.num[0],0,0);g.restore();
   g.save();g.translate(W/2,Y(ap.len-60));g.rotate(PI);g.scale(1,-1);g.fillText(ap.num[1],0,0);g.restore();
   // tyre rubber: dark streaks built up over the touchdown zones, over the paint
@@ -1101,14 +1121,14 @@ function buildAirport(ap){
   const tex=new THREE.CanvasTexture(tc);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=16;
   const h=ap.hdg*DEG;const place=(geo,mat,u,v,y)=>{geo.rotateX(-PI/2);geo.rotateY(-h);const m=new THREE.Mesh(geo,mat);const p=worldAt(ap.ends[0],u,v,y);m.position.copy(p);scene.add(m);return m;};
   const conc=addDetail(new THREE.MeshStandardMaterial({color:0x58713c,roughness:1}),'grass',{s1:5,s2:31,tint:0.35,k:0.85,f0:250,f1:2200,n0:25,n1:220,aer:210,ka:0.45});const tarm=c=>addDetail(new THREE.MeshStandardMaterial({color:c,roughness:0.95}),'asphalt',{s1:6,s2:37,dg:3.6,k:0.85,f0:400,f1:3000,n0:60,n1:500});
-  place(new THREE.PlaneGeometry(ap.w>=45?420:300,ap.len+700),conc,ap.len/2,ap.w>=45?60:40,0.05).receiveShadow=true;
+  if(!ap.real)place(new THREE.PlaneGeometry(ap.w>=45?420:300,ap.len+700),conc,ap.len/2,ap.w>=45?60:40,0.05).receiveShadow=true;
   place(new THREE.PlaneGeometry(ap.w+24,ap.len+120),tarm(0x7c8086),ap.len/2,0,0.08);
   place(new THREE.PlaneGeometry(ap.w,ap.len),addDetail(new THREE.MeshStandardMaterial({map:tex,roughness:0.88}),'asphalt',{s1:6,s2:37,dg:3.6,k:0.85,f0:400,f1:3000,n0:60,n1:500}),ap.len/2,0,0.12).receiveShadow=true;
-  const tw=ap.w>=45?150:110;place(new THREE.PlaneGeometry(30,ap.len),tarm(0x6c7076),ap.len/2,tw,0.1);
-  [0.07,0.5,0.93].forEach(k=>place(new THREE.PlaneGeometry(tw,30),tarm(0x6c7076),ap.len*k,tw/2,0.1));
-  place(new THREE.PlaneGeometry(220,ap.w>=45?420:260),addDetail(new THREE.MeshStandardMaterial({color:0xa3a6a4,roughness:1}),'concrete',{s1:14,s2:57,dg:2.3,k:0.95,f0:1500,f1:9000,n0:200,n1:1500}),ap.len/2,tw+150,0.1);
+  const tw=ap.w>=45?150:110;if(!ap.real)place(new THREE.PlaneGeometry(30,ap.len),tarm(0x6c7076),ap.len/2,tw,0.1);
+  if(!ap.real)[0.07,0.5,0.93].forEach(k=>place(new THREE.PlaneGeometry(tw,30),tarm(0x6c7076),ap.len*k,tw/2,0.1));
+  if(!ap.real)place(new THREE.PlaneGeometry(220,ap.w>=45?420:260),addDetail(new THREE.MeshStandardMaterial({color:0xa3a6a4,roughness:1}),'concrete',{s1:14,s2:57,dg:2.3,k:0.95,f0:1500,f1:9000,n0:200,n1:1500}),ap.len/2,tw+150,0.1);
   const bm=new THREE.MeshStandardMaterial({color:0xe3e6ea,roughness:0.8});loadTex('metal.jpg',t=>{t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(5,1.5);bm.map=t;bm.color.setHex(0xf2f4f6);bm.metalness=0.25;bm.roughness=0.6;bm.needsUpdate=true;});const bl=ap.w>=45?[[0.47,210,90,16,60],[0.53,210,90,16,60],[0.41,230,40,10,40],[0.57,240,30,24,30]]:[[0.5,180,50,10,30],[0.44,190,24,8,24]];
-  bl.forEach(([k,v,w,hh,d])=>{const b=new THREE.Mesh(new THREE.BoxGeometry(w,hh,d),bm);b.position.copy(worldAt(ap.ends[0],ap.len*k,tw+v,hh/2));b.rotation.y=-h;scene.add(b);});
+  if(!ap.real)bl.forEach(([k,v,w,hh,d])=>{const b=new THREE.Mesh(new THREE.BoxGeometry(w,hh,d),bm);b.position.copy(worldAt(ap.ends[0],ap.len*k,tw+v,hh/2));b.rotation.y=-h;scene.add(b);});
   const tower=new THREE.Mesh(new THREE.CylinderGeometry(4,5,42,12),bm);tower.position.copy(ap.tower);tower.position.y=21;scene.add(tower);
   const cab=new THREE.Mesh(new THREE.BoxGeometry(14,8,14),new THREE.MeshStandardMaterial({color:0x2a3a4a,roughness:0.3,metalness:0.4}));cab.position.copy(ap.tower);cab.position.y=46;scene.add(cab);
   const beacon=new THREE.Mesh(new THREE.SphereGeometry(1.2,8,6),lightMat(0xffffff));beacon.position.copy(ap.tower);beacon.position.y=52;scene.add(beacon);
@@ -1118,12 +1138,122 @@ function buildAirport(ap){
   for(let v=-ap.w/2+1.5;v<=ap.w/2-1.5;v+=3){add(2,v,0.5,0x33ff66);add(ap.len-2,v,0.5,0x33ff66);}
   for(let u=0;u<=ap.len;u+=60){const c=(u>ap.len-600||u<600)?0xffb040:0xffffff;add(u,-ap.w/2-1.5,0.5,c);add(u,ap.w/2+1.5,0.5,c);}
   for(let u=0;u<=ap.len;u+=30)add(u,0,0.4,0xffffff);
-  for(let u=0;u<=ap.len;u+=60){add(u,tw-15,0.5,0x3080ff);add(u,tw+15,0.5,0x3080ff);}
+  if(!ap.real)for(let u=0;u<=ap.len;u+=60){add(u,tw-15,0.5,0x3080ff);add(u,tw+15,0.5,0x3080ff);}
   const g2=new THREE.BufferGeometry();g2.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g2.setAttribute('color',new THREE.Float32BufferAttribute(Cc,3));
   scene.add(new THREE.Points(g2,new THREE.PointsMaterial({size:3.2,sizeAttenuation:false,vertexColors:true,transparent:true,opacity:0.95,depthWrite:false})));
   for(const e of ap.ends){for(let i=0;i<4;i++){const w=worldAt(e,e.aim,-36-i*4,0.8);papiEnds.push({end:e,i,pos:w});}}
 }
 AIRPORTS.forEach(buildAirport);
+/* ================= Istanbul: Bosphorus and Golden Horn bridges, landmarks, towers and city blocks (positions from OpenStreetMap) ================= */
+const llv=(lat,lon,y)=>{const [x,z]=ll(lat,lon);return new THREE.Vector3(x,y||0,z);};
+let plantCity=null;
+{const S=o=>new THREE.MeshStandardMaterial(o);
+ const mSteel=S({color:0x8d9399,roughness:0.55,metalness:0.5}),mConc=S({color:0xc9c6bd,roughness:0.9}),mDeck=S({color:0x3b3e43,roughness:0.9}),mStone=S({color:0xb9ab92,roughness:0.95}),
+  mLead=S({color:0x7b858c,roughness:0.6,metalness:0.3}),mWhite=S({color:0xe8e6df,roughness:0.85}),mRed=S({color:0xb98670,roughness:0.9}),mGrey=S({color:0xb4b7ba,roughness:0.9}),
+  mGlassA=S({color:0x2c4a63,roughness:0.12,metalness:0.75,envMapIntensity:1.4}),mGlassB=S({color:0x51606b,roughness:0.18,metalness:0.7,envMapIntensity:1.3}),mGlassC=S({color:0x1f2d3a,roughness:0.1,metalness:0.8,envMapIntensity:1.5});
+ const cableMat=new THREE.LineBasicMaterial({color:0xd9dde0,transparent:true,opacity:0.85}),hangMat=new THREE.LineBasicMaterial({color:0xc4c9cd,transparent:true,opacity:0.45});
+ const bx=(g,w,h,d,mat,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);g.add(m);return m;};
+ const cy=(g,r0,r1,h,mat,x,y,z,seg)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(r0,r1,h,seg||14),mat);m.position.set(x,y,z);g.add(m);return m;};
+ const line=(g,pts,mat,seg)=>{const geo=new THREE.BufferGeometry().setFromPoints(pts);const l=seg?new THREE.LineSegments(geo,mat):new THREE.Line(geo,mat);g.add(l);return l;};
+ // ---------- Bosphorus bridges (local x runs along the bridge) ----------
+ for(const b of BRIDGES){const g=new THREE.Group();g.position.set(b.cx,0,b.cz);g.rotation.y=-Math.atan2(b.dz,b.dx);scene.add(g);
+   const L=b.len,sp=b.span,H=b.deck,T=b.tower,W=b.w,R=BRIDGE_RAMP;
+   bx(g,L,3.2,W,mDeck,0,H,0);bx(g,L,1.2,0.5,mSteel,0,H+2,W/2);bx(g,L,1.2,0.5,mSteel,0,H+2,-W/2);
+   // lane paint
+   bx(g,L,0.1,0.5,S({color:0xe8e8e8,roughness:0.8}),0,H+1.66,0);
+   // approach ramps down to the (flat) ground on piers
+   for(const sd of[-1,1]){const rl=Math.hypot(R,H);const r=bx(g,rl,2.6,W,mDeck,sd*(L/2+R/2),H/2,0);r.rotation.z=-sd*Math.atan2(H,R);
+     for(let k=1;k<6;k++){const u=sd*(L/2+R*k/6),h=H*(1-k/6);if(h>4)bx(g,5,h,W*0.6,mConc,u,h/2,0);}
+     // side-span piers between the tower and the end of the structure
+     const side=(L-sp)/2;for(let k=1;k<=Math.floor(side/90);k++)bx(g,5,H,W*0.6,mConc,sd*(sp/2+k*90),H/2,0);}
+   for(const sd of[-1,1]){const tx=sd*sp/2;
+     if(b.type==='s'){for(const v of[-1,1])bx(g,7,T,6,mSteel,tx,T/2,v*(W/2+1));
+       [H-8,H+(T-H)*0.5,T-5].forEach(y=>bx(g,6,5,W+2,mSteel,tx,y,0));bx(g,12,H*0.5,W+14,mConc,tx,H*0.25,0);}
+     else{ // A-shaped concrete pylons
+       for(const v of[-1,1]){const leg=bx(g,9,T*1.01,8,mConc,tx,T/2,v*(W/2+4)*0.55);leg.rotation.x=v*Math.atan2((W/2+4)*0.9,T);}
+       bx(g,8,10,W*0.5,mConc,tx,T*0.72,0);bx(g,10,8,W+10,mConc,tx,H-7,0);}}
+   // cables
+   for(const v of[-1,1]){const z=v*(W/2+(b.type==='s'?1:0));const top=T-1;
+     const main=[];for(let k=0;k<=48;k++){const u=-sp/2+sp*k/48;main.push(new THREE.Vector3(u,H+5+(top-H-5)*Math.pow(2*u/sp,2),z));}
+     line(g,[new THREE.Vector3(-L/2,H+1.6,z),...main,new THREE.Vector3(L/2,H+1.6,z)],cableMat);
+     const hang=[];
+     if(b.type==='s'){for(let u=-sp/2+18;u<sp/2-17;u+=18){hang.push(new THREE.Vector3(u,H+1.6,z),new THREE.Vector3(u,H+5+(top-H-5)*Math.pow(2*u/sp,2),z));}}
+     else{ // stay cables fanning from the pylon to the deck, hangers only in the middle
+       for(const sd of[-1,1]){const tx=sd*sp/2;for(let k=1;k<=11;k++){const y=T*0.62+(T*0.36)*k/11;hang.push(new THREE.Vector3(tx,y,z*0.2),new THREE.Vector3(tx-sd*k*(sp*0.42/11),H+1.6,z));hang.push(new THREE.Vector3(tx,y,z*0.2),new THREE.Vector3(tx+sd*k*((L-sp)/2/11),H+1.6,z));}}
+       for(let u=-sp*0.09;u<=sp*0.09;u+=24)hang.push(new THREE.Vector3(u,H+1.6,z),new THREE.Vector3(u,H+5+(top-H-5)*Math.pow(2*u/sp,2),z));}
+     line(g,hang,hangMat,true);}
+   // aviation lights on the tower tops
+   for(const sd of[-1,1])for(const v of[-1,1]){const lt=new THREE.Mesh(new THREE.SphereGeometry(1.6,8,6),new THREE.MeshBasicMaterial({color:0xff3b30}));lt.position.set(sd*sp/2,T+1.5,b.type==='s'?v*(W/2+1):0);g.add(lt);}
+   g.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});}
+ // ---------- Golden Horn bridges: low decks on piers ----------
+ const lowBridge=(a,b2,w,h,pier)=>{const A=llv(a[0],a[1]),B=llv(b2[0],b2[1]);const g=new THREE.Group();g.position.copy(A).add(B).multiplyScalar(0.5);const L=A.distanceTo(B);g.rotation.y=-Math.atan2(B.z-A.z,B.x-A.x);scene.add(g);
+   bx(g,L,1.6,w,mDeck,0,h,0);bx(g,L,1,0.4,mGrey,0,h+1.2,w/2);bx(g,L,1,0.4,mGrey,0,h+1.2,-w/2);for(let u=-L/2+pier/2;u<L/2;u+=pier)bx(g,3,h,w*0.7,mConc,u,h/2,0);return g;};
+ lowBridge([41.01820,28.97198],[41.02182,28.97460],42,6,40);   // Galata Bridge
+ lowBridge([41.02303,28.96254],[41.02543,28.96769],25,5,45);   // Atatürk Bridge
+ lowBridge([41.03986,28.93891],[41.04743,28.94515],32,22,70);  // Haliç Bridge
+ {const g=lowBridge([41.02155,28.96600],[41.02440,28.96930],13,13,60);for(const u of[-90,90]){bx(g,4,65,4,mWhite,u,32,0);}} // Golden Horn metro bridge with its two pylons
+ // ---------- mosques: base, dome, half-domes, minarets ----------
+ const mosque=(lat,lon,o)=>{const g=new THREE.Group();g.position.copy(llv(lat,lon));g.rotation.y=(o.rot||0)*DEG;scene.add(g);const w=o.w,h=o.h,R=o.R,wall=o.wall||mGrey;
+   bx(g,w,h,w,wall,0,h/2,0);bx(g,w*0.62,h*0.35,w*0.62,wall,0,h*1.17,0);
+   const dome=new THREE.Mesh(new THREE.SphereGeometry(R,24,12,0,2*PI,0,PI/2),mLead);dome.position.y=h*1.34;g.add(dome);
+   for(let k=0;k<4;k++){const an=k*PI/2;const hd=new THREE.Mesh(new THREE.SphereGeometry(R*0.62,16,8,0,2*PI,0,PI/2),mLead);hd.position.set(cos(an)*w*0.36,h*0.98,sin(an)*w*0.36);g.add(hd);
+     const sd=new THREE.Mesh(new THREE.SphereGeometry(R*0.3,12,6,0,2*PI,0,PI/2),mLead);sd.position.set(cos(an+PI/4)*w*0.56,h*0.98,sin(an+PI/4)*w*0.56);g.add(sd);}
+   if(o.court)bx(g,w,h*0.3,w*0.9,wall,0,h*0.15,-w*0.95);
+   const mins=o.min===6?[[1,1],[1,-1],[-1,1],[-1,-1],[1,-2.9],[-1,-2.9]]:o.min===4?[[1,1],[1,-1],[-1,1],[-1,-1]]:[[1,-1],[-1,-1]];
+   for(const[sx,sz]of mins){const x=sx*w*0.56,z=sz*w*0.56,mh=o.mh,r=max(1.4,mh*0.022);cy(g,r,r*1.25,mh*0.8,mWhite,x,mh*0.4,z,10);cy(g,r*1.7,r*1.7,mh*0.02,mWhite,x,mh*0.5,z,10);cy(g,r*1.6,r*1.6,mh*0.02,mWhite,x,mh*0.68,z,10);cy(g,0.05,r,mh*0.2,mLead,x,mh*0.9,z,10);}
+   g.traverse(m=>{if(m.isMesh){m.castShadow=false;}});return g;};
+ mosque(41.00851,28.98000,{w:72,h:30,R:16,min:4,mh:60,wall:mRed,rot:35});                 // Hagia Sophia
+ mosque(41.00541,28.97665,{w:64,h:24,R:12,min:6,mh:64,rot:35,court:1});                   // Sultanahmet (Blue Mosque)
+ mosque(41.01624,28.96382,{w:60,h:27,R:13.5,min:4,mh:70,rot:28,court:1});                 // Süleymaniye
+ mosque(41.01975,28.94976,{w:46,h:22,R:11,min:2,mh:55,rot:30,court:1});                   // Fatih
+ mosque(41.01700,28.97190,{w:40,h:20,R:9,min:2,mh:52,rot:20,court:1});                    // Yeni Cami, Eminönü
+ mosque(41.04731,29.02679,{w:18,h:14,R:6,min:2,mh:38,rot:60,wall:mWhite});                // Ortaköy
+ mosque(41.03443,29.07031,{w:100,h:36,R:17,min:6,mh:107,rot:10,court:1,wall:mWhite});     // Büyük Çamlıca
+ // ---------- towers and other landmarks ----------
+ {const g=new THREE.Group();g.position.copy(llv(41.02563,28.97421));scene.add(g);cy(g,8.2,8.8,48,mStone,0,24,0,18);cy(g,9.3,9.3,3,mStone,0,46,0,18);cy(g,7.2,7.2,6,mStone,0,51,0,18);cy(g,0.1,7.8,13,mLead,0,60.5,0,18);}          // Galata Tower
+ {const g=new THREE.Group();g.position.copy(llv(41.02112,29.00408));scene.add(g);cy(g,24,30,3,mStone,0,1.5,0,20);bx(g,20,9,13,mWhite,0,7,0);bx(g,7,22,7,mWhite,4,14,0);cy(g,0.1,5.5,9,mLead,4,29.5,0,4);bx(g,0.6,10,0.6,mSteel,4,38,0);} // Maiden's Tower
+ {const g=new THREE.Group();g.position.copy(llv(41.01637,29.06554));scene.add(g);const pts=[[10,0],[8,30],[7,90],[10,130],[14,165],[15,195],[13,225],[8,250],[4,262],[2.2,300],[1.2,369],[0.01,369]].map(p=>new THREE.Vector2(p[0],p[1]));
+   const tw=new THREE.Mesh(new THREE.LatheGeometry(pts,24),mWhite);tw.scale.z=0.72;g.add(tw);const band=new THREE.Mesh(new THREE.LatheGeometry([[14.3,160],[15.3,195],[13.3,226]].map(p=>new THREE.Vector2(p[0],p[1])),24),mGlassC);band.scale.z=0.72;g.add(band);
+   const lt=new THREE.Mesh(new THREE.SphereGeometry(2,8,6),new THREE.MeshBasicMaterial({color:0xff3b30}));lt.position.y=370;g.add(lt);}                                                          // Çamlıca TV and radio tower
+ {const g=new THREE.Group();g.position.copy(llv(41.01280,28.96465));scene.add(g);cy(g,3.6,4.6,62,mWhite,0,31,0,12);cy(g,5,5,2,mWhite,0,56,0,12);cy(g,3,3.4,16,mWhite,0,70,0,12);cy(g,0.1,3.4,7,mLead,0,81.5,0,12);}                 // Beyazıt Tower
+ {const g=new THREE.Group();g.position.copy(llv(41.03902,28.99965));g.rotation.y=-52*DEG;scene.add(g);bx(g,250,22,34,mWhite,0,11,0);bx(g,46,30,40,mWhite,0,15,0);bx(g,250,1.5,36,mLead,0,22.7,0);}                                 // Dolmabahçe Palace
+ {const g=new THREE.Group();g.position.copy(llv(41.04347,29.01531));g.rotation.y=-62*DEG;scene.add(g);bx(g,130,20,24,mWhite,0,10,0);}                                                                                                // Çırağan Palace
+ {const g=new THREE.Group();g.position.copy(llv(41.03946,28.99461));scene.add(g);const st=new THREE.Mesh(new THREE.CylinderGeometry(108,96,34,40,1,true),S({color:0xdfe2e4,roughness:0.6,side:THREE.DoubleSide}));st.scale.z=0.82;st.position.y=17;g.add(st);
+   const pitch=new THREE.Mesh(new THREE.PlaneGeometry(105,68),S({color:0x3f8a3c,roughness:1}));pitch.rotation.x=-PI/2;pitch.position.y=1;g.add(pitch);}                                                                           // Beşiktaş stadium
+ for(const[la,lo,r,h]of[[41.08492,29.05609,12,30],[41.08560,29.05560,10,26],[41.08440,29.05690,11,28]]){const g=new THREE.Group();g.position.copy(llv(la,lo));scene.add(g);cy(g,r,r*1.05,h,mStone,0,h/2,0,16);cy(g,r*0.6,r*0.6,h*0.3,mStone,0,h*1.15,0,16);} // Rumeli Hisarı towers
+ // ---------- skyscrapers (name, lat, lon, height) ----------
+ const TALL=[['Sapphire',41.08506,29.00655,261],['Levent 199',41.08054,29.01031,170],['ÖzdilekPark',41.07731,29.01093,150],['Nidakule',41.07979,29.00817,150],['Kanyon',41.07830,29.01150,118],['İşbank Tower 1',41.08190,29.00930,181],['İşbank 2',41.08160,29.00860,118],['İşbank 3',41.08225,29.00865,118],
+  ['Skyland A',41.10239,28.98548,284],['Skyland B',41.10288,28.98662,284],['Spine Tower',41.11096,29.02315,202],['42 Maslak A',41.11361,29.02092,160],['42 Maslak B',41.11299,29.02043,160],['Maslak',41.10956,29.02382,150],['Abdi İbrahim',41.10775,29.01510,120],['Maslak 2',41.10791,28.99982,150],['Maslak 3',41.10715,28.99981,150],
+  ['Torun 1',41.06509,28.99909,160],['Torun 2',41.06514,28.99995,160],['Torun 3',41.06514,29.00085,160],['Torun 4',41.06549,28.99843,160],['Çiftçi 1',41.06856,29.01624,190],['Çiftçi 2',41.06890,29.01690,190],['Nurol',41.06778,28.98613,152],['Marriott',41.06391,28.98800,135],
+  ['Bomonti 1',41.05664,28.97683,194],['Bomonti 2',41.05703,28.97598,194],['Hilton Bomonti',41.05876,28.97925,143],
+  ['CBRT Tower',41.00196,29.11070,352],['Ziraat 1',41.00089,29.10858,219],['Ziraat 2',41.00166,29.10872,175],['Vakıfbank',40.99989,29.11091,220],['Metropol',40.99470,29.12173,301],['Andromeda',40.99118,29.11678,196],['Sky 1',40.98903,29.12628,160],['Sky 2',40.98896,29.12716,160],['Beste',40.98988,29.11959,150],['Arya',40.98980,29.12139,125],
+  ['Palladium',40.98411,29.10041,180],['Allianz',40.98132,29.10074,185],['Ataşehir 1',40.99114,29.10646,150],['Ataşehir 2',40.99280,29.08562,150],['Four Winds 1',40.97678,29.05547,180],['Four Winds 2',40.97642,29.05436,180],['Four Winds 3',40.97621,29.05495,180],['Acıbadem',41.00464,29.07131,180],['Kartal 1',40.91666,29.18907,165],['Kartal 2',40.91610,29.18883,165]];
+ TALL.forEach(([n,la,lo,h],i)=>{const g=new THREE.Group();g.position.copy(llv(la,lo));g.rotation.y=(i*37%90)*DEG;scene.add(g);const w=22+h*0.07,mat=[mGlassA,mGlassB,mGlassC][i%3];
+   bx(g,w,h*0.86,w*0.8,mat,0,h*0.43,0);bx(g,w*0.72,h*0.14,w*0.6,mat,0,h*0.93,0);bx(g,w*1.5,9,w*1.3,mGrey,0,4.5,0);if(h>250)bx(g,1.2,h*0.08,1.2,mSteel,0,h*1.04,0);});
+ // ---------- city blocks: instanced buildings planted where the satellite image shows built-up land ----------
+ {const N=MOB?9000:70000;const geo=new THREE.BoxGeometry(1,1,1);geo.translate(0,0.5,0);const wc=document.createElement('canvas');wc.width=64;wc.height=128;{const g=wc.getContext('2d');g.fillStyle='#e9e6df';g.fillRect(0,0,64,128);for(let r=0;r<10;r++)for(let c=0;c<5;c++){g.fillStyle=(r*5+c*3)%7===0?'#8fa3b3':'#4d5963';g.fillRect(4+c*12.4,5+r*12.4,7.5,7.5);}}
+  const wt=new THREE.CanvasTexture(wc);wt.colorSpace=THREE.SRGBColorSpace;wt.anisotropy=4;const mSide=S({map:wt,roughness:0.85}),mRoof=S({color:0xd9b7a6,roughness:0.95});
+  const city=new THREE.InstancedMesh(geo,[mSide,mSide,mRoof,mRoof,mSide,mSide],N);city.count=0;city.frustumCulled=false;city.castShadow=false;city.receiveShadow=false;scene.add(city);
+  const core=ll(41.035,28.995),m4=new THREE.Matrix4(),q=new THREE.Quaternion(),pv=new THREE.Vector3(),sc=new THREE.Vector3(),col=new THREE.Color(),up=new THREE.Vector3(0,1,0);
+  const [x0,z1]=ll(40.86,28.62),[x1,z0]=ll(41.14,29.36);const old=ll(41.0125,28.968);
+  // keep city blocks clear of the landmarks, and low in the old city so its skyline is the mosques
+  const KEEP=[[41.00851,28.98000,110],[41.00541,28.97665,120],[41.01624,28.96382,110],[41.01975,28.94976,90],[41.01700,28.97190,70],[41.04731,29.02679,50],[41.03443,29.07031,170],[41.02563,28.97421,45],[41.01637,29.06554,60],[41.01280,28.96465,35],[41.03902,28.99965,150],[41.04347,29.01531,90],[41.03946,28.99461,130],[41.08492,29.05609,120],[41.01281,28.98402,200]]
+    .map(k=>[...ll(k[0],k[1]),k[2]]).concat(TALL.map(t=>[...ll(t[1],t[2]),55]));
+  let seed=20240613;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+  const hash=(a,b)=>{const s=Math.sin(a*127.1+b*311.7)*43758.5453;return s-Math.floor(s);};
+  plantCity=()=>{let n=0,tries=0;while(n<N&&tries++<N*30){let x,z;
+      if(rnd()<0.62){const r=Math.sqrt(-2*Math.log(max(1e-6,rnd())))*6500,an=rnd()*2*PI;x=core[0]+cos(an)*r;z=core[1]+sin(an)*r*0.8;}else{x=x0+rnd()*(x1-x0);z=z0+rnd()*(z1-z0);}
+      const c=satAt(x,z);if(!c)continue;const r_=c[0],g_=c[1],b_=c[2],lum=r_*0.3+g_*0.59+b_*0.11;
+      if(lum<78||b_>g_*1.04||g_>r_*1.05||r_>b_*1.45)continue;                 // water, forest and fields, bare soil and sand
+      if(nearAirport(x,z,150))continue;if(BRIDGES.some(b=>Math.hypot(x-b.cx,z-b.cz)<b.len/2+BRIDGE_RAMP))continue;
+      if(KEEP.some(k=>abs(x-k[0])<k[2]&&abs(z-k[1])<k[2]))continue;const inOld=Math.hypot(x-old[0],z-old[1])<2600;
+      const tall=!inOld&&TALL.some(t=>{const p=ll(t[1],t[2]);return Math.hypot(x-p[0],z-p[1])<800;});const rr=rnd();
+      const h=inOld?7+rnd()*8:tall&&rr<0.3?35+rnd()*75:rr>0.99?28+rnd()*30:8+rnd()*rnd()*22;const w=16+rnd()*26,d=14+rnd()*22;
+      q.setFromAxisAngle(up,hash(Math.floor(x/400),Math.floor(z/400))*PI+(rnd()<0.5?0:PI/2));pv.set(x,0,z);sc.set(w,h,d);m4.compose(pv,q,sc);city.setMatrixAt(n,m4);
+      const k=0.3+rnd()*0.4;col.setRGB(min(1,(r_/255*1.15)*(1-k)+0.86*k),min(1,(g_/255*1.15)*(1-k)+0.84*k),min(1,(b_/255*1.15)*(1-k)+0.8*k),THREE.SRGBColorSpace);city.setColorAt(n,col);n++;}
+    city.count=n;city.instanceMatrix.needsUpdate=true;if(city.instanceColor)city.instanceColor.needsUpdate=true;PHOTO.city=n;};
+  if(PHOTO.ground>=SAT.N*SAT.N)plantCity();}
+}
 {const pp=[];papiEnds.forEach(q=>pp.push(q.pos.x,q.pos.y,q.pos.z));const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.Float32BufferAttribute(pp,3));papiAttr=new THREE.Float32BufferAttribute(new Float32Array(pp.length).fill(1),3);pg.setAttribute('color',papiAttr);
  scene.add(new THREE.Points(pg,new THREE.PointsMaterial({size:6,sizeAttenuation:false,vertexColors:true,depthWrite:false})));}
 // drone
@@ -2003,7 +2133,7 @@ function startGame(){$('title').hidden=true;$('result').hidden=true;$('app').cla
 
 /* ================= Destination & moving map ================= */
 function setTarget(end){target=end;document.querySelectorAll('#dest button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.end===end.id)));const hd=$('hDEST');if(hd)hd.textContent=end.id+' · '+end.ap.name;}
-{const d=$('dest');AIRPORTS.forEach(ap=>ap.ends.forEach(e=>{const b=document.createElement('button');b.type='button';b.dataset.end=e.id;b.innerHTML='<b></b><small></small>';b.querySelector('b').textContent=e.id;b.querySelector('small').textContent=ap.name+' · '+fmt(ap.len)+' m · '+String(ap.hdg===e.hdg?ap.hdg:e.hdg).padStart(3,'0')+'°';b.addEventListener('click',()=>setTarget(e));d.appendChild(b);}));setTarget(target);}
+{const d=$('dest');AIRPORTS.forEach(ap=>ap.ends.forEach(e=>{const b=document.createElement('button');b.type='button';b.dataset.end=e.id;b.innerHTML='<b></b><small></small>';b.querySelector('b').textContent=e.id;b.querySelector('small').textContent=ap.name+' · '+fmt(ap.len)+' m · '+String(Math.round(e.hdg)%360).padStart(3,'0')+'°';b.addEventListener('click',()=>setTarget(e));d.appendChild(b);}));setTarget(target);}
 const mapC=$('map'),mapX=mapC.getContext('2d');const MAPR=[20,40];let mapRi=0;
 $('mapRange').addEventListener('click',()=>{mapRi=(mapRi+1)%MAPR.length;$('mapRange').textContent='Map '+MAPR[mapRi]+' nm';});
 function mapXY(x,z,S,sc){return [S/2+(x-ac.pos.x)*sc,S/2+(z-ac.pos.z)*sc];}
@@ -2012,6 +2142,8 @@ function drawMap(){
   const g=mapX;g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,S,S);mapCore(g,S,MAPR[mapRi],10);
 }
 function mapCore(g,S,RNG,fs){const sc=(S/2)/(RNG*1852);const k=fs/10;
+  if(SAT.ready){const [mx,my]=mapXY(-SAT.half,-SAT.half,S,sc);g.save();g.globalAlpha=0.8;g.drawImage(SAT.thumb,mx,my,2*SAT.half*sc,2*SAT.half*sc);g.restore();
+    g.strokeStyle='#ffb432';g.lineWidth=2*k;for(const b of BRIDGES){const [ax,ay]=mapXY(b.cx-b.dx*b.len/2,b.cz-b.dz*b.len/2,S,sc),[bx,by]=mapXY(b.cx+b.dx*b.len/2,b.cz+b.dz*b.len/2,S,sc);g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke();}}
   g.strokeStyle='rgba(63,211,230,.25)';g.lineWidth=1*k;for(let r=5;r<=RNG;r+=5){g.beginPath();g.arc(S/2,S/2,r*1852*sc,0,2*PI);g.stroke();}
   g.fillStyle='rgba(139,154,171,.9)';g.font='600 '+fs+'px IBM Plex Mono, monospace';g.textAlign='center';g.fillText('N',S/2,fs);
   // wind arrow
@@ -2149,7 +2281,7 @@ function frame(now){
   updateHUD(dt);updateRunwaySymbol();if((now/100|0)%2===0)drawMap();updatePanel(dt);renderLever();
 }
 syncSys();updateThrOut();resetFlight();ac.phase='standby';applyMob();
-window.__hawk={PHOTO,setCam:(m)=>{camMode=m;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
+window.__hawk={PHOTO,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
 requestAnimationFrame(frame);
 })();
 </script>

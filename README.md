@@ -14,9 +14,12 @@ Open either file in a browser or serve the folder with any static host. Deployed
 
 Made by Baris Hiz.
 
-## Scenery assets
+## Istanbul scenery
 
-The game loads photo textures from `assets/` and falls back to its generated scenery if they are missing.
+The world is a 72 km square of Istanbul centred on 41.07 N, 29.00 E, flat at sea level. Runways use real threshold coordinates: Istanbul Airport (IST 16R/34L), Sabiha Gökçen (SAW 06L/24R), Atatürk (ISL 05/23) and Samandıra (SMD 18/36). The three Bosphorus bridges are built to their real spans and tower heights and are solid (you can fly under the decks). Golden Horn bridges, the main mosques, Galata Tower, the Maiden's Tower, the Çamlıca tower, palaces and about 50 skyscrapers stand at their real positions, and city blocks are planted wherever the imagery shows built-up land.
 
-- Ground imagery: Sentinel-2 cloudless 2016 by EOX IT Services GmbH (https://s2maps.eu), contains modified Copernicus Sentinel data 2016, licensed CC BY 4.0. A 64 km square of the Mecklenburg lake district around the Müritz.
+The game loads photo textures from `assets/` and falls back to generated scenery if they are missing.
+
+- Ground imagery: Sentinel-2 cloudless 2017 by EOX IT Services GmbH (https://s2maps.eu), contains modified Copernicus Sentinel data 2017, licensed CC BY 4.0.
+- Runway, bridge and landmark positions: © OpenStreetMap contributors (ODbL).
 - Sky panorama and surface photos (grass, asphalt, concrete, corrugated metal, aerial ground): Poly Haven (https://polyhaven.com), CC0.

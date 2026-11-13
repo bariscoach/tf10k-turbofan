@@ -66,7 +66,7 @@ main{display:grid;grid-template-columns:1fr 400px;min-height:0}
 #panel{overflow:auto;border-left:1px solid var(--line);background:var(--panel);padding-block:14px 24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px;min-width:0}
 .sec-h{font-family:var(--font-display);font-weight:600;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-dim);margin:0 0 6px;display:flex;justify-content:space-between;align-items:baseline}
 .sec-h span{font-family:var(--font-mono);letter-spacing:0;text-transform:none;font-weight:400;font-size:11px;color:var(--fg-mute)}
-.thrust{border:1px solid var(--line-2);border-radius:6px;padding:10px 12px;background:var(--panel-2)}
+.thrust{border:1px solid var(--line-2);border-radius:6px;padding:8px 12px;background:var(--panel-2)}
 .thrust .big{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-variant-numeric:tabular-nums}
 .thrust .val{font-family:var(--font-mono);font-weight:600;font-size:34px;line-height:1;color:var(--cyan)}
 .thrust .val small{font-size:14px;font-weight:500;color:var(--fg-dim);margin-left:4px}
@@ -74,7 +74,7 @@ main{display:grid;grid-template-columns:1fr 400px;min-height:0}
 .bar{position:relative;height:10px;border-radius:3px;background:var(--line);margin-top:8px;overflow:hidden}
 .bar i{position:absolute;inset:0 auto 0 0;width:0;background:linear-gradient(90deg,var(--cyan),var(--green));transition:width .15s linear}
 .bar b{position:absolute;top:0;bottom:0;width:1px;background:var(--panel)}
-.gauges{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.gauges{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
 .gauge{border:1px solid var(--line);border-radius:6px;background:var(--panel-2);padding:4px}
 .gauge canvas{display:block;width:100%;aspect-ratio:1/0.92;max-width:100%}
 .ro{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
@@ -92,7 +92,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
 input[type=range]::-moz-range-thumb{width:14px;height:20px;border-radius:4px;background:linear-gradient(180deg,#e9eef3,#9aa6b4);border:1px solid #2a3340;box-shadow:0 2px 6px rgba(0,0,0,.6)}
 input[type=range]:disabled{opacity:.45;cursor:not-allowed}
 input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
-.quad{position:relative;height:200px;margin-top:6px;border-radius:6px;background:radial-gradient(120% 90% at 50% 100%,#1b222c,#0c1117 70%);border:1px solid var(--line);overflow:hidden}
+.quad{position:relative;height:150px;margin-top:6px;border-radius:6px;background:radial-gradient(120% 90% at 50% 100%,#1b222c,#0c1117 70%);border:1px solid var(--line);overflow:hidden}
 .quad canvas{display:block;width:100%;height:100%;cursor:grab;touch-action:none;transition:opacity .2s}
 .quad.locked canvas{opacity:.55;cursor:not-allowed}
 .quad.drag canvas{cursor:grabbing}
@@ -117,11 +117,15 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
 .plist button:hover{border-color:var(--fg-mute)} .plist button.sel{border-color:var(--cyan);color:var(--cyan)}
 .spec{font-size:12px;color:var(--fg-dim);display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0}
 .spec dt{color:var(--fg-mute)} .spec dd{margin:0;font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg-dim)}
+#panel{gap:10px!important}
+.thrust .val{font-size:28px!important}
+.btn{padding:11px 10px!important}
+.gauge{padding:2px!important}
 @media (max-width:900px){
-  #panel .btns{order:-3} #panel .lever{order:-2} #panel .thrust{order:-1}
+  #panel .btns{order:-2} #panel .lever{order:-1} header h1 small,.status .credit{display:none!important} .quad{height:120px}
   header{padding-block:4px} .status{gap:6px}
   button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-  main{grid-template-columns:1fr;grid-template-rows:46vh minmax(0,1fr);grid-template-rows:46dvh minmax(0,1fr)}
+  main{grid-template-columns:1fr;grid-template-rows:38vh minmax(0,1fr);grid-template-rows:38dvh minmax(0,1fr)}
   #panel{border-left:0;border-top:1px solid var(--line)}
   header h1{font-size:19px} header h1 small{display:block;margin:2px 0 0;font-size:12px}
   .lbl{font-size:10px}
@@ -159,6 +163,11 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
     </section>
 
     <aside id="panel">
+      <div class="btns">
+        <button class="btn start" id="btnStart" type="button">Start</button>
+        <button class="btn stop" id="btnStop" type="button" disabled>Shutdown</button>
+      </div>
+
       <div class="thrust">
         <div class="sec-h">Net thrust <span>rated 10,000 lbf sea level static</span></div>
         <div class="big"><div class="val"><span id="thrustVal">0</span><small>lbf</small></div><div class="pct" id="thrustPct">0 % rated</div></div>
@@ -166,7 +175,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
       </div>
 
       <div>
-        <div class="sec-h">Primary engine indications</div>
+        <div class="sec-h">Engine indications</div>
         <div class="gauges">
           <div class="gauge"><canvas id="gN1"></canvas></div>
           <div class="gauge"><canvas id="gEGT"></canvas></div>
@@ -198,11 +207,6 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
         <div class="quad" id="quad"><canvas id="lever" aria-hidden="true"></canvas>
           <input type="range" id="throttle" class="sr" min="0" max="100" step="0.5" value="0" aria-label="Thrust lever" disabled></div>
         <div class="note" id="thrNote">Lever locked until the engine reaches ground idle.</div>
-      </div>
-
-      <div class="btns">
-        <button class="btn start" id="btnStart" type="button">Start</button>
-        <button class="btn stop" id="btnStop" type="button" disabled>Shutdown</button>
       </div>
 
       <div class="chips">

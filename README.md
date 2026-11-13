@@ -6,6 +6,8 @@ Two single-file three.js + Web Audio apps built around the same simulated engine
 
 **`testcell.html` — TF-10K turbofan test cell.** Cutaway 3D engine with FADEC-style auto start, Boeing-style 3D thrust lever, fuel cutoff and spool-down; live EICAS gauges, fuel consumption; numbered hotspots explaining each component; CFM56-style synthesized sound.
 
+On phones and tablets the game switches to a full-screen touch layout: a touch stick, a vertical throttle with TO/GA, CLB and IDLE, a button bar for flaps, gear, brakes, speed brake and the autopilot drawer, a rotate-to-landscape prompt, safe-area padding and a lighter graphics preset.
+
 Open either file in a browser or serve the folder with any static host. Deployed with Vercel.
 
 Made by Baris Hiz.

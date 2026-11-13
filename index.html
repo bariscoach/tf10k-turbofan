@@ -75,7 +75,7 @@ main{display:grid;grid-template-columns:1fr 372px;min-height:0}
 #fma{position:absolute;left:50%;top:62px;transform:translateX(-50%);display:flex;gap:0;border:1px solid rgba(125,245,160,.45);border-radius:4px;background:rgba(10,14,20,.55);font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:.08em;white-space:nowrap}
 #fma span{padding:2px 10px;border-right:1px solid rgba(125,245,160,.3);min-width:64px;text-align:center} #fma span:last-child{border-right:0}
 #fma .arm{color:#e3eaf2} #fma .act{color:var(--hud)} #fma .off{color:var(--fg-mute)} #fma .warn{color:var(--amber)}
-#view.ckView .hb,#view.ckView #cdi,#view.ckView #rwySym{display:none}
+#view.ckView .hb,#view.ckView #cdi,#view.ckView #rwySym,#view.ckView #map,#view.ckView #mapRange{display:none}
 #view.ckView #fma{top:12px}
 #app.ckFull main{grid-template-columns:1fr;grid-template-rows:1fr} #app.ckFull #panel{display:none}
 #ckTip{position:absolute;z-index:6;max-width:260px;padding:5px 9px;border-radius:5px;background:rgba(10,14,20,.9);border:1px solid var(--line-2);font-size:12px;line-height:1.35;color:var(--fg);pointer-events:none}
@@ -1382,56 +1382,177 @@ function updateSmoke(dt){for(const s of smoke){if(s.life<=0)continue;s.life-=dt;
 /* ================= Virtual cockpit (as if a pilot sat in the nose) ================= */
 const EYE=new THREE.Vector3(0,1.27,-3.9);
 const cockpit=new THREE.Group();cockpit.position.copy(EYE);cockpit.visible=false;drone.add(cockpit);
-const ck={headY:0,headP:-0.08,fov:72,drag:null,t:1,was:false,autoP:0,eoT:0,eoDist:0,eoLos:0,eoLock:false,glance:false,glP:0};
+const CKP=-0.17;const ck={headY:0,headP:CKP,fov:74,drag:null,t:1,was:false,autoP:0,eoT:0,eoDist:0,eoLos:0,eoLock:false,glance:false,glP:0};
+if(MOB)ck.headP=-0.26;
 const ckTex={};
-{const mPanel=std({color:0x22272d,roughness:0.85,metalness:0.2}),mFrame=std({color:0x3b4148,roughness:0.6,metalness:0.4}),mBlack=std({color:0x0d0f12,roughness:0.9}),
-  mGrip=std({color:0x1a1c1f,roughness:0.7}),mGlass=new THREE.MeshStandardMaterial({color:0xaed3e6,transparent:true,opacity:0.07,roughness:0.05,metalness:0.1,depthWrite:false,side:THREE.DoubleSide});
+const DS=MOB?1:2; // display canvas scale: drawing code works in 512-unit space, canvases are 512*DS
+{const mShell=std({color:0x2b3137,roughness:0.85,metalness:0.15}),mFrame=std({color:0x3a4047,roughness:0.5,metalness:0.55}),mBlack=std({color:0x0c0e10,roughness:0.9}),
+  mCoam=std({color:0x121417,roughness:0.97,metalness:0}),mBezel=std({color:0x15181c,roughness:0.6,metalness:0.3}),mGrip=std({color:0x1b1d20,roughness:0.75}),
+  mMetal=std({color:0x8a939c,roughness:0.35,metalness:0.8}),mCush=std({color:0x3c3f34,roughness:0.95}),mYel=std({color:0xe1b012,roughness:0.5}),mRed=std({color:0xb8261d,roughness:0.5}),
+  mMirror=std({color:0xc9d3db,roughness:0.04,metalness:1}),mBtn=std({color:0x4a525b,roughness:0.55,metalness:0.4}),
+  mGlass=new THREE.MeshStandardMaterial({color:0xaed3e6,transparent:true,opacity:0.07,roughness:0.05,metalness:0.1,depthWrite:false,side:THREE.DoubleSide});
  const add=(m,x,y,z,parent)=>{m.position.set(x,y,z);(parent||cockpit).add(m);return m;};
- // canopy glass and frame
- const dome=new THREE.Mesh(new THREE.SphereGeometry(1,40,20,0,2*PI,0,PI/2),mGlass);dome.scale.set(0.64,0.5,1.7);add(dome,0,-0.28,-0.05);
- for(const z of[-0.92,0.62]){const arch=new THREE.Mesh(new THREE.TorusGeometry(0.62,0.022,8,40,PI),mFrame);arch.scale.y=0.78;add(arch,0,-0.27,z);}
- for(const sd of[-1,1]){add(new THREE.Mesh(new THREE.BoxGeometry(0.07,0.09,2.2),mFrame),0.62*sd,-0.3,-0.05);}
- add(new THREE.Mesh(new THREE.BoxGeometry(0.04,0.03,0.9),mFrame),0,0.21,-0.32).rotation.x=0.12;
- // glareshield and instrument panel
- const gs=add(new THREE.Mesh(new THREE.BoxGeometry(1.1,0.05,0.3),mPanel),0,-0.33,-0.84);gs.rotation.x=0.08;
- add(new THREE.Mesh(new THREE.BoxGeometry(1.1,0.025,0.03),mBlack),0,-0.315,-0.69);
- const panel=new THREE.Group();panel.position.set(0,-0.79,-0.8);panel.rotation.x=-0.32;cockpit.add(panel);
- add(new THREE.Mesh(new THREE.BoxGeometry(1.12,0.46,0.05),mPanel),0,0,-0.03,panel);
- const mkScreen=(name,x,w,h)=>{const c=document.createElement('canvas');c.width=512;c.height=Math.round(512*h/w);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;
-   add(new THREE.Mesh(new THREE.BoxGeometry(w+0.03,h+0.03,0.02),mBlack),x,0.01,0,panel);
-   const scr=add(new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:t,toneMapped:false})),x,0.01,0.012,panel);ckTex[name]={c,g:c.getContext('2d'),t,W:512,H:c.height};return scr;};
- mkScreen('eng',-0.37,0.3,0.3);mkScreen('pfd',0,0.34,0.34);ck.ndScr=mkScreen('nd',0.37,0.3,0.3);
- {const oc=document.createElement('canvas');oc.width=oc.height=512;const ot=new THREE.CanvasTexture(oc);ckTex.eo={c:oc,g:oc.getContext('2d'),t:ot,W:512,H:512};
-  ck.eoOv=add(new THREE.Mesh(new THREE.PlaneGeometry(0.3,0.3),new THREE.MeshBasicMaterial({map:ot,transparent:true,depthWrite:false,toneMapped:false})),0.37,0.01,0.014,panel);ck.eoOv.renderOrder=4;}
- for(let i=0;i<6;i++){add(new THREE.Mesh(new THREE.BoxGeometry(0.035,0.02,0.015),std({color:0x5d666f,roughness:0.5})),-0.5+i*0.2,-0.205,0.01,panel);}
- // HUD combiner glass
- const hc=document.createElement('canvas');hc.width=hc.height=512;const ht=new THREE.CanvasTexture(hc);ckTex.hud={c:hc,g:hc.getContext('2d'),t:ht,W:512,H:512};
- const hud=add(new THREE.Mesh(new THREE.PlaneGeometry(0.27,0.27),new THREE.MeshBasicMaterial({map:ht,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false})),0,-0.05,-0.74);hud.rotation.x=-0.05;
- const hglass=add(new THREE.Mesh(new THREE.PlaneGeometry(0.29,0.29),new THREE.MeshBasicMaterial({color:0x9fd8c0,transparent:true,opacity:0.06,depthWrite:false})),0,-0.05,-0.745);hglass.rotation.x=-0.05;
- for(const sd of[-1,1])add(new THREE.Mesh(new THREE.BoxGeometry(0.007,0.3,0.007),mFrame),0.15*sd,-0.18,-0.75);
- // cockpit tub: floor and side walls so the outer skin isn't seen from inside
- add(new THREE.Mesh(new THREE.BoxGeometry(1.1,0.04,1.9),mPanel),0,-1.0,-0.2);
- for(const sd of[-1,1])add(new THREE.Mesh(new THREE.BoxGeometry(0.04,0.72,1.9),mPanel),0.55*sd,-0.64,-0.2);
- add(new THREE.Mesh(new THREE.BoxGeometry(1.1,0.68,0.04),mPanel),0,-0.66,-1.12);
- add(new THREE.Mesh(new THREE.BoxGeometry(1.1,0.72,0.04),mPanel),0,-0.64,0.75);
- // side consoles
- for(const sd of[-1,1]){add(new THREE.Mesh(new THREE.BoxGeometry(0.24,0.1,0.95),mPanel),0.43*sd,-0.56,-0.2);
-   for(let i=0;i<5;i++)add(new THREE.Mesh(new THREE.BoxGeometry(0.03,0.015,0.02),std({color:i%2?0x6b7480:0xc23b2f,roughness:0.5})),0.43*sd+(i%2?0.05:-0.05),-0.5,-0.55+i*0.1);}
- // side-stick (right) and throttle (left)
- ck.stick=new THREE.Group();ck.stick.position.set(0.42,-0.5,-0.32);cockpit.add(ck.stick);
- add(new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.045,0.05,12),mBlack),0,0.02,0,ck.stick);
- add(new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.014,0.12,10),mFrame),0,0.09,0,ck.stick);
- const grip=add(new THREE.Mesh(new THREE.CapsuleGeometry(0.022,0.07,6,12),mGrip),0,0.18,0.0,ck.stick);grip.rotation.x=0.18;
- add(new THREE.Mesh(new THREE.BoxGeometry(0.012,0.012,0.02),std({color:0xc23b2f,roughness:0.5})),0,0.235,-0.015,ck.stick);
- ck.thr=new THREE.Group();ck.thr.position.set(-0.43,-0.5,-0.2);cockpit.add(ck.thr);
- add(new THREE.Mesh(new THREE.BoxGeometry(0.02,0.012,0.36),mBlack),-0.43,-0.505,-0.2);
- add(new THREE.Mesh(new THREE.BoxGeometry(0.014,0.1,0.014),mFrame),0,0.05,0,ck.thr);
- add(new THREE.Mesh(new THREE.BoxGeometry(0.05,0.04,0.07),mGrip),0,0.11,0,ck.thr);
- // rudder pedals
- ck.ped=[];for(const sd of[-1,1]){const p=add(new THREE.Mesh(new THREE.BoxGeometry(0.09,0.14,0.025),mFrame),0.13*sd,-0.86,-0.92);p.rotation.x=-0.5;ck.ped.push(p);}
+ const box=(w,h,d,mat,x,y,z,parent)=>add(new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat),x,y,z,parent);
+ const cyl=(r0,r1,h,mat,x,y,z,parent,seg)=>add(new THREE.Mesh(new THREE.CylinderGeometry(r0,r1,h,seg||14),mat),x,y,z,parent);
+ // engraved faceplates: canvas texture with backlit white legends, knob scales, screws; real knobs/toggles are added on top for depth
+ const plate=(w,d,draw)=>{const W=Math.round(1400*w*DS/2)*2,H=Math.round(1400*d*DS/2)*2;const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
+   const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#20252b');gr.addColorStop(1,'#181c21');g.fillStyle=gr;g.fillRect(0,0,W,H);
+   g.strokeStyle='#323a43';g.lineWidth=2*DS;g.strokeRect(DS,DS,W-2*DS,H-2*DS);
+   const scr=(x,y)=>{g.fillStyle='#4b535c';g.beginPath();g.arc(x,y,4*DS,0,2*PI);g.fill();g.strokeStyle='#1a1d21';g.lineWidth=1.2*DS;g.beginPath();g.moveTo(x-3*DS,y-1*DS);g.lineTo(x+3*DS,y+1*DS);g.stroke();};
+   scr(9*DS,9*DS);scr(W-9*DS,9*DS);scr(9*DS,H-9*DS);scr(W-9*DS,H-9*DS);
+   const P={g,W,H,u:x=>x*W,v:y=>y*H,
+     txt(t,x,y,sz,col,al){g.fillStyle=col||'#e9eef2';g.font='700 '+Math.round((sz||13)*DS)+'px Rajdhani, Arial Narrow, sans-serif';g.textAlign=al||'center';g.textBaseline='middle';g.fillText(t,x*W,y*H);},
+     scale(x,y,r,n,labels){g.strokeStyle='#d8dee4';g.lineWidth=1.4*DS;for(let i=0;i<n;i++){const an=PI*0.75+i/(n-1)*PI*1.5;const R=r*W;g.beginPath();g.moveTo(x*W+cos(an)*R*1.25,y*H+sin(an)*R*1.25);g.lineTo(x*W+cos(an)*R*1.5,y*H+sin(an)*R*1.5);g.stroke();
+       if(labels&&labels[i]){g.fillStyle='#d8dee4';g.font='700 '+Math.round(9*DS)+'px Rajdhani, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(labels[i],x*W+cos(an)*R*2.05,y*H+sin(an)*R*2.05);}}},
+     lcd(x,y,w,h,t,col){g.fillStyle='#070a0c';g.fillRect((x-w/2)*W,(y-h/2)*H,w*W,h*H);g.strokeStyle='#39424c';g.lineWidth=1.5*DS;g.strokeRect((x-w/2)*W,(y-h/2)*H,w*W,h*H);g.fillStyle=col||'#ffb432';g.font='600 '+Math.round(h*H*0.62)+'px IBM Plex Mono, monospace';g.textAlign='center';g.textBaseline='middle';g.fillText(t,x*W,y*H+1);},
+     ann(x,y,w,h,t,col){g.fillStyle='#0b0d10';g.fillRect((x-w/2)*W,(y-h/2)*H,w*W,h*H);g.strokeStyle='#3a434d';g.strokeRect((x-w/2)*W,(y-h/2)*H,w*W,h*H);g.fillStyle=col||'#5a636c';g.font='700 '+Math.round(h*H*0.5)+'px Rajdhani, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(t,x*W,y*H+1);},
+     line(x0,y0,x1,y1){g.strokeStyle='#596470';g.lineWidth=1.4*DS;g.beginPath();g.moveTo(x0*W,y0*H);g.lineTo(x1*W,y1*H);g.stroke();},
+     guard(x,y){g.strokeStyle='#d8dee4';g.lineWidth=1.2*DS;g.strokeRect(x*W-9*DS,y*H-12*DS,18*DS,24*DS);},
+     stripes(x,y,w,h){g.save();g.beginPath();g.rect((x-w/2)*W,(y-h/2)*H,w*W,h*H);g.clip();g.fillStyle='#e1b012';g.fillRect((x-w/2)*W,(y-h/2)*H,w*W,h*H);g.fillStyle='#111';for(let i=-10;i<30;i++){g.beginPath();g.moveTo((x-w/2)*W+i*12*DS,(y-h/2)*H);g.lineTo((x-w/2)*W+i*12*DS+6*DS,(y-h/2)*H);g.lineTo((x-w/2)*W+i*12*DS+6*DS-h*H,(y+h/2)*H);g.lineTo((x-w/2)*W+i*12*DS-h*H,(y+h/2)*H);g.fill();}g.restore();}};
+   draw(P);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;
+   return std({map:t,roughness:0.75,metalness:0.2});};
+ // a console faceplate lying flat (u across x, v along z), with knobs and toggles at plate-relative (u,v)
+ const consolePlate=(cx,cz,w,d,draw,knobs,toggles)=>{const g=new THREE.Group();g.position.set(cx,-0.5095,cz);cockpit.add(g);
+   const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),plate(w,d,draw));m.rotation.x=-PI/2;g.add(m);
+   (knobs||[]).forEach(([u,v,r])=>{const k=cyl(r,r*1.08,0.012,mGrip,(u-0.5)*w,0.006,(v-0.5)*d,g,18);cyl(r*0.25,r*0.25,0.0125,mMetal,(u-0.5)*w,0.007,(v-0.5)*d,g,8);
+     const ptr=box(r*0.16,0.0128,r*0.9,std({color:0xe9eef2,roughness:0.5}),(u-0.5)*w,0.0065,(v-0.5)*d-r*0.45,g);ptr.rotation.y=Math.random()*1.5-0.75;});
+   (toggles||[]).forEach(([u,v])=>{box(0.016,0.006,0.02,mBtn,(u-0.5)*w,0.003,(v-0.5)*d,g);const t=cyl(0.0028,0.0035,0.026,mMetal,(u-0.5)*w,0.014,(v-0.5)*d,g,8);t.rotation.x=(Math.random()<0.5?-0.45:0.45);});
+   return g;};
+
+ // ---------- canopy: windscreen arch, bubble, canopy bow, sills, mirrors ----------
+ const dome=new THREE.Mesh(new THREE.SphereGeometry(1,48,24,0,2*PI,0,PI/2),mGlass);dome.scale.set(0.64,0.5,1.7);add(dome,0,-0.28,-0.05);
+ {const arch=new THREE.Mesh(new THREE.TorusGeometry(0.62,0.03,10,48,PI),mFrame);arch.scale.set(1,0.78,1.6);add(arch,0,-0.27,-0.97);arch.rotation.x=0.15;
+  const bow=new THREE.Mesh(new THREE.TorusGeometry(0.62,0.034,10,48,PI),mFrame);bow.scale.y=0.78;add(bow,0,-0.27,0.62);
+  const bow2=new THREE.Mesh(new THREE.TorusGeometry(0.6,0.012,8,48,PI),mBlack);bow2.scale.y=0.76;add(bow2,0,-0.27,0.58);
+  // rear-view mirrors on the windscreen arch
+  for(const[x,yaw]of[[-0.27,0.25],[0,0],[0.27,-0.25]]){const mg=new THREE.Group();mg.position.set(x,(x?0.115:0.17),x?-0.86:-0.9);mg.rotation.set(-0.35,yaw,0);cockpit.add(mg);
+    box(0.135,0.045,0.016,mBlack,0,0,0,mg);const mr=box(0.125,0.037,0.002,mMirror,0,0,0.0085,mg);mr.material=mMirror;box(0.012,0.02,0.02,mFrame,0,0.028,-0.008,mg);}}
+ for(const sd of[-1,1]){ // canopy sills with rails, latches and grab handles
+  box(0.08,0.035,2.1,mFrame,0.6*sd,-0.3,-0.05);box(0.03,0.012,2.0,mBlack,0.575*sd,-0.28,-0.05);
+  for(let i=0;i<5;i++)box(0.02,0.022,0.035,mMetal,0.585*sd,-0.268,-0.8+i*0.38);
+  const h=new THREE.Mesh(new THREE.TorusGeometry(0.045,0.007,8,16,PI),mYel);h.rotation.set(0,PI/2,0);add(h,0.57*sd,-0.25,-0.62);}
+
+ // ---------- glareshield coaming with padded lip, HUD, AOA indexer, master warning / caution ----------
+ {const sh=new THREE.Shape();sh.moveTo(-0.5,0);sh.lineTo(0.5,0);sh.lineTo(0.47,-0.2);sh.quadraticCurveTo(0,-0.34,-0.47,-0.2);sh.closePath();
+  const cg=new THREE.ExtrudeGeometry(sh,{depth:0.025,bevelEnabled:true,bevelThickness:0.008,bevelSize:0.008,bevelSegments:2});cg.rotateX(PI/2);
+  add(new THREE.Mesh(cg,mCoam),0,-0.198,-0.69);
+  const lip=new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,1.0,14).rotateZ(PI/2),mCoam);add(lip,0,-0.212,-0.69);
+  for(const sd of[-1,1]){const w=box(0.06,0.02,0.36,mCoam,0.52*sd,-0.24,-0.78);w.rotation.z=-0.5*sd;}
+  // stitched seam on the lip
+  box(0.98,0.002,0.002,std({color:0x2c3036,roughness:1}),0,-0.196,-0.685);}
+ // HUD: projector housing under the coaming, combiner frame and glass
+ box(0.22,0.05,0.12,mBezel,0,-0.21,-0.8);
+ const hc=document.createElement('canvas');hc.width=hc.height=512*DS;const ht=new THREE.CanvasTexture(hc);ckTex.hud={c:hc,g:hc.getContext('2d'),t:ht,W:512*DS,H:512*DS};
+ const hud=add(new THREE.Mesh(new THREE.PlaneGeometry(0.27,0.27),new THREE.MeshBasicMaterial({map:ht,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false})),0,-0.05,-0.76);hud.rotation.x=-0.05;
+ const hglass=add(new THREE.Mesh(new THREE.PlaneGeometry(0.29,0.29),new THREE.MeshBasicMaterial({color:0x9fd8c0,transparent:true,opacity:0.07,depthWrite:false})),0,-0.05,-0.765);hglass.rotation.x=-0.05;
+ for(const sd of[-1,1]){box(0.012,0.31,0.014,mFrame,0.152*sd,-0.05,-0.77);box(0.02,0.04,0.03,mBezel,0.152*sd,-0.19,-0.78);}
+ box(0.316,0.012,0.016,mFrame,0,0.104,-0.77);
+ ck.lamps={};
+ const lamp=(name,x,y,z,w,h,text,col)=>{const c=document.createElement('canvas');c.width=128*DS;c.height=Math.round(128*DS*h/w);const g=c.getContext('2d');const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;
+   const m=add(new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:t,toneMapped:false})),x,y,z);m.rotation.x=-0.3;box(w+0.01,h+0.01,0.012,mBezel,x,y-0.001,z-0.007);
+   ck.lamps[name]={g,c,t,text,col,on:null,set(on){if(on===this.on)return;this.on=on;const W=c.width,H=c.height;g.fillStyle=on?this.col:'#16191d';g.fillRect(0,0,W,H);g.fillStyle=on?'#1b0d06':'#4a525b';g.font='700 '+Math.round(H*0.36)+'px Rajdhani, sans-serif';g.textAlign='center';g.textBaseline='middle';
+     this.text.split('\n').forEach((l,i,a)=>g.fillText(l,W/2,H/2+(i-(a.length-1)/2)*H*0.38));t.needsUpdate=true;}};ck.lamps[name].set(false);};
+ lamp('warn',0.22,-0.17,-0.74,0.06,0.034,'MASTER\nWARN','#ff3b30');lamp('caut',0.29,-0.17,-0.74,0.06,0.034,'MASTER\nCAUT','#ffb020');
+ lamp('aoaHi',-0.22,-0.152,-0.74,0.034,0.014,'▼','#37e36e');lamp('aoaOn',-0.22,-0.17,-0.74,0.034,0.014,'●','#37e36e');lamp('aoaLo',-0.22,-0.188,-0.74,0.034,0.014,'▲','#ffb020');
+ lamp('fire',-0.29,-0.17,-0.74,0.06,0.034,'ENG\nFIRE','#ff3b30');
+
+ // ---------- large-area display: three portals in one bezel, with option-select keys ----------
+ const lad=new THREE.Group();lad.position.set(0,-0.505,-0.735);lad.rotation.x=-0.28;cockpit.add(lad);ck.lad=lad;
+ box(1.02,0.36,0.08,mShell,0,-0.01,-0.05,lad); // shroud
+ box(0.95,0.31,0.024,mBezel,0,0,-0.004,lad);
+ box(0.95,0.008,0.03,mFrame,0,0.158,0,lad);
+ const mkScreen=(name,x,w,h)=>{const c=document.createElement('canvas');c.width=512*DS;c.height=Math.round(512*DS*h/w);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;
+   box(w+0.012,h+0.012,0.006,mBlack,x,0,0.009,lad);
+   const scr=add(new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:t,toneMapped:false})),x,0,0.0125,lad);ckTex[name]={c,g:c.getContext('2d'),t,W:512*DS,H:c.height};
+   // option-select keys above and below the portal
+   for(const yy of[1,-1])for(let i=0;i<5;i++)box(0.03,0.012,0.008,mBtn,x-0.104+i*0.052,yy*0.144,0.012,lad);
+   // rocker switches on the side of each portal
+   for(const sd of[-1,1])box(0.008,0.035,0.008,mBtn,x+sd*(w/2+0.012),0.09,0.012,lad);
+   return scr;};
+ mkScreen('eng',-0.305,0.26,0.26);mkScreen('pfd',0,0.26,0.26);ck.ndScr=mkScreen('nd',0.305,0.26,0.26);
+ {const oc=document.createElement('canvas');oc.width=oc.height=512*DS;const ot=new THREE.CanvasTexture(oc);ckTex.eo={c:oc,g:oc.getContext('2d'),t:ot,W:512*DS,H:512*DS};
+  ck.eoOv=add(new THREE.Mesh(new THREE.PlaneGeometry(0.26,0.26),new THREE.MeshBasicMaterial({map:ot,transparent:true,depthWrite:false,toneMapped:false})),0.305,0,0.0145,lad);ck.eoOv.renderOrder=4;}
+ // annunciator strip under the display
+ {const m=new THREE.Mesh(new THREE.PlaneGeometry(0.6,0.03),plate(0.6,0.03,P=>{['FUEL LOW','HYD','GEN','OXY','FLCS','ENG','APU','CANOPY'].forEach((t,i)=>P.ann(0.07+i*0.122,0.5,0.11,0.62,t));}));add(m,0,-0.2,0.004,lad);}
+ // knee panel and side panels below the display
+ {const m=new THREE.Mesh(new THREE.PlaneGeometry(0.42,0.2),plate(0.42,0.2,P=>{P.txt('ECM',0.12,0.14,12);P.txt('IFF',0.5,0.14,12);P.txt('DATA LINK',0.86,0.14,12);
+    P.scale(0.12,0.55,0.06,6,['OFF','STBY','1','2','3','AUTO']);P.scale(0.5,0.55,0.06,5,['OFF','STBY','LOW','NORM','EMER']);P.lcd(0.86,0.5,0.22,0.16,'L16 ON','#55db8e');P.txt('MASTER ARM',0.5,0.88,11,'#e1b012');P.guard(0.66,0.88);}));
+  m.position.set(0,-0.73,-0.7);m.rotation.x=-0.5;cockpit.add(m);
+  [[0.12,0.55],[0.5,0.55]].forEach(([u,v])=>{const k=cyl(0.016,0.018,0.014,mGrip,(u-0.5)*0.42,-0.73+(0.5-v)*0.2*Math.cos(0.5)+0.006,-0.7-(0.5-v)*0.2*Math.sin(0.5)+0.004);k.rotation.x=-0.5+PI/2;});
+  box(0.44,0.22,0.06,mShell,0,-0.735,-0.735).rotation.x=-0.5;}
+ // left: gear panel area; right: fuel quantity and clock
+ {const m=new THREE.Mesh(new THREE.PlaneGeometry(0.075,0.24),plate(0.075,0.24,P=>{P.txt('FUEL LB',0.5,0.06,11);P.txt('BINGO',0.5,0.3,10);P.scale(0.5,0.44,0.13,6,['0','','','','','2K']);P.txt('ELAPSED',0.5,0.64,10);P.stripes(0.5,0.92,0.8,0.05);}));
+  m.position.set(0.505,-0.52,-0.71);m.rotation.x=-0.28;cockpit.add(m);
+  ck.lcds={};const lcdM=(name,v,col)=>{const c=document.createElement('canvas');c.width=128*DS;c.height=32*DS;const g=c.getContext('2d');const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;
+    const mm=new THREE.Mesh(new THREE.PlaneGeometry(0.05,0.0125),new THREE.MeshBasicMaterial({map:t,toneMapped:false}));mm.position.set(0,(0.5-v)*0.24,0.001);m.add(mm);
+    ck.lcds[name]={txt:'',set(x){if(x===this.txt)return;this.txt=x;g.fillStyle='#050708';g.fillRect(0,0,c.width,c.height);g.fillStyle=col;g.font='600 '+(24*DS)+'px IBM Plex Mono, monospace';g.textAlign='center';g.textBaseline='middle';g.fillText(x,c.width/2,c.height/2+DS);t.needsUpdate=true;}};};
+  lcdM('fuel',0.15,'#ffb432');lcdM('clock',0.75,'#55db8e');}
+
+ // ---------- cockpit tub: floor, walls, front bulkhead, structure ----------
+ box(1.1,0.04,1.9,mShell,0,-1.0,-0.2);
+ for(const sd of[-1,1]){box(0.04,0.72,1.9,mShell,0.55*sd,-0.64,-0.2);
+   for(let i=0;i<6;i++)box(0.012,0.6,0.018,mFrame,0.528*sd,-0.66,-0.95+i*0.3); // frames
+   box(0.012,0.02,1.9,mFrame,0.528*sd,-0.4,-0.2);}
+ box(1.1,0.68,0.04,mShell,0,-0.66,-1.12);box(1.1,0.72,0.04,mShell,0,-0.64,0.75);
+ // rudder pedals on rails
+ ck.ped=[];for(const sd of[-1,1]){box(0.02,0.015,0.3,mFrame,0.13*sd,-0.97,-0.9);const p=new THREE.Group();p.position.set(0.13*sd,-0.86,-0.92);cockpit.add(p);
+   box(0.1,0.15,0.02,mMetal,0,0,0,p);box(0.1,0.02,0.04,mBlack,0,-0.07,0.02,p);for(let i=0;i<4;i++)box(0.09,0.006,0.004,mBlack,0,-0.05+i*0.03,0.011,p);p.rotation.x=-0.5;ck.ped.push(p);}
+
+ // ---------- side consoles ----------
+ for(const sd of[-1,1]){box(0.24,0.1,0.95,mShell,0.43*sd,-0.56,-0.2);box(0.012,0.1,0.95,mFrame,(0.43-0.12)*sd,-0.56,-0.2);}
+ // left: flap selector, throttle quadrant, speed brake/brakes, fuel/engine panel
+ consolePlate(-0.43,-0.56,0.22,0.2,P=>{P.txt('FLAPS',0.3,0.12,14);P.txt('0',0.62,0.28,12);P.txt('15',0.62,0.5,12);P.txt('30',0.62,0.72,12);P.line(0.5,0.22,0.5,0.8);P.txt('LDG LT',0.86,0.12,11);P.txt('ENG START',0.86,0.6,10);});
+ consolePlate(-0.43,-0.2,0.22,0.5,P=>{P.line(0.62,0.08,0.62,0.92);P.txt('AB',0.82,0.12,12,'#ff8c4a');P.txt('MIL',0.82,0.28,12);P.txt('IDLE',0.82,0.82,12);P.txt('OFF',0.82,0.93,11,'#ff5347');
+   for(let i=0;i<9;i++)P.line(0.55,0.12+i*0.09,0.58,0.12+i*0.09);P.txt('FRICTION',0.22,0.88,10);P.scale(0.22,0.74,0.045,5);P.txt('THROTTLE',0.22,0.1,12);P.txt('ENG',0.22,0.3,11);P.txt('JFS',0.22,0.45,11);P.guard(0.22,0.55);},
+   [[0.22,0.74,0.014]],[[0.22,0.55]]);
+ consolePlate(-0.43,0.15,0.22,0.22,P=>{P.txt('FUEL',0.25,0.15,12);P.scale(0.25,0.42,0.06,4,['OFF','NORM','AFT','FWD']);P.txt('EXT LT',0.72,0.15,12);P.scale(0.72,0.42,0.06,4,['OFF','DIM','BRT','FLASH']);},
+   [[0.25,0.42,0.016],[0.72,0.42,0.016]]);
+ // right: flight control panel, side-stick, comm, nav, oxygen
+ consolePlate(0.43,-0.56,0.22,0.2,P=>{P.txt('FLCS',0.5,0.12,14);P.ann(0.28,0.4,0.36,0.14,'FLCS RDY','#37e36e');P.ann(0.72,0.4,0.36,0.14,'DUAL');});
+ consolePlate(0.43,-0.25,0.22,0.24,P=>{P.txt('STICK',0.5,0.1,12);P.txt('TRIM',0.18,0.9,10);P.txt('ROLL',0.82,0.9,10);P.scale(0.18,0.68,0.05,5);P.scale(0.82,0.68,0.05,5);},[[0.18,0.68,0.014],[0.82,0.68,0.014]]);
+ consolePlate(0.43,0.02,0.22,0.22,P=>{P.txt('COMM 1',0.3,0.1,12);P.lcd(0.3,0.26,0.42,0.13,'121.500');P.txt('COMM 2',0.73,0.1,12);P.lcd(0.73,0.26,0.42,0.13,'243.000');P.txt('VOL',0.3,0.88,10);P.txt('SQL',0.73,0.88,10);P.scale(0.3,0.62,0.05,6);P.scale(0.73,0.62,0.05,6);},
+   [[0.3,0.62,0.016],[0.73,0.62,0.016]]);
+ consolePlate(0.43,0.22,0.22,0.16,P=>{P.txt('OXYGEN',0.3,0.15,11);P.lcd(0.3,0.5,0.4,0.24,'98%','#55db8e');P.txt('NAV',0.75,0.15,11);P.scale(0.75,0.6,0.06,4,['OFF','INS','GPS','BLND']);},[[0.75,0.6,0.016]]);
+
+ // ---------- side-stick (right) with boot, curved grip, trigger, hat switches and pinky lever ----------
+ ck.stick=new THREE.Group();ck.stick.position.set(0.43,-0.5,-0.3);cockpit.add(ck.stick);
+ cyl(0.04,0.05,0.04,mBlack,0,0.015,0,ck.stick,16);
+ for(let i=0;i<4;i++)cyl(0.026-i*0.003,0.03-i*0.003,0.012,mGrip,0,0.04+i*0.011,0,ck.stick,14); // rubber boot
+ cyl(0.011,0.013,0.08,mFrame,0,0.1,0,ck.stick,10);
+ {const pts=[];for(let i=0;i<=12;i++){const t=i/12;pts.push(new THREE.Vector2(0.021+0.01*sin(t*PI)-0.006*t,t*0.12));}
+  const grip=new THREE.Mesh(new THREE.LatheGeometry(pts,18),mGrip);grip.scale.set(0.9,1,1.15);grip.position.set(0,0.13,0.004);grip.rotation.x=0.22;ck.stick.add(grip);
+  const top=new THREE.Mesh(new THREE.SphereGeometry(0.019,14,10,0,2*PI,0,PI/2),mGrip);top.position.set(0,0.248,-0.022);top.rotation.x=0.22;ck.stick.add(top);
+  box(0.014,0.006,0.014,mBtn,0,0.255,-0.03,ck.stick).rotation.x=0.22;box(0.006,0.008,0.006,mBlack,0,0.262,-0.03,ck.stick);       // trim hat
+  box(0.01,0.01,0.01,mRed,0.012,0.245,-0.008,ck.stick);                                                                             // red button
+  const trig=box(0.01,0.03,0.008,mMetal,0,0.19,-0.04,ck.stick);trig.rotation.x=0.4;                                                 // trigger
+  box(0.03,0.008,0.012,mMetal,0,0.16,0.03,ck.stick);                                                                                // pinky lever
+  box(0.008,0.035,0.06,mGrip,-0.026,0.2,0.0,ck.stick);}                                                                             // palm rest
+ // ---------- throttle (left): stem, chunky grip with switches ----------
+ ck.thr=new THREE.Group();ck.thr.position.set(-0.4,-0.5,-0.2);cockpit.add(ck.thr);
+ box(0.016,0.1,0.016,mFrame,0,0.05,0,ck.thr);
+ const tgrip=box(0.05,0.045,0.08,mGrip,0,0.115,0,ck.thr);
+ box(0.04,0.03,0.012,mGrip,-0.01,0.12,0.045,ck.thr);box(0.012,0.012,0.012,mBtn,0.02,0.142,-0.01,ck.thr);box(0.01,0.01,0.01,mRed,0.02,0.142,0.02,ck.thr);
+ cyl(0.008,0.008,0.006,mMetal,-0.02,0.139,-0.02,ck.thr,10);box(0.006,0.02,0.03,mBtn,0.027,0.115,0.0,ck.thr);
+ box(0.02,0.012,0.36,mBlack,-0.4,-0.505,-0.2); // slot
+ // ---------- ejection seat: headbox, back cushion, harness, firing handle ----------
+ {const sg=new THREE.Group();sg.position.set(0,0,0.32);cockpit.add(sg);
+  box(0.36,0.75,0.06,mShell,0,-0.45,0.06,sg);box(0.3,0.52,0.05,mCush,0,-0.5,0.0,sg);
+  box(0.3,0.3,0.14,mShell,0,0.06,0.07,sg);box(0.24,0.16,0.02,mCush,0,0.02,0.0,sg);
+  {const c=document.createElement('canvas');c.width=256;c.height=96;const g=c.getContext('2d');g.fillStyle='#e1b012';g.fillRect(0,0,256,96);g.fillStyle='#111';g.font='700 34px Rajdhani, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('DANGER',128,30);g.font='700 20px Rajdhani, sans-serif';g.fillText('EJECTION SEAT',128,70);
+   const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;add(new THREE.Mesh(new THREE.PlaneGeometry(0.13,0.05),std({map:t,roughness:0.6})),0,0.17,-0.001,sg);}
+  for(const sd of[-1,1]){box(0.05,0.55,0.01,std({color:0x3d4a3a,roughness:0.95}),0.09*sd,-0.42,-0.03,sg);box(0.03,0.62,0.05,mFrame,0.2*sd,-0.4,0.06,sg);}
+  box(0.34,0.06,0.42,mShell,0,-0.86,-0.22,sg);box(0.3,0.04,0.38,mCush,0,-0.82,-0.22,sg);
+  const hd=new THREE.Mesh(new THREE.TorusGeometry(0.045,0.009,8,20,PI),mYel);hd.position.set(0,-0.82,-0.43);hd.rotation.x=-PI/2-0.6;sg.add(hd);
+  for(let i=0;i<5;i++){const s=box(0.012,0.02,0.02,mBlack,-0.04+i*0.02,-0.79,-0.44,sg);s.rotation.z=0.5;}}
  cockpit.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;o.renderOrder=2;}});}
 // ---- displays ----
-function ckBg(d,col){const g=d.g;g.setTransform(1,0,0,1,0,0);g.fillStyle=col||'#05080b';g.fillRect(0,0,d.W,d.H);return g;}
+function a_stallW(){return !!ac.stallW;}
+function ckBg(d,col){const g=d.g;g.setTransform(1,0,0,1,0,0);g.fillStyle=col||'#05080b';g.fillRect(0,0,d.W,d.H);g.setTransform(DS,0,0,DS,0,0);return g;}
+// option-select key legends along the top and bottom edge of a display (matches the physical keys on the bezel)
+function osb(g,top,bot,act){g.font='700 15px Rajdhani, sans-serif';g.textAlign='center';g.textBaseline='middle';
+  top.forEach((t,i)=>{if(!t)return;const x=56+i*100;g.fillStyle=t===act?'#05080b':'#9fb0c2';if(t===act){g.fillStyle='#9fb0c2';g.fillRect(x-30,4,60,18);g.fillStyle='#05080b';}g.fillText(t,x,14);});
+  bot.forEach((t,i)=>{if(!t)return;g.fillStyle='#9fb0c2';g.fillText(t,56+i*100,500);});}
+const nzOf=a=>{const rho=1.225*exp(-a.pos.y/9000);return 0.5*rho*a.V*a.V*AC.S*CL(a.alpha,a.flaps)/(AC.mass*9.81);};
 function drawCockpitDisplays(a){
   // PFD: ADI in the middle, speed tape left, altitude tape right, heading strip, mode line
   {const d=ckTex.pfd,g=ckBg(d);g.save();g.translate(106,96);adiCore(g,300,a);g.restore();
@@ -1443,17 +1564,38 @@ function drawCockpitDisplays(a){
    g.fillStyle='#cfd8e2';g.font='600 18px IBM Plex Mono, monospace';g.textAlign='center';const hd=((a.psiB/DEG)%360+360)%360;g.fillText('HDG '+String(Math.round(hd)).padStart(3,'0')+'   V/S '+fmt(Math.round(a.vs/FT*60/10)*10),256,430);
    g.fillStyle='#7df5a0';g.font='700 18px Rajdhani, sans-serif';g.fillText((ap.athr?'SPD '+ap.sel.ias:'MAN THR')+'   '+(ap.on?(ap.lat==='LOC'?'LOC':'HDG '+String(ap.sel.hdg).padStart(3,'0')):'—')+'   '+(ap.on?(ap.vert==='GS'?'G/S':ap.vert==='FLARE'?'FLARE':ap.vert==='ALT'?'ALT '+ap.sel.alt:'V/S '+ap.sel.vs):'—')+'   '+(ap.on?'AP1':''),256,40);
    g.fillStyle='#ffb432';g.font='600 16px IBM Plex Mono, monospace';g.fillText('AOA '+(a.alpha/DEG).toFixed(1)+'°',256,470);
+   g.fillStyle='#e3eaf2';g.font='600 16px IBM Plex Mono, monospace';g.textAlign='left';g.fillText('G '+nzOf(a).toFixed(1),12,412);g.textAlign='right';g.fillText('M '+(a.V/340).toFixed(2),500,412);g.textAlign='center';
+   osb(g,['PFD','FPM','HSI','BARO','DCLT'],['SWAP','','MENU','','TEST'],'PFD');
    if(a.stallW){g.fillStyle='#ff5347';g.font='700 28px Rajdhani, sans-serif';g.fillText('STALL',256,140);}d.t.needsUpdate=true;}
-  // engine display
-  {const d=ckTex.eng,g=ckBg(d);const arc=(cx,cy,r,v,max_,lbl,txt,red)=>{g.lineWidth=8;g.strokeStyle='#1d252e';g.beginPath();g.arc(cx,cy,r,0.75*PI,2.25*PI);g.stroke();const f=clamp(v/max_,0,1);g.strokeStyle=v>=red?'#ff5347':'#3fd3e6';g.beginPath();g.arc(cx,cy,r,0.75*PI,0.75*PI+1.5*PI*f);g.stroke();
-     g.fillStyle='#e3eaf2';g.font='700 30px IBM Plex Mono, monospace';g.textAlign='center';g.textBaseline='middle';g.fillText(txt,cx,cy);g.fillStyle='#8b9aab';g.font='700 20px Rajdhani, sans-serif';g.fillText(lbl,cx,cy+r*0.75);};
-   arc(128,130,92,sim.n1,110,'N1 %',sim.n1.toFixed(1),104);arc(384,130,92,sim.egt,1100,'EGT °C',String(Math.round(sim.egt)),950);arc(128,370,92,sim.n2,110,'N2 %',sim.n2.toFixed(1),104);arc(384,370,92,sim.ff,4000,'FF PPH',String(Math.round(sim.ff/10)*10),99999);
-   g.fillStyle='#8b9aab';g.font='600 18px IBM Plex Mono, monospace';g.textAlign='center';g.fillText('THR '+Math.round(sim.throttle*100)+'%  FUEL '+fmt(ac.fuel)+' LB',256,250);
-   g.fillText('FLAPS '+['0','15','30'][a.flaps]+'   '+(a.gearT>0.97?'GEAR DN':a.gearT<0.03?'GEAR UP':'GEAR TRANSIT'),256,490);d.t.needsUpdate=true;}
+  // engine and systems display: N1/EGT dials, N2/FF/oil/hydraulic bars, fuel, gear/flap/speed-brake synoptic
+  {const d=ckTex.eng,g=ckBg(d);
+   const arc=(cx,cy,r,v,max_,lbl,txt,red)=>{g.lineWidth=10;g.strokeStyle='#1d252e';g.beginPath();g.arc(cx,cy,r,0.75*PI,2.25*PI);g.stroke();const f=clamp(v/max_,0,1);g.strokeStyle=v>=red?'#ff5347':'#3fd3e6';g.beginPath();g.arc(cx,cy,r,0.75*PI,0.75*PI+1.5*PI*f);g.stroke();
+     g.strokeStyle='#ff5347';g.lineWidth=3;const rr=0.75*PI+1.5*PI*clamp(red/max_,0,1);g.beginPath();g.moveTo(cx+cos(rr)*(r-9),cy+sin(rr)*(r-9));g.lineTo(cx+cos(rr)*(r+9),cy+sin(rr)*(r+9));g.stroke();
+     g.strokeStyle='#e3eaf2';g.lineWidth=3;const an=0.75*PI+1.5*PI*f;g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+cos(an)*(r-14),cy+sin(an)*(r-14));g.stroke();
+     g.fillStyle='#05080b';g.fillRect(cx-6,cy+8,r+2,34);g.strokeStyle='#596470';g.lineWidth=1.5;g.strokeRect(cx-6,cy+8,r+2,34);
+     g.fillStyle='#e3eaf2';g.font='700 26px IBM Plex Mono, monospace';g.textAlign='right';g.textBaseline='middle';g.fillText(txt,cx+r-8,cy+26);g.fillStyle='#8b9aab';g.font='700 18px Rajdhani, sans-serif';g.textAlign='center';g.fillText(lbl,cx,cy-r*0.45);};
+   arc(130,135,80,sim.n1,110,'N1 %',sim.n1.toFixed(1),104);arc(382,135,80,sim.egt,1100,'EGT °C',String(Math.round(sim.egt)),950);
+   const bar=(y,lbl,v,max_,txt,col)=>{g.fillStyle='#8b9aab';g.font='700 17px Rajdhani, sans-serif';g.textAlign='left';g.textBaseline='middle';g.fillText(lbl,24,y);g.fillStyle='#1d252e';g.fillRect(96,y-8,250,16);g.fillStyle=col||'#3fd3e6';g.fillRect(96,y-8,250*clamp(v/max_,0,1),16);
+     g.fillStyle='#e3eaf2';g.font='600 18px IBM Plex Mono, monospace';g.textAlign='right';g.fillText(txt,488,y);};
+   const run=sim.lit;bar(262,'N2 %',sim.n2,110,sim.n2.toFixed(1));bar(290,'FF PPH',sim.ff,4000,fmt(Math.round(sim.ff/10)*10));bar(318,'OIL PSI',run?42+sim.n2*0.3:sim.n2*0.6,100,String(Math.round(run?42+sim.n2*0.3:sim.n2*0.6)));
+   bar(346,'HYD PSI',min(3000,sim.n2*40),3200,fmt(Math.round(min(3000,sim.n2*40)/10)*10),'#55db8e');
+   g.strokeStyle='#2c343e';g.lineWidth=1.5;g.beginPath();g.moveTo(16,368);g.lineTo(496,368);g.stroke();
+   // fuel
+   g.fillStyle='#8b9aab';g.font='700 17px Rajdhani, sans-serif';g.textAlign='left';g.fillText('FUEL',24,392);g.fillStyle='#1d252e';g.fillRect(24,404,26,70);const ff=clamp(ac.fuel/3000,0,1);g.fillStyle=ac.fuel<300?'#ff5347':'#ffb432';g.fillRect(24,404+70*(1-ff),26,70*ff);
+   g.fillStyle='#e3eaf2';g.font='600 18px IBM Plex Mono, monospace';g.fillText(fmt(ac.fuel),60,425);g.fillStyle='#8b9aab';g.font='600 13px IBM Plex Mono, monospace';g.fillText('LB',60,446);g.fillText('THR '+Math.round(sim.throttle*100)+'%',60,466);
+   // gear synoptic
+   const gc=a.gearT>0.97?'#37e36e':a.gearT<0.03?'#5f6d7d':'#ff3b30',gt=a.gearT>0.97?'DN':a.gearT<0.03?'UP':'TR';
+   [[300,392],[262,446],[338,446]].forEach(([x,y])=>{g.fillStyle='#05080b';g.fillRect(x-20,y-14,40,28);g.strokeStyle=gc;g.lineWidth=2;g.strokeRect(x-20,y-14,40,28);g.fillStyle=gc;g.font='700 17px IBM Plex Mono, monospace';g.textAlign='center';g.fillText(gt,x,y+1);});
+   g.fillStyle='#8b9aab';g.font='700 15px Rajdhani, sans-serif';g.fillText('GEAR',300,478);
+   // flaps and speed brake
+   g.textAlign='left';g.fillText('FLAPS',384,392);g.fillStyle='#e3eaf2';g.font='700 22px IBM Plex Mono, monospace';g.fillText(['0','15','30'][a.flaps],448,392);
+   g.strokeStyle='#e3eaf2';g.lineWidth=4;g.beginPath();g.moveTo(386,420);g.lineTo(436,420);g.lineTo(436+cos(a.flaps*0.5)*36,420+sin(a.flaps*0.5)*36);g.stroke();
+   g.fillStyle=a.splr?'#ffb432':'#5f6d7d';g.font='700 15px Rajdhani, sans-serif';g.fillText(a.splr?'SPD BRK OUT':'SPD BRK IN',384,470);
+   osb(g,['ENG','FUEL','HYD','ELEC','FCS'],['','','MENU','',''],'ENG');d.t.needsUpdate=true;}
   // nav display
   if(ndMode!=='cam'){const d=ckTex.nd,g=ckBg(d,'#04070a');mapCore(g,512,MAPR[mapRi],14);d.t.needsUpdate=true;}
 }
-function drawHUD(a){const d=ckTex.hud,g=d.g;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,512,512);const C='#7dff9f';g.strokeStyle=C;g.fillStyle=C;g.lineWidth=3;const ppd=25,c=256;
+function drawHUD(a){const d=ckTex.hud,g=d.g;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,d.W,d.H);g.setTransform(DS,0,0,DS,0,0);const C='#7dff9f';g.strokeStyle=C;g.fillStyle=C;g.lineWidth=3;const ppd=25,c=256;
   g.save();g.beginPath();g.rect(40,40,432,432);g.clip();g.translate(c,c);g.rotate(-a.phi);g.translate(0,a.theta/DEG*ppd);
   g.beginPath();g.moveTo(-260,0);g.lineTo(-40,0);g.moveTo(40,0);g.lineTo(260,0);g.stroke();
   g.font='600 22px IBM Plex Mono, monospace';g.textBaseline='middle';
@@ -1465,6 +1607,9 @@ function drawHUD(a){const d=ckTex.hud,g=d.g;g.setTransform(1,0,0,1,0,0);g.clearR
   g.font='700 26px IBM Plex Mono, monospace';g.textAlign='center';g.textBaseline='middle';
   g.strokeRect(36,236,88,40);g.fillText(String(Math.round(a.ias)),80,256);g.strokeRect(388,236,96,40);g.fillText(String(Math.round(max(0,a.agl))),436,256);
   g.font='600 20px IBM Plex Mono, monospace';g.fillText(String(Math.round(((a.psiB/DEG)%360+360)%360)).padStart(3,'0'),256,60);g.fillText('AOA '+(a.alpha/DEG).toFixed(1),80,300);g.fillText(Math.round(a.vs/FT*60/10)*10+' fpm',436,300);
+  // flight path marker: where the aircraft is actually going (offset from the boresight by AoA and sideslip)
+  {const fx=c-clamp(a.beta/DEG*ppd,-150,150),fy=c+clamp(a.alpha/DEG*ppd,-150,180);g.beginPath();g.arc(fx,fy,11,0,2*PI);g.moveTo(fx-11,fy);g.lineTo(fx-28,fy);g.moveTo(fx+11,fy);g.lineTo(fx+28,fy);g.moveTo(fx,fy-11);g.lineTo(fx,fy-24);g.stroke();}
+  g.font='600 20px IBM Plex Mono, monospace';g.textAlign='left';g.fillText('G '+nzOf(a).toFixed(1),40,340);g.fillText('M '+(a.V/340).toFixed(2),40,366);g.textAlign='center';
   if(a.stallW){g.font='700 32px Rajdhani, sans-serif';g.fillText('STALL',256,140);}
   if(!a.gear&&a.agl<1000){g.font='700 24px Rajdhani, sans-serif';g.fillText('GEAR',256,420);}
   d.t.needsUpdate=true;}
@@ -1486,7 +1631,7 @@ canvas.addEventListener('pointermove',e=>{if(camMode!=='cockpit'){ckTip.hidden=t
 canvas.addEventListener('pointerup',()=>{ck.drag=null;canvas.style.cursor='grab';});canvas.addEventListener('pointercancel',()=>{ck.drag=null;});
 canvas.addEventListener('pointerleave',()=>{ckTip.hidden=true;});
 canvas.addEventListener('wheel',e=>{if(camMode!=='cockpit')return;e.preventDefault();const p=ckPick(e);if(p&&p.h.wheel&&p.h.wheel(p.uv,e.deltaY,e))return;ck.fov=clamp(ck.fov+e.deltaY*0.03,28,85);},{passive:false});
-canvas.addEventListener('dblclick',()=>{ck.headY=0;ck.headP=-0.08;ck.fov=72;});
+canvas.addEventListener('dblclick',()=>{ck.headY=0;ck.headP=MOB?-0.26:CKP;ck.fov=74;});
 /* ================= Cockpit controls: glareshield autopilot, gear and flap levers, switches, draggable throttle ================= */
 const ckHits=[];const ckLights={};
 {const mPlate=std({color:0x1b1f24,roughness:0.8,metalness:0.2}),mMetal=std({color:0x7d8690,roughness:0.4,metalness:0.7}),mBlack=std({color:0x0d0f12,roughness:0.9});
@@ -1495,10 +1640,10 @@ const ckHits=[];const ckLights={};
    const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;const m=add(new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,toneMapped:false})),x,y,z,parent);m.rotation.x=rx||0;m.renderOrder=3;return m;};
  const light=(name,x,y,z,parent,rx)=>{const m=add(new THREE.Mesh(new THREE.PlaneGeometry(0.018,0.018),new THREE.MeshBasicMaterial({color:0x1c2228,toneMapped:false})),x,y,z,parent);m.rotation.x=rx||0;ckLights[name]=m;return m;};
  // glareshield autopilot panel (canvas display + hit regions)
- const mc=document.createElement('canvas');mc.width=1024;mc.height=128;const mt=new THREE.CanvasTexture(mc);mt.colorSpace=THREE.SRGBColorSpace;mt.anisotropy=8;ckTex.mcp={c:mc,g:mc.getContext('2d'),t:mt,key:''};
- const mcpG=new THREE.Group();mcpG.position.set(0,-0.375,-0.66);mcpG.rotation.x=-0.22;cockpit.add(mcpG);
- add(new THREE.Mesh(new THREE.BoxGeometry(1.02,0.13,0.03),mPlate),0,0,-0.016,mcpG);
- const mcpMesh=add(new THREE.Mesh(new THREE.PlaneGeometry(1.0,0.125),new THREE.MeshBasicMaterial({map:mt,toneMapped:false})),0,0,0.001,mcpG);
+ const mc=document.createElement('canvas');mc.width=1024*DS;mc.height=128*DS;const mt=new THREE.CanvasTexture(mc);mt.colorSpace=THREE.SRGBColorSpace;mt.anisotropy=8;ckTex.mcp={c:mc,g:mc.getContext('2d'),t:mt,key:''};
+ const mcpG=new THREE.Group();mcpG.position.set(0,-0.262,-0.7);mcpG.rotation.x=-0.35;cockpit.add(mcpG);
+ add(new THREE.Mesh(new THREE.BoxGeometry(0.93,0.122,0.03),mPlate),0,0,-0.016,mcpG);
+ const mcpMesh=add(new THREE.Mesh(new THREE.PlaneGeometry(0.9,0.1125),new THREE.MeshBasicMaterial({map:mt,toneMapped:false})),0,0,0.001,mcpG);
  const WIN=[['ias','SPD',16],['hdg','HDG',166],['alt','ALT',316],['vs','V/S',466]],BTN=[['AP','AP'],['ATHR','A/THR'],['HDG','HDG'],['ALT','ALT'],['VS','V/S'],['APP','APP']];
  const btnX=i=>620+i*68;
  ckHits.push({mesh:mcpMesh,
@@ -1507,24 +1652,23 @@ const ckHits=[];const ckLights={};
    wheel(uv,dy,e){const r=this.region(uv);if(r&&r.t==='win'){apSel(r.k,dy<0?1:-1,e.shiftKey);return true;}return false;},
    tip(uv){const r=this.region(uv);if(!r)return'';return r.t==='win'?r.l+': click left to decrease, right to increase, or scroll (Shift for big steps)':r.l+': '+({AP:'autopilot on/off',ATHR:'auto-thrust holds the SPD window',HDG:'fly the HDG window',ALT:'hold altitude',VS:'climb or descend at the V/S window',APP:'arm ILS approach and autoland'}[r.m]);}});
  // gear lever with wheel knob + three lights (left of the main panel)
- const gearG=new THREE.Group();gearG.position.set(-0.66,-0.66,-0.74);gearG.rotation.x=-0.32;cockpit.add(gearG);
- add(new THREE.Mesh(new THREE.BoxGeometry(0.1,0.2,0.02),mPlate),0,0,-0.01,gearG);
+ const gearG=new THREE.Group();gearG.position.set(-0.505,-0.455,-0.73);gearG.rotation.x=-0.28;cockpit.add(gearG);
+ add(new THREE.Mesh(new THREE.BoxGeometry(0.062,0.24,0.02),mPlate),0,0,-0.01,gearG);
  add(new THREE.Mesh(new THREE.BoxGeometry(0.012,0.13,0.012),mBlack),0,0,0.002,gearG);
  ck.gearArm=new THREE.Group();gearG.add(ck.gearArm);
  add(new THREE.Mesh(new THREE.BoxGeometry(0.012,0.012,0.06),mMetal),0,0,0.03,ck.gearArm);
  const knob=add(new THREE.Mesh(new THREE.CylinderGeometry(0.024,0.024,0.016,18).rotateX(PI/2),std({color:0xe8ebee,roughness:0.5})),0,0,0.065,ck.gearArm);
- ['N','L','R'].forEach((n,i)=>light('gear'+n,0.035,0.07-i*0.025,0.002,gearG));
- label('GEAR',0.08,0.022,0,-0.088,0.002,0,gearG);
+ ['N','L','R'].forEach((n,i)=>light('gear'+n,-0.02+i*0.02,0.1,0.002,gearG));
+ label('NOSE  L  R',0.06,0.012,0,0.084,0.002,0,gearG,20);label('GEAR',0.06,0.02,0,-0.1,0.002,0,gearG);label('UP',0.03,0.014,0.0,0.064,0.002,0,gearG,22);label('DN',0.03,0.014,0,-0.075,0.002,0,gearG,22);
  ckHits.push({mesh:knob,click(){toggleGear();},tip(){return 'Landing gear: '+(ac.gear?'down, click to raise':'up, click to lower')+' (G)';}});
  ckHits.push({mesh:gearG.children[0],click(){toggleGear();},tip(){return 'Landing gear lever (G)';}});
  // flap lever on the left console, ahead of the throttle
- const flapG=new THREE.Group();flapG.position.set(-0.4,-0.505,-0.56);cockpit.add(flapG);
- add(new THREE.Mesh(new THREE.BoxGeometry(0.09,0.012,0.16),mPlate),0,0,0,flapG);
+ const flapG=new THREE.Group();flapG.position.set(-0.43,-0.505,-0.56);cockpit.add(flapG);
+ add(new THREE.Mesh(new THREE.BoxGeometry(0.03,0.006,0.13),mPlate),0,-0.002,0,flapG);
  add(new THREE.Mesh(new THREE.BoxGeometry(0.01,0.014,0.12),mBlack),0,0.002,0,flapG);
  ck.flapArm=new THREE.Group();flapG.add(ck.flapArm);
  add(new THREE.Mesh(new THREE.BoxGeometry(0.008,0.05,0.008),mMetal),0,0.03,0,ck.flapArm);
  const fk=add(new THREE.Mesh(new THREE.BoxGeometry(0.04,0.022,0.03),std({color:0xd8dde2,roughness:0.6})),0,0.06,0,ck.flapArm);
- label('FLAPS',0.07,0.02,0,0.008,0.09,-PI/2,flapG);label('0   15   30',0.04,0.016,0.035,0.008,0,-PI/2,flapG,22).rotation.z=-PI/2;
  ckHits.push({mesh:fk,click(){ac.flaps=(ac.flaps+1)%3;syncSys();audio.clunk&&audio.clunk(0.3);},tip(){return 'Flaps '+['0','15','30'][ac.flaps]+': click to select next (F)';}});
  ckHits.push({mesh:flapG.children[0],click(){ac.flaps=(ac.flaps+1)%3;syncSys();audio.clunk&&audio.clunk(0.3);},tip(){return 'Flap lever: click to step 0 / 15 / 30 (F)';}});
  // switches: speed brake + wheel brakes on the left console, auto-trim + auto-rudder on the right console
@@ -1533,15 +1677,15 @@ const ckHits=[];const ckLights={};
    const tog=add(new THREE.Mesh(new THREE.BoxGeometry(0.012,0.035,0.012),mMetal),0,0.022,0,g);
    light(name,0.025,0.0075,-0.018,g,-PI/2);label(text,0.075,0.018,0,0.0075,0.022,-PI/2,g);
    const h={mesh:base,tog,get,click(){act();audio.click&&audio.click();},tip(){return tipT+': '+(get()?'on':'off')+', click to switch';}};ckHits.push(h);ckHits.push({...h,mesh:tog});ck.switches=(ck.switches||[]);ck.switches.push(h);};
- sw('splr',-0.47,0.13,'SPD BRK',()=>ac.splr,()=>toggleSplr(),'Speed brake (Space)');
- sw('brk',-0.38,0.13,'BRAKES',()=>ac.brk,()=>toggleBrk(),'Wheel brakes (B)');
- sw('atrim',0.38,-0.55,'A-TRIM',()=>autoTrim,()=>toggleAutoTrim(),'Fly-by-wire auto-trim, holds the flight path and bank with the stick centred (T)');
- sw('arud',0.47,-0.55,'A-RUD',()=>autoRudder,()=>toggleAutoRudder(),'Auto-rudder, keeps turns coordinated');
+ sw('splr',-0.474,0.17,'SPD BRK',()=>ac.splr,()=>toggleSplr(),'Speed brake (Space)');
+ sw('brk',-0.386,0.17,'BRAKES',()=>ac.brk,()=>toggleBrk(),'Wheel brakes (B)');
+ sw('atrim',0.386,-0.52,'A-TRIM',()=>autoTrim,()=>toggleAutoTrim(),'Fly-by-wire auto-trim, holds the flight path and bank with the stick centred (T)');
+ sw('arud',0.474,-0.52,'A-RUD',()=>autoRudder,()=>toggleAutoRudder(),'Auto-rudder, keeps turns coordinated');
  // throttle: grab the grip and drag
  const tg=ck.thr.children[1];ckHits.push({mesh:tg,drag:'thr',tip(){return 'Throttle '+Math.round(sim.throttle*100)+'%: drag forward or back (PgUp / PgDn)';}});
  ckHits.push({mesh:ck.thr.children[0],drag:'thr',tip(){return 'Throttle: drag the grip';}});
  cockpit.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;if(!o.renderOrder)o.renderOrder=2;}});}
-function drawMCP(){const d=ckTex.mcp,g=d.g;const key=JSON.stringify([ap.sel,ap.on,ap.athr,ap.lat,ap.vert,ap.app,ap.loc,ap.gs]);if(key===d.key)return;d.key=key;
+function drawMCP(){const d=ckTex.mcp,g=d.g;const key=JSON.stringify([ap.sel,ap.on,ap.athr,ap.lat,ap.vert,ap.app,ap.loc,ap.gs]);if(key===d.key)return;d.key=key;g.setTransform(DS,0,0,DS,0,0);
   g.fillStyle='#14181d';g.fillRect(0,0,1024,128);g.strokeStyle='#2c343e';g.lineWidth=2;g.strokeRect(2,2,1020,124);
   const win=(k,l,x0,val,dim)=>{g.fillStyle='#8b9aab';g.font='700 22px Rajdhani, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(l,x0+70,22);
     g.fillStyle='#05080b';g.fillRect(x0+18,38,104,52);g.strokeStyle='#2a3442';g.strokeRect(x0+18,38,104,52);
@@ -1554,6 +1698,10 @@ function drawMCP(){const d=ckTex.mcp,g=d.g;const key=JSON.stringify([ap.sel,ap.o
     g.fillStyle=lit[m]?'#55db8e':arm[m]?'#e3eaf2':'#26313d';g.fillRect(x+16,38,28,7);g.fillStyle='#e3eaf2';g.font='700 '+(l.length>3?19:24)+'px Rajdhani, sans-serif';g.textAlign='center';g.fillText(l,x+30,76);});
   d.t.needsUpdate=true;}
 function updateCockpitControls(){drawMCP();
+  const L=ck.lamps,fl=((performance.now()/350)|0)%2===0,vr=vrefCalc();
+  L.warn.set(a_stallW()&&fl);L.caut.set((ac.fuel<300||(ac.gearT>0.03&&ac.gearT<0.97)||(!ac.gear&&ac.agl<500&&ac.vs<0&&!ac.onGround))&&fl);L.fire.set(sim.egt>1000);
+  const ia=ac.gear&&!ac.onGround;L.aoaHi.set(ia&&ac.ias<vr-5);L.aoaOn.set(ia&&abs(ac.ias-vr)<=5);L.aoaLo.set(ia&&ac.ias>vr+5);
+  ck.lcds.fuel.set(String(Math.round(ac.fuel)));const tt=ac.t|0;ck.lcds.clock.set(String((tt/60)|0).padStart(2,'0')+':'+String(tt%60).padStart(2,'0'));
   ck.gearArm.rotation.x=lerp(-0.45,0.45,ac.gear?1:0);ck.gearArm.position.y=ac.gear?-0.045:0.045;
   ['N','L','R'].forEach(n=>ckLights['gear'+n].material.color.setHex(ac.gearT>0.97?0x37e36e:ac.gearT>0.03?0xff3b30:0x1c2228));
   ck.flapArm.position.z=-0.05+ac.flaps*0.05;
@@ -1563,7 +1711,7 @@ const ckRay=new THREE.Raycaster(),ckNdc=new THREE.Vector2();const ckTip=document
 function ckPick(e){const r=canvas.getBoundingClientRect();ckNdc.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);ckRay.setFromCamera(ckNdc,camera);
   const hits=ckRay.intersectObjects(ckHits.map(h=>h.mesh),false);if(!hits.length)return null;const h=ckHits.find(x=>x.mesh===hits[0].object);return h?{h,uv:hits[0].uv||new THREE.Vector2()}:null;}
 /* ================= Nose sensor camera (live feed on the right display) ================= */
-const eoCam=new THREE.PerspectiveCamera(20,1,2,60000);const eoRT=new THREE.WebGLRenderTarget(MOB?256:512,MOB?256:512,{samples:MOB?0:2});eoRT.texture.colorSpace=THREE.SRGBColorSpace;
+const eoCam=new THREE.PerspectiveCamera(20,1,2,60000);const eoRT=new THREE.WebGLRenderTarget(MOB?320:768,MOB?320:768,{samples:MOB?0:2});eoRT.texture.colorSpace=THREE.SRGBColorSpace;
 let ndMode='cam';const eoMat=new THREE.MeshBasicMaterial({map:eoRT.texture,toneMapped:true});let ndMatCanvas=null;
 const EOPOS=new THREE.Vector3(0,-0.42,-7.75);
 function eoAim(){return worldAt(target,target.aim,0,0.5);}
@@ -1574,7 +1722,7 @@ function renderEO(){drone.updateMatrixWorld(true);const p=EOPOS.clone().applyMat
   eoCam.updateProjectionMatrix();ck.eoDist=dist;ck.eoLos=Math.asin(clamp(toA.y/max(dist,1),-1,1))/DEG;
   const dv=drone.visible,cv=cockpit.visible;drone.visible=false;cockpit.visible=false;skyMesh.position.copy(p);
   renderer.setRenderTarget(eoRT);renderer.render(scene,eoCam);renderer.setRenderTarget(null);drone.visible=dv;cockpit.visible=cv;}
-function drawEOOverlay(now){const d=ckTex.eo,g=d.g;g.clearRect(0,0,512,512);if(ndMode!=='cam'){d.t.needsUpdate=true;return;}
+function drawEOOverlay(now){const d=ckTex.eo,g=d.g;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,d.W,d.H);g.setTransform(DS,0,0,DS,0,0);if(ndMode!=='cam'){d.t.needsUpdate=true;return;}
   const C='rgba(235,255,240,0.95)';g.strokeStyle=C;g.fillStyle=C;g.lineWidth=2.5;
   const br=(x,y,sx,sy)=>{g.beginPath();g.moveTo(x,y+sy*40);g.lineTo(x,y);g.lineTo(x+sx*40,y);g.stroke();};br(24,24,1,1);br(488,24,-1,1);br(24,488,1,-1);br(488,488,-1,-1);
   if(ck.eoLock){g.beginPath();g.moveTo(256,214);g.lineTo(256,240);g.moveTo(256,272);g.lineTo(256,298);g.moveTo(214,256);g.lineTo(240,256);g.moveTo(272,256);g.lineTo(298,256);g.stroke();g.strokeRect(236,236,40,40);}
@@ -1584,7 +1732,7 @@ function drawEOOverlay(now){const d=ckTex.eo,g=d.g;g.clearRect(0,0,512,512);if(n
   g.textBaseline='bottom';g.textAlign='left';g.fillText(target.id,40,472);g.textAlign='right';g.fillText((ck.eoDist/1852).toFixed(1)+' NM',472,472);
   g.font='600 20px IBM Plex Mono, monospace';g.textAlign='left';g.fillText('LOS '+(ck.eoLos>=0?'+':'')+ck.eoLos.toFixed(1)+'°',40,440);
   if((now/600|0)%2){g.fillStyle='#ff4a3d';g.beginPath();g.arc(452,82,8,0,2*PI);g.fill();g.fillStyle=C;g.textAlign='right';g.textBaseline='middle';g.font='600 18px IBM Plex Mono, monospace';g.fillText('REC',436,82);}
-  g.textAlign='center';g.textBaseline='bottom';g.font='600 16px IBM Plex Mono, monospace';g.fillStyle='rgba(235,255,240,0.6)';g.fillText('click: map',256,500);
+  g.fillStyle='rgba(5,8,11,0.55)';g.fillRect(0,0,512,26);g.fillRect(0,488,512,24);osb(g,['EO','IR','ZOOM','TRK','MAP'],['','','click: map','',''],'EO');
   d.t.needsUpdate=true;}
 function setNdMode(m){ndMode=m;if(!ndMatCanvas)ndMatCanvas=ck.ndScr.material;ck.ndScr.material=m==='cam'?eoMat:ndMatCanvas;ck.eoOv.visible=m==='cam';}
 ckHits.push({mesh:ck.ndScr,click(){setNdMode(ndMode==='cam'?'map':'cam');audio.click&&audio.click();},tip(){return ndMode==='cam'?'Nose camera, locked on '+target.id+': click for the map':'Map: click for the nose camera';}});

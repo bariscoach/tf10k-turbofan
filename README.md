@@ -8,6 +8,8 @@ Two single-file three.js + Web Audio apps built around the same simulated engine
 
 On phones and tablets the game switches to a full-screen touch layout: a touch stick, a vertical throttle with TO/GA, CLB and IDLE, a button bar for flaps, gear, brakes, speed brake and the autopilot drawer, a rotate-to-landscape prompt, safe-area padding and a lighter graphics preset.
 
+The flight model is 6-DOF with a quaternion attitude, so the H-20 can roll, fly inverted and loop. Its fighter-style fly-by-wire commands roll rate (up to about 230°/s), limits load to +9/−3 g and holds bank and flight path with the stick centred; landing, takeoff and autoland behave as before. Full aerobatic manoeuvres are possible.
+
 Open either file in a browser or serve the folder with any static host. Deployed with Vercel.
 
 Made by Baris Hiz.

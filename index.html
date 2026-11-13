@@ -395,13 +395,15 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
               <li><b>Clean up.</b> It lifts off around 140 kt. At "positive rate" raise the gear (G), then flaps up (F) above 180 kt.</li>
             </ol>
             <p class="lead">After a landing you can also add full power before you stop and rotate again for a touch-and-go.</p>
+            <h3>Aerobatics</h3>
+            <p class="lead">The H-20 flies like a fighter: roll it inverted, loop it, pull a 9 g turn. Climb to 8,000 ft at full power and over 350 kt first. A full-stick loop from 400 kt takes about 16 s. Pull too hard when slow and it stalls; hard turns bleed speed fast.</p>
             <h3>Controls</h3>
           <dl class="keys">
             <dt>↓ ↑ / S W</dt><dd>Pull back (nose up) / push forward (nose down), as in flight sims <button type="button" class="chip" id="chipInv" aria-pressed="false" style="margin-left:6px;padding:1px 6px;font-size:11px">Arcade pitch (↑ nose up)</button></dd>
             <dt>Q E</dt><dd>Rudder left / right (steers on the ground). Auto-rudder keeps turns coordinated unless you switch it off</dd>
-            <dt>[ ] · T</dt><dd>Trim nose down / up · auto-trim on or off (on: a centred yoke holds the flight path)</dd>
+            <dt>[ ] · T</dt><dd>Trim nose down / up · fly-by-wire on or off (on: a centred stick holds the flight path and bank, full stick pulls up to 9 g)</dd>
             <dt>Z · panel</dt><dd>Autopilot on/off; set IAS, HDG, ALT, V/S and use A/THR, HDG, ALT, V/S, APP (ILS with autoland)</dd>
-            <dt>← → / A D</dt><dd>Roll left / right with the ailerons</dd>
+            <dt>← → / A D</dt><dd>Roll left / right. The fly-by-wire rolls at about 60°/s at landing speed and up to 230°/s above 300 kt; release to hold the bank</dd>
             <dt>PgUp PgDn / + −</dt><dd>Thrust (or drag anywhere on the throttle, or tap Idle, CLB, TO/GA)</dd>
             <dt>F · G · B · Space</dt><dd>Flaps · Gear · Brakes · Speed brake</dd>
             <dt>C · V · R</dt><dd>Cockpit view · cycle cameras · restart. Hold X in the cockpit to glance down at the displays. Every cockpit control is clickable: autopilot on the glareshield, gear lever, flap lever, switches, and drag the throttle. Drag elsewhere to look around, scroll to zoom, double-click to look ahead</dd>
@@ -707,7 +709,18 @@ const PM={qref:0.5*1.225*61.7*61.7,a0:6*DEG,ka:6,kd:1.3,kq:3.2,la:1.3,lp:2.4,ld:
   // directional: weathercock stiffness, yaw damping, rudder power, adverse yaw, side force, dihedral effect (roll from sideslip)
   nb:4.0,nr:2.6,ndr:0.5,nda:0.04,yb:0.6,lb:0.25,
   // auto-trim flight-path hold gains
-  fk:1.4,fq:0.9};
+  fk:1.4,fq:0.9,
+  // fighter fly-by-wire: g limits, roll-rate command (deg/s at low and high speed), roll-rate loop gain
+  nzMax:9,nzMin:-3,pLo:32,pHi:230,kp:14};
+const _q1=new THREE.Quaternion(),_e1=new THREE.Euler(0,0,0,'YXZ'),_v1=new THREE.Vector3(),_v2=new THREE.Vector3(),_v3=new THREE.Vector3();
+// attitude is a quaternion (body: -Z nose, +Y canopy, +X right wing) and velocity an air-relative vector, so any attitude is reachable;
+// Euler angles (theta pitch, phi bank, psiB heading) and path angles (gamma, psi) are derived for the HUD, autopilot and ground model
+function syncFromEuler(a){a.Q=a.Q||new THREE.Quaternion();a.Q.setFromEuler(_e1.set(a.theta,-a.psiB,-a.phi,'YXZ'));
+  a.va=a.va||new THREE.Vector3();a.va.set(sin(a.psi)*cos(a.gamma),sin(a.gamma),-cos(a.psi)*cos(a.gamma)).multiplyScalar(a.V);}
+function bodyAxes(a){return {f:new THREE.Vector3(0,0,-1).applyQuaternion(a.Q),u:new THREE.Vector3(0,1,0).applyQuaternion(a.Q),rt:new THREE.Vector3(1,0,0).applyQuaternion(a.Q)};}
+function airAngles(a){const B=bodyAxes(a);const V=max(a.va.length(),0.1);const vf=a.va.dot(B.f),vu=a.va.dot(B.u),vr=a.va.dot(B.rt);
+  a.alpha=Math.atan2(-vu,vf);a.beta=clamp(-Math.asin(clamp(vr/V,-1,1)),-0.5,0.5);return B;}
+function eulerFromQ(a){_e1.setFromQuaternion(a.Q,'YXZ');a.theta=_e1.x;a.psiB=wrapPI(-_e1.y);a.phi=wrapPI(-_e1.z);}
 const wrapPI=x=>{while(x>PI)x-=2*PI;while(x<-PI)x+=2*PI;return x;};
 /* autopilot (mode control panel) */
 const ap={on:false,athr:false,lat:'HDG',vert:'VS',app:false,loc:false,gs:false,altArm:false,sel:{ias:160,hdg:0,alt:1800,vs:-700},I:0,athI:0,msg:'',msgT:0};
@@ -780,8 +793,9 @@ function resetFlight(){
     ac.onGround=true;ac.gear=1;ac.gearT=1;ac.flaps=1;ac.brk=true;ac.splr=false;ac.trim=-0.35;ac.gc=[GX.stat,GX.stat,GX.stat];ac.agl=0;ac.vs=0;ac.ias=0;ac.fuel=3000;ac.rwy=e;ac.surf='runway';
     Object.assign(sim,{phase:'run',n1:22,n2:60,egt:430,ff:520,thrust:600,lit:true,fuelOn:true,starter:false,ignition:false,throttle:0});thr.value=0;updateThrOut();ac.toPhase='hold';ac.airHigh=false;syncSys();
     onEvent('Lined up on '+e.id+'. Parking brake set. Press B to release, then full thrust.','');}
+  ac.pOm=null;ac.phiHold=null;ac.qRef=0;syncFromEuler(ac);
 }
-function CL(a,f){const st=AC.aStall[f];const lin=AC.clA*(a-AC.a0)+AC.clFlap[f];if(a<=st)return lin+(ac.splr?AC.clSplr:0);const peak=AC.clA*(st-AC.a0)+AC.clFlap[f];return max(0.3,peak-(a-st)*AC.cls)+(ac.splr?AC.clSplr:0);}
+function CL(a,f){const st=AC.aStall[f];const lin=AC.clA*(a-AC.a0)+AC.clFlap[f];if(a<=st)return max(lin,-0.9)+(ac.splr?AC.clSplr:0);const peak=AC.clA*(st-AC.a0)+AC.clFlap[f];return max(0.3,peak-(a-st)*AC.cls)+(ac.splr?AC.clSplr:0);}
 function vrefCalc(f){f=f==null?ac.flaps:f;return 1.3*sqrt(2*AC.mass*9.81/(1.225*AC.S*CL(AC.aStall[f],f)))/KT;}
 function flyStep(dt){
   const a=ac;a.t+=dt;
@@ -798,29 +812,43 @@ function flyStep(dt){
   const cmd=apGuidance(a,dt);let fast=false;
   if(cmd&&ap.on){pIn=cmd.de;rIn=cmd.da;fast=true;}
   if(cmd&&cmd.thr!=null)setThrottle(cmd.thr);
-  a.de=ramp(a.de,pIn,fast||inp.pitch?6:(abs(pIn)>abs(a.de)?1.0:3.0));a.da=ramp(a.da,rIn,fast||inp.roll?6:(abs(rIn)>abs(a.da)?1.5:3.5));
+  a.de=ramp(a.de,pIn,fast||inp.pitch?6:(abs(pIn)>abs(a.de)?1.0:3.0));a.da=ramp(a.da,rIn,fast||inp.roll?6:(abs(rIn)>abs(a.da)?1.5:(autoTrim&&!a.onGround?8:3.5)));
   // rudder: pedals ramp; auto-rudder keeps the ball centred (sideslip zero) like the sims' assist
   const drAuto=autoRudder||ap.on?clamp(-3*a.beta-0.8*(a.r-(a.psiDot||0)),-0.6,0.6):0;
   a.dr=ramp(a.dr,clamp(yIn,-1,1),abs(yIn)>abs(a.dr)?1.5:3.0);a.drTot=clamp(a.dr+drAuto,-1,1);
   a.steer=cmd&&cmd.steer!=null?cmd.steer:clamp(a.dr+(autoRudder?a.da:0),-1,1);
   if(inp.trimUp)a.trim=clamp(a.trim+0.22*dt,-1,1);if(inp.trimDn)a.trim=clamp(a.trim-0.22*dt,-1,1);
   // aero angles and dynamic pressure
-  a.alpha=a.theta-a.gamma;const f=a.flaps;const st=AC.aStall[f];
+  if(!a.Q)syncFromEuler(a);
+  if(a.onGround)a.alpha=a.theta-a.gamma;else airAngles(a);const f=a.flaps;const st=AC.aStall[f];
   const qbar=0.5*rho*a.V*a.V,qn=qbar/PM.qref,sq=sqrt(max(qn,0.04));
   a.stalled=a.alpha>st&&!a.onGround;a.stallW=a.alpha>st-3*DEG&&!a.onGround;
   // pitching moment: static stability about trim AoA, elevator (+trim), pitch damping; elevator weaker when stalled
-  const dEl=clamp(a.de+a.trim,-1.4,1.4)*(a.stalled?0.55:1);
-  let qd=qn*(-PM.ka*(a.alpha-PM.a0)+PM.kd*dEl)-PM.kq*sq*a.q;
+  let dEl=clamp(a.de+a.trim,-1.4,1.4)*(a.stalled?0.55:1);
+  // fly-by-wire g limiter: elevator can't demand more AoA than the +9/-3 g limits allow at this speed
+  // full stick reaches the g limit, or just past the stall AoA when slow, so a stall is still possible
+  if(autoTrim&&!a.onGround&&qbar>50&&!ap.on){const W=AC.mass*9.81,an=n=>AC.a0+(n*W/(qbar*AC.S)-AC.clFlap[f])/AC.clA,el=x=>PM.ka*(x-PM.a0)/PM.kd;
+    dEl=clamp((a.de*1.6+a.trim)*(a.stalled?0.55:1),el(max(an(PM.nzMin),-12*DEG)),el(min(an(PM.nzMax),st+1*DEG)));}
+  let qd=qn*(-PM.ka*(a.alpha-PM.a0)+PM.kd*dEl)-PM.kq*sq*(a.q-(autoTrim&&!a.onGround?a.qRef||0:0));
   if(a.stalled){const ex=(a.alpha-st)/DEG;qd-=ex*0.05*max(qn,0.3);a.p+=(Math.random()-0.5)*ex*0.9*DEG;}
   // rolling moment: aileron, roll damping, dihedral
-  const bankHold=autoTrim&&!ap.on&&abs(rIn)<0.02;
-  let pd=qn*(PM.la*a.da+PM.lb*a.beta)-PM.lp*sq*a.p-(bankHold?(abs(a.phi)>33*DEG?1.2*(a.phi-Math.sign(a.phi)*33*DEG):0):PM.ld*a.phi);
+  let pd;
+  if(autoTrim&&!a.onGround){
+    // fly-by-wire roll: stick commands roll rate (45°/s slow, up to 230°/s at fighter speeds); centred, it holds any bank
+    let pMax=lerp(PM.pLo,PM.pHi,pow(clamp((a.ias-100)/220,0,1),1.5))*DEG*(a.stalled?0.35:1)*min(1,qn*3);if(ap.on)pMax=min(pMax,25*DEG);
+    // stick centred: hold the bank angle it was released at (not near the vertical, where bank is undefined)
+    let pc=a.da*pMax;
+    if(!ap.on&&abs(rIn)<0.02&&abs(a.theta)<70*DEG){if(a.phiHold==null)a.phiHold=wrapPI(a.phi+a.p/PM.kp);if(a.phiHold!=null)pc=clamp(2*wrapPI(a.phiHold-a.phi),-pMax,pMax);}else a.phiHold=null;
+    pd=PM.kp*(pc-a.p)+qn*PM.lb*a.beta*0.3;
+  }else pd=qn*(PM.la*a.da+PM.lb*a.beta)-PM.lp*sq*a.p-PM.ld*a.phi;
   // yawing moment: weathercock stability (sideslip), rudder, adverse yaw from aileron, yaw damping relative to the turn
   const rd=qn*(-PM.nb*a.beta+PM.ndr*a.drTot-PM.nda*a.da)-PM.nr*sq*(a.r-(a.psiDot||0));
   // auto-trim: with the yoke centred the drone holds its attitude, like fly-by-wire
   // auto-trim holds the flight path with the yoke centred and adds back-pressure in turns (fly-by-wire style)
-  if(abs(pIn)>0.02||a.onGround||ap.on)a.fpHold=null;else if(a.fpHold==null&&abs(a.de)<0.03)a.fpHold=a.gamma;
-  if(autoTrim&&!ap.on&&!a.onGround&&!a.stalled&&a.fpHold!=null)a.trim=clamp(a.trim+(PM.fk*(a.fpHold-a.gamma)-PM.fq*a.q)*dt,-1,1);
+  const normalAtt=abs(a.phi)<62*DEG&&abs(a.theta)<60*DEG;
+  if(abs(pIn)>0.02||a.onGround||ap.on||!normalAtt)a.fpHold=null;else if(a.fpHold==null&&abs(a.de)<0.03&&abs(a.gamma)<30*DEG)a.fpHold=a.gamma;
+  if(autoTrim&&!ap.on&&!a.onGround&&!a.stalled&&a.fpHold!=null)a.trim=clamp(a.trim+(PM.fk*(a.fpHold-a.gamma)-PM.fq*(a.q-(a.onGround?0:a.qRef||0)))*dt,-1,1);
+  else if(autoTrim&&!ap.on&&!a.onGround&&!a.stalled&&abs(pIn)<0.02&&qbar>50){const nz=qbar*AC.S*CL(a.alpha,f)/(AC.mass*9.81);const nzT=abs(a.phi)<90*DEG&&abs(a.theta)<60*DEG?min(2,1/max(cos(a.phi),0.5)):1;a.trim=clamp(a.trim+0.35*(nzT-nz)*dt/max(qn,0.5),-1,1);}
   const cl=CL(a.alpha,f);const cd=AC.cd0+AC.k*cl*cl+AC.cdFlap[f]+AC.cdGear*a.gearT+(a.splr?AC.cdSplr:0)+(a.stalled?0.015*(a.alpha-st)/DEG:0)+0.6*a.beta*a.beta;
   const L=qbar*AC.S*cl,D=qbar*AC.S*cd;
   const m=AC.mass,g=9.81;
@@ -832,9 +860,7 @@ function flyStep(dt){
   // landing gear contact while not yet settled: struts push up, pitch the nose down (mains behind CG), roll, and drag
   let G=null;
   if(!a.onGround){G=gearForces(a);a.gc=G.c;
-    if(G.any){dG+=G.Fz/(m*max(a.V,25));qd+=G.M*GX.mk/GX.Iy;pd+=G.Lr/GX.Ix;
-      const surf=surfaceAt(a.pos);const mu=surf==='grass'?0.08:0.02;dV-=(mu*G.Fz+(a.brk&&G.mains?0.25*G.Fz:0))/m;
-      const al=clamp(G.Fz/(m*g)*4*dt,0,1);a.psi=wrapPI(a.psi+wrapPI(a.psiB-a.psi)*al);a.r+=(0-a.r)*al;}}
+    if(G.any){qd+=G.M*GX.mk/GX.Iy;pd+=G.Lr/GX.Ix;}}
   if(a.onGround){
     // rolling: tyre friction by surface, brakes, spoilers, nosewheel steering; weight on the nose gear pushes the nose down
     const W=m*g;const surf=surfaceAt(a.pos);a.surf=surf;const mu=surf==='grass'?0.09:0.02,bmu=surf==='grass'?0.18:0.33;
@@ -847,14 +873,27 @@ function flyStep(dt){
     if(a.theta<0){a.theta=0;a.q=max(0,a.q);}if(a.theta>13.5*DEG){a.theta=13.5*DEG;a.q=min(0,a.q);if(!a.toTail&&a.V>20){a.toTail=true;onEvent('Tail strike on rotation','warn');audio.thud&&audio.thud(0.5);}}
     if(L*cos(a.phi)+T*sin(a.alpha)>W*1.02&&a.theta>2*DEG){a.onGround=false;a.settleT=0;a.airHigh=false;a.liftPitch=a.theta;a.liftIas=a.ias;}
     dG=0;
-  }else{a.q+=qd*dt;a.p+=pd*dt;a.r+=rd*dt;a.theta=clamp(a.theta+a.q*dt,-40*DEG,40*DEG);a.phi=clamp(a.phi+a.p*dt,-80*DEG,80*DEG);}
-  a.V=max(0,a.V+dV*dt);a.gamma=clamp(a.gamma+dG*dt,-40*DEG,40*DEG);
-  if(!a.onGround&&a.V>5){
-    // path turns from the lift vector's horizontal part plus side force from sideslip; the nose yaws by its own yaw rate
-    a.psiDot=(L*sin(a.phi)+qbar*AC.S*PM.yb*a.beta)/(m*a.V*max(cos(a.gamma),0.3));a.psi=wrapPI(a.psi+a.psiDot*dt);a.psiB=wrapPI(a.psiB+a.r*dt);a.beta=clamp(wrapPI(a.psiB-a.psi),-0.5,0.5);}
+    a.V=max(0,a.V+dV*dt);syncFromEuler(a);
+  }else{
+    // 6-DOF: body rates (roll p, pitch q, yaw r) turn the attitude quaternion; lift, drag, thrust, side force, gravity and gear act on the velocity vector
+    a.q+=qd*dt;a.p+=pd*dt;a.r+=rd*dt;
+    const w=_v1.set(a.q,-a.r,-a.p),wl=w.length();if(wl>1e-9)a.Q.multiply(_q1.setFromAxisAngle(w.divideScalar(wl),wl*dt)).normalize();
+    const B=bodyAxes(a),V0=a.va.length(),vh=V0>1?a.va.clone().divideScalar(V0):B.f.clone();
+    const lift=B.u.clone().addScaledVector(vh,-B.u.dot(vh));if(lift.lengthSq()>1e-6)lift.normalize();
+    const side=B.rt.clone().addScaledVector(vh,-B.rt.dot(vh));if(side.lengthSq()>1e-6)side.normalize();
+    const F=lift.multiplyScalar(L).addScaledVector(vh,-D).addScaledVector(B.f,T).addScaledVector(side,qbar*AC.S*PM.yb*a.beta);F.y-=m*g;
+    if(G&&G.any){F.y+=G.Fz;const surf=surfaceAt(a.pos);const mu=surf==='grass'?0.08:0.02;F.addScaledVector(vh,-(mu*G.Fz+(a.brk&&G.mains?0.25*G.Fz:0)));}
+    a.va.addScaledVector(F,dt/m);
+    // tyres in contact scrub off sideways motion and yaw
+    if(G&&G.any){const al=clamp(G.Fz/(m*g)*4*dt,0,1);const rh=_v2.set(B.rt.x,0,B.rt.z);if(rh.lengthSq()>1e-6){rh.normalize();a.va.addScaledVector(rh,-a.va.dot(rh)*al);}a.r+=(0-a.r)*al;}
+    a.V=max(a.va.length(),0.1);if(a.va.length()<0.1)a.va.copy(B.f).multiplyScalar(0.1);
+    // path rotation rate seen along the body yaw axis: yaw damping and auto-rudder work relative to the turn
+    const vn=_v3.copy(a.va).divideScalar(a.V);if(a.pOm){_v2.crossVectors(a.pOm,vn).divideScalar(dt);a.psiDot=-_v2.dot(B.u);a.qRef=_v2.dot(B.rt);}else{a.psiDot=0;a.qRef=0;}a.pOm=(a.pOm||new THREE.Vector3()).copy(vn);
+    a.gamma=Math.asin(clamp(a.va.y/a.V,-1,1));if(abs(cos(a.gamma))>1e-3)a.psi=Math.atan2(a.va.x,-a.va.z);eulerFromQ(a);
+  }
   // position
-  const dir=new THREE.Vector3(sin(a.psi),0,-cos(a.psi));
-  const vel=dir.multiplyScalar(a.V*cos(a.gamma));vel.y=a.V*sin(a.gamma);if(!a.onGround)vel.add(wind);
+  const dir=new THREE.Vector3(sin(a.psiB),0,-cos(a.psiB));
+  const vel=a.va.clone();if(!a.onGround)vel.add(wind);
   a.pos.addScaledVector(vel,dt);a.vs=vel.y;
   a.ias=a.V*sqrt(rho/1.225)/KT;a.agl=(a.pos.y-AC.gearH)/FT;
   a.gearT+=((a.gear?1:0)-a.gearT)*(1-exp(-dt/2.5));
@@ -866,6 +905,7 @@ function flyStep(dt){
     const sink=-a.vs/FT*60;
     if(a.gearT<0.95&&a.pos.y<=0.9){a.td=a.td||{vsFpm:sink,x:0,dist:0,ias:a.ias,bank:abs(a.phi)/DEG,pitch:a.theta/DEG,gear:false,onRwy:false,flaps:a.flaps,rwy:'none',aim:300,planned:target.id};crash('Gear was up. The H-20 slid in on its belly.');return;}
     if(a.agl>15)a.airHigh=true;
+    if(a.pos.y<1.2&&(abs(a.phi)>75*DEG||a.theta<-25*DEG||a.pos.y<0.2)&&!(G&&G.any)){a.td=a.td||{vsFpm:sink,x:0,dist:0,ias:a.ias,bank:abs(a.phi)/DEG,pitch:a.theta/DEG,gear:a.gearT>0.95,onRwy:false,flaps:a.flaps,rwy:'none',aim:300,planned:target.id};crash('Flew into the ground at '+fmt(a.ias)+' kt, '+fmt(abs(a.phi)/DEG)+'° of bank.');return;}
     if(G&&G.any&&!a.td&&a.airHigh){
       const hit=findRunway(a.pos);let end=null;if(hit)end=(dir.x*hit.ap.d.x+dir.z*hit.ap.d.z)>=0?hit.ap.ends[0]:hit.ap.ends[1];
       const ref=end||target;const loc=local(ref,a.pos);a.rwy=ref;
@@ -887,7 +927,7 @@ function flyStep(dt){
     const tip=a.pos.y+AC.tipZ*cos(a.theta)-AC.tipY*abs(sin(a.phi))+AC.tipL*sin(a.theta);if(tip<=0){crash('Wingtip strike at '+fmt(abs(a.phi)/DEG,1)+'° of bank.');return;}
     const tail=a.pos.y+AC.tailZ*cos(a.theta)+AC.tailL*sin(a.theta);if(tail<=0&&a.td)a.td.tail=true;if(tail<-0.35){crash('Heavy tail strike at '+fmt(a.theta/DEG,1)+'° nose-up.');return;}
     // settle: both mains loaded and vertical motion damped out → rollout
-    if(G&&G.mains&&abs(a.vs)<0.35){a.settleT=(a.settleT||0)+dt;if(a.settleT>0.25){a.onGround=true;a.pos.y=AC.gearH;a.gamma=0;a.psi=a.psiB;a.beta=0;a.vs=0;}}else a.settleT=0;
+    if(G&&G.mains&&abs(a.vs)<0.35){a.settleT=(a.settleT||0)+dt;if(a.settleT>0.25){a.onGround=true;a.pos.y=AC.gearH;a.gamma=0;a.psi=a.psiB;a.beta=0;a.vs=0;a.V=a.va.length();a.pOm=null;syncFromEuler(a);}}else a.settleT=0;
   }
   if(a.onGround&&a.td){if(a.V<0.6){finish();return;}}
   if(a.toPhase==='hold'&&!a.brk&&sim.throttle>0.3){a.toPhase='roll';onEvent('Brakes released. Takeoff roll','');}
@@ -1495,7 +1535,7 @@ const ckHits=[];const ckLights={};
    const h={mesh:base,tog,get,click(){act();audio.click&&audio.click();},tip(){return tipT+': '+(get()?'on':'off')+', click to switch';}};ckHits.push(h);ckHits.push({...h,mesh:tog});ck.switches=(ck.switches||[]);ck.switches.push(h);};
  sw('splr',-0.47,0.13,'SPD BRK',()=>ac.splr,()=>toggleSplr(),'Speed brake (Space)');
  sw('brk',-0.38,0.13,'BRAKES',()=>ac.brk,()=>toggleBrk(),'Wheel brakes (B)');
- sw('atrim',0.38,-0.55,'A-TRIM',()=>autoTrim,()=>toggleAutoTrim(),'Auto-trim, holds the flight path with the stick centred (T)');
+ sw('atrim',0.38,-0.55,'A-TRIM',()=>autoTrim,()=>toggleAutoTrim(),'Fly-by-wire auto-trim, holds the flight path and bank with the stick centred (T)');
  sw('arud',0.47,-0.55,'A-RUD',()=>autoRudder,()=>toggleAutoRudder(),'Auto-rudder, keeps turns coordinated');
  // throttle: grab the grip and drag
  const tg=ck.thr.children[1];ckHits.push({mesh:tg,drag:'thr',tip(){return 'Throttle '+Math.round(sim.throttle*100)+'%: drag forward or back (PgUp / PgDn)';}});
@@ -1550,12 +1590,15 @@ function setNdMode(m){ndMode=m;if(!ndMatCanvas)ndMatCanvas=ck.ndScr.material;ck.
 ckHits.push({mesh:ck.ndScr,click(){setNdMode(ndMode==='cam'?'map':'cam');audio.click&&audio.click();},tip(){return ndMode==='cam'?'Nose camera, locked on '+target.id+': click for the map':'Map: click for the nose camera';}});
 setNdMode('cam');
 /* camera */
-let camMode='chase';const camPos=new THREE.Vector3(),camLook=new THREE.Vector3();let shake=0;
+let camMode='chase';const camPos=new THREE.Vector3(),camLook=new THREE.Vector3(),camUp=new THREE.Vector3(0,1,0),camUpT=new THREE.Vector3();let shake=0;
 function updateCamera(dt){
-  const a=ac;const dir=new THREE.Vector3(sin(a.psiB),0,-cos(a.psiB));const up=new THREE.Vector3(0,1,0);
+  const a=ac;const B=a.Q?bodyAxes(a):null;const dir=new THREE.Vector3(sin(a.psiB),0,-cos(a.psiB));const up=new THREE.Vector3(0,1,0);
+  // in aerobatics (steep bank, near-vertical, inverted) the chase camera rides behind the body and rolls with it; in normal flight it stays level
+  const aero=B?clamp(max((abs(a.phi)-50*DEG)/(40*DEG),(abs(a.theta)-40*DEG)/(30*DEG)),0,1):0;
+  camUpT.copy(up).lerp(B?B.u:up,aero);if(camUpT.lengthSq()<1e-4)camUpT.copy(B.u);camUpT.normalize();camUp.lerp(camUpT,1-exp(-dt/0.25)).normalize();
   let want,look;
-  if(camMode==='chase'){want=a.pos.clone().addScaledVector(dir,-20).addScaledVector(up,5.2);look=a.pos.clone().addScaledVector(dir,30);want.y=max(want.y,2.2);}
-  else if(camMode==='nose'){want=a.pos.clone().addScaledVector(dir,7.9).addScaledVector(up,0.35);const fwd=new THREE.Vector3(sin(a.psiB)*cos(a.theta),sin(a.theta),-cos(a.psiB)*cos(a.theta));look=want.clone().addScaledVector(fwd,200);}
+  if(camMode==='chase'){const f=B&&aero>0?dir.clone().lerp(B.f,aero).normalize():dir;want=a.pos.clone().addScaledVector(f,-20).addScaledVector(camUp,5.2);look=a.pos.clone().addScaledVector(f,30);want.y=max(want.y,2.2);}
+  else if(camMode==='nose'){const f=B?B.f:dir,u=B?B.u:up;want=a.pos.clone().addScaledVector(f,7.9).addScaledVector(u,0.35);look=want.clone().addScaledVector(f,200);}
   else if(camMode==='cockpit'){
     drone.updateMatrixWorld(true);const eye=EYE.clone().applyMatrix4(drone.matrixWorld);camPos.copy(eye);camera.position.copy(eye);
     if(shake>0){camera.position.x+=(Math.random()-0.5)*shake*0.25;camera.position.y+=(Math.random()-0.5)*shake*0.25;}
@@ -1569,8 +1612,8 @@ function updateCamera(dt){
   const k=camMode==='nose'?1:1-exp(-dt/0.18);camPos.lerp(want,k);camLook.lerp(look,k);
   camera.position.copy(camPos);
   if(shake>0){camera.position.x+=(Math.random()-0.5)*shake;camera.position.y+=(Math.random()-0.5)*shake;}
-  camera.up.set(0,1,0);
-  if(camMode==='nose'){camera.up.set(sin(a.phi)*cos(a.psiB),cos(a.phi),sin(a.phi)*sin(a.psiB));camera.fov=60;}else camera.fov=camMode==='tower'?clamp(30000/max(50,a.pos.distanceTo(want)),4,50):55;
+  camera.up.set(0,1,0);if(camMode==='chase')camera.up.copy(camUp);
+  if(camMode==='nose'){if(B)camera.up.copy(B.u);else camera.up.set(sin(a.phi)*cos(a.psiB),cos(a.phi),sin(a.phi)*sin(a.psiB));camera.fov=60;}else camera.fov=camMode==='tower'?clamp(30000/max(50,a.pos.distanceTo(want)),4,50):55;
   camera.updateProjectionMatrix();camera.lookAt(camLook);
 }
 document.querySelectorAll('.viewbar button').forEach(b=>b.addEventListener('click',()=>{camMode=b.dataset.view;}));
@@ -1845,7 +1888,7 @@ function frame(now){
   if(ac.phase==='fly'){step(dt);const n=2;for(let i=0;i<n;i++)flyStep(dt/n);}
   updateAudio(dt);updateGameAudio(dt);
   // drone pose
-  drone.position.copy(ac.pos);drone.rotation.set(0,0,0);drone.rotateY(-ac.psiB);drone.rotateX(ac.theta);drone.rotateZ(-ac.phi);
+  drone.position.copy(ac.pos);if(ac.Q)drone.quaternion.copy(ac.Q);else{drone.rotation.set(0,0,0);drone.rotateY(-ac.psiB);drone.rotateX(ac.theta);drone.rotateZ(-ac.phi);}
   // gear: retract forward into the pods/nose, struts compress, wheels spin with ground speed and spin down in the air
   const gE=clamp((ac.gearT-0.03)/0.94,0,1);
   gearUnits.forEach((u,i)=>{u.pivot.rotation.x=(1-gE)*PI/2*(u.fold||1);u.slide.position.y=u.axleY+(ac.gc?ac.gc[i]||0:0);

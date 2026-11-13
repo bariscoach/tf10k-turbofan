@@ -1460,7 +1460,7 @@ const CKP=-0.17;const ck={headY:0,headP:CKP,fov:74,drag:null,t:1,was:false,autoP
 if(MOB)ck.headP=-0.26;
 const ckTex={};
 const DS=MOB?1:2; // display canvas scale: drawing code works in 512-unit space, canvases are 512*DS
-{const mShell=std({color:0x2b3137,roughness:0.85,metalness:0.15}),mFrame=std({color:0x3a4047,roughness:0.5,metalness:0.55}),mBlack=std({color:0x0c0e10,roughness:0.9}),
+{const mShell=std({color:0x4a4e50,roughness:0.82,metalness:0.1}),mFrame=std({color:0x2b2d2f,roughness:0.55,metalness:0.45}),mCowl=std({color:0x131415,roughness:0.93,metalness:0}),mThr=std({color:0x8b8f92,roughness:0.72,metalness:0.1}),mBlack=std({color:0x0c0e10,roughness:0.9}),
   mCoam=std({color:0x121417,roughness:0.97,metalness:0}),mBezel=std({color:0x15181c,roughness:0.6,metalness:0.3}),mGrip=std({color:0x1b1d20,roughness:0.75}),
   mMetal=std({color:0x8a939c,roughness:0.35,metalness:0.8}),mCush=std({color:0x3c3f34,roughness:0.95}),mYel=std({color:0xe1b012,roughness:0.5}),mRed=std({color:0xb8261d,roughness:0.5}),
   mMirror=std({color:0xc9d3db,roughness:0.04,metalness:1}),mBtn=std({color:0x4a525b,roughness:0.55,metalness:0.4}),
@@ -1470,7 +1470,7 @@ const DS=MOB?1:2; // display canvas scale: drawing code works in 512-unit space,
  const cyl=(r0,r1,h,mat,x,y,z,parent,seg)=>add(new THREE.Mesh(new THREE.CylinderGeometry(r0,r1,h,seg||14),mat),x,y,z,parent);
  // engraved faceplates: canvas texture with backlit white legends, knob scales, screws; real knobs/toggles are added on top for depth
  const plate=(w,d,draw)=>{const W=Math.round(1400*w*DS/2)*2,H=Math.round(1400*d*DS/2)*2;const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
-   const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#20252b');gr.addColorStop(1,'#181c21');g.fillStyle=gr;g.fillRect(0,0,W,H);
+   const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#1c1d1f');gr.addColorStop(1,'#151617');g.fillStyle=gr;g.fillRect(0,0,W,H);
    g.strokeStyle='#323a43';g.lineWidth=2*DS;g.strokeRect(DS,DS,W-2*DS,H-2*DS);
    const scr=(x,y)=>{g.fillStyle='#4b535c';g.beginPath();g.arc(x,y,4*DS,0,2*PI);g.fill();g.strokeStyle='#1a1d21';g.lineWidth=1.2*DS;g.beginPath();g.moveTo(x-3*DS,y-1*DS);g.lineTo(x+3*DS,y+1*DS);g.stroke();};
    scr(9*DS,9*DS);scr(W-9*DS,9*DS);scr(9*DS,H-9*DS);scr(W-9*DS,H-9*DS);
@@ -1530,38 +1530,34 @@ const DS=MOB?1:2; // display canvas scale: drawing code works in 512-unit space,
  lamp('aoaHi',-0.22,-0.152,-0.74,0.034,0.014,'▼','#37e36e');lamp('aoaOn',-0.22,-0.17,-0.74,0.034,0.014,'●','#37e36e');lamp('aoaLo',-0.22,-0.188,-0.74,0.034,0.014,'▲','#ffb020');
  lamp('fire',-0.29,-0.17,-0.74,0.06,0.034,'ENG\nFIRE','#ff3b30');
 
- // ---------- large-area display: three portals in one bezel, with option-select keys ----------
+ // ---------- panoramic display: one glass panel in a moulded black cowl (after the F-35), standby unit below, auxiliary gauges beside it (after the F-16) ----------
  const lad=new THREE.Group();lad.position.set(0,-0.505,-0.735);lad.rotation.x=-0.28;cockpit.add(lad);ck.lad=lad;
- box(1.02,0.36,0.08,mShell,0,-0.01,-0.05,lad); // shroud
- box(0.95,0.31,0.024,mBezel,0,0,-0.004,lad);
- box(0.95,0.008,0.03,mFrame,0,0.158,0,lad);
+ {const sh=new THREE.Shape();sh.moveTo(-0.455,-0.2);sh.lineTo(0.455,-0.2);sh.lineTo(0.455,0.11);sh.quadraticCurveTo(0.455,0.2,0.36,0.2);sh.lineTo(-0.36,0.2);sh.quadraticCurveTo(-0.455,0.2,-0.455,0.11);sh.closePath();
+  const hole=new THREE.Path(),x0=-0.416,y0=-0.143,x1=0.416,y1=0.143,r=0.014;hole.moveTo(x0+r,y0);hole.lineTo(x0,y0+r);hole.lineTo(x0,y1-r);hole.lineTo(x0+r,y1);hole.lineTo(x1-r,y1);hole.lineTo(x1,y1-r);hole.lineTo(x1,y0+r);hole.lineTo(x1-r,y0);hole.closePath();sh.holes.push(hole);
+  add(new THREE.Mesh(new THREE.ExtrudeGeometry(sh,{depth:0.06,bevelEnabled:true,bevelThickness:0.012,bevelSize:0.01,bevelSegments:3,curveSegments:10}),mCowl),0,0,-0.035,lad);
+  box(0.86,0.3,0.01,mBlack,0,0,0.002,lad);box(0.9,0.38,0.05,mCowl,0,-0.005,-0.06,lad);}
  const mkScreen=(name,x,w,h)=>{const c=document.createElement('canvas');c.width=512*DS;c.height=Math.round(512*DS*h/w);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;
-   box(w+0.012,h+0.012,0.006,mBlack,x,0,0.009,lad);
-   const scr=add(new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:t,toneMapped:false})),x,0,0.0125,lad);ckTex[name]={c,g:c.getContext('2d'),t,W:512*DS,H:c.height};
-   // option-select keys above and below the portal
-   for(const yy of[1,-1])for(let i=0;i<5;i++)box(0.03,0.012,0.008,mBtn,x-0.104+i*0.052,yy*0.144,0.012,lad);
-   // rocker switches on the side of each portal
-   for(const sd of[-1,1])box(0.008,0.035,0.008,mBtn,x+sd*(w/2+0.012),0.09,0.012,lad);
-   return scr;};
- mkScreen('eng',-0.305,0.26,0.26);mkScreen('pfd',0,0.26,0.26);ck.ndScr=mkScreen('nd',0.305,0.26,0.26);
+   const scr=add(new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:t,toneMapped:false})),x,0,0.0125,lad);ckTex[name]={c,g:c.getContext('2d'),t,W:512*DS,H:c.height};return scr;};
+ mkScreen('eng',-0.272,0.266,0.266);mkScreen('pfd',0,0.266,0.266);ck.ndScr=mkScreen('nd',0.272,0.266,0.266);
  {const oc=document.createElement('canvas');oc.width=oc.height=512*DS;const ot=new THREE.CanvasTexture(oc);ckTex.eo={c:oc,g:oc.getContext('2d'),t:ot,W:512*DS,H:512*DS};
-  ck.eoOv=add(new THREE.Mesh(new THREE.PlaneGeometry(0.26,0.26),new THREE.MeshBasicMaterial({map:ot,transparent:true,depthWrite:false,toneMapped:false})),0.305,0,0.0145,lad);ck.eoOv.renderOrder=4;}
- // annunciator strip under the display
- {const m=new THREE.Mesh(new THREE.PlaneGeometry(0.6,0.03),plate(0.6,0.03,P=>{['FUEL LOW','HYD','GEN','OXY','FLCS','ENG','APU','CANOPY'].forEach((t,i)=>P.ann(0.07+i*0.122,0.5,0.11,0.62,t));}));add(m,0,-0.2,0.004,lad);}
- // knee panel and side panels below the display
- {const m=new THREE.Mesh(new THREE.PlaneGeometry(0.42,0.2),plate(0.42,0.2,P=>{P.txt('ECM',0.12,0.14,12);P.txt('IFF',0.5,0.14,12);P.txt('DATA LINK',0.86,0.14,12);
-    P.scale(0.12,0.55,0.06,6,['OFF','STBY','1','2','3','AUTO']);P.scale(0.5,0.55,0.06,5,['OFF','STBY','LOW','NORM','EMER']);P.lcd(0.86,0.5,0.22,0.16,'L16 ON','#55db8e');P.txt('MASTER ARM',0.5,0.88,11,'#e1b012');P.guard(0.66,0.88);}));
-  m.position.set(0,-0.73,-0.7);m.rotation.x=-0.5;cockpit.add(m);
-  [[0.12,0.55],[0.5,0.55]].forEach(([u,v])=>{const k=cyl(0.016,0.018,0.014,mGrip,(u-0.5)*0.42,-0.73+(0.5-v)*0.2*Math.cos(0.5)+0.006,-0.7-(0.5-v)*0.2*Math.sin(0.5)+0.004);k.rotation.x=-0.5+PI/2;});
-  box(0.44,0.22,0.06,mShell,0,-0.735,-0.735).rotation.x=-0.5;}
- // left: gear panel area; right: fuel quantity and clock
- {const m=new THREE.Mesh(new THREE.PlaneGeometry(0.075,0.24),plate(0.075,0.24,P=>{P.txt('FUEL LB',0.5,0.06,11);P.txt('BINGO',0.5,0.3,10);P.scale(0.5,0.44,0.13,6,['0','','','','','2K']);P.txt('ELAPSED',0.5,0.64,10);P.stripes(0.5,0.92,0.8,0.05);}));
-  m.position.set(0.505,-0.52,-0.71);m.rotation.x=-0.28;cockpit.add(m);
-  ck.lcds={};const lcdM=(name,v,col)=>{const c=document.createElement('canvas');c.width=128*DS;c.height=32*DS;const g=c.getContext('2d');const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;
-    const mm=new THREE.Mesh(new THREE.PlaneGeometry(0.05,0.0125),new THREE.MeshBasicMaterial({map:t,toneMapped:false}));mm.position.set(0,(0.5-v)*0.24,0.001);m.add(mm);
-    ck.lcds[name]={txt:'',set(x){if(x===this.txt)return;this.txt=x;g.fillStyle='#050708';g.fillRect(0,0,c.width,c.height);g.fillStyle=col;g.font='600 '+(24*DS)+'px IBM Plex Mono, monospace';g.textAlign='center';g.textBaseline='middle';g.fillText(x,c.width/2,c.height/2+DS);t.needsUpdate=true;}};};
-  lcdM('fuel',0.15,'#ffb432');lcdM('clock',0.75,'#55db8e');}
-
+  ck.eoOv=add(new THREE.Mesh(new THREE.PlaneGeometry(0.266,0.266),new THREE.MeshBasicMaterial({map:ot,transparent:true,depthWrite:false,toneMapped:false})),0.272,0,0.0145,lad);ck.eoOv.renderOrder=4;}
+ // single cover glass with a faint reflection of the sky
+ {const gl=add(new THREE.Mesh(new THREE.PlaneGeometry(0.83,0.284),new THREE.MeshStandardMaterial({color:0x0b1118,transparent:true,opacity:0.16,roughness:0.03,metalness:0.2,envMapIntensity:1.6,depthWrite:false})),0,0,0.018,lad);gl.userData.keepOrder=5;}
+ // caution lights along the lower rim
+ {const m=new THREE.Mesh(new THREE.PlaneGeometry(0.6,0.026),plate(0.6,0.026,P=>{['FUEL LOW','HYD','GEN','OXY','FLCS','ENG','APU','CANOPY'].forEach((t,i)=>P.ann(0.07+i*0.122,0.5,0.11,0.66,t));}));add(m,0,-0.173,0.0375,lad);}
+ // standby unit on the centre pedestal: small attitude display with a 4 x 4 keypad, knobs below
+ {box(0.24,0.3,0.2,mShell,0,-1.0,-0.74);const pg=new THREE.Group();pg.position.set(0,-0.8,-0.585);pg.rotation.x=-0.75;pg.scale.setScalar(1.3);cockpit.add(pg);
+  box(0.27,0.2,0.07,mCowl,0,0,-0.036,pg);
+  const c=document.createElement('canvas');c.width=c.height=256*DS;const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;ckTex.stby={c,g:c.getContext('2d'),t,W:256*DS,H:256*DS};
+  box(0.1,0.1,0.008,mBezel,0.06,0.025,0,pg);add(new THREE.Mesh(new THREE.PlaneGeometry(0.088,0.088),new THREE.MeshBasicMaterial({map:t,toneMapped:false})),0.06,0.025,0.0045,pg);
+  box(0.1,0.1,0.006,mBezel,-0.066,0.025,-0.001,pg);const mKey=std({color:0xd9dcd6,roughness:0.6,emissive:0x34352f});
+  for(let r=0;r<4;r++)for(let k=0;k<4;k++)box(0.018,0.018,0.008,mKey,-0.1+k*0.0227,0.059-r*0.0227,0.004,pg);
+  for(const x of[-0.1,-0.045,0.02,0.1]){const k=cyl(0.012,0.013,0.016,mGrip,x,-0.066,0.008,pg,14);k.rotation.x=PI/2;cyl(0.003,0.003,0.0165,mMetal,x,-0.066,0.009,pg,6).rotation.x=PI/2;}}
+ // auxiliary round gauges right of the display: RPM, FTIT, fuel
+ {const c=document.createElement('canvas');c.width=128*DS;c.height=384*DS;const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;ckTex.aux={c,g:c.getContext('2d'),t,W:128*DS,H:384*DS};
+  const ag=new THREE.Group();ag.position.set(0.505,-0.455,-0.73);ag.rotation.x=-0.28;cockpit.add(ag);
+  box(0.088,0.25,0.04,mCowl,0,0,-0.021,ag);add(new THREE.Mesh(new THREE.PlaneGeometry(0.074,0.222),new THREE.MeshBasicMaterial({map:t,toneMapped:false})),0,0,0.001,ag);
+  for(let i=0;i<3;i++)add(new THREE.Mesh(new THREE.TorusGeometry(0.0315,0.0045,8,28),mBezel),0,0.074-i*0.074,0.004,ag);}
  // ---------- cockpit tub: floor, walls, front bulkhead, structure ----------
  box(1.1,0.04,1.9,mShell,0,-1.0,-0.2);
  for(const sd of[-1,1]){box(0.04,0.72,1.9,mShell,0.55*sd,-0.64,-0.2);
@@ -1604,8 +1600,8 @@ const DS=MOB?1:2; // display canvas scale: drawing code works in 512-unit space,
  // ---------- throttle (left): stem, chunky grip with switches ----------
  ck.thr=new THREE.Group();ck.thr.position.set(-0.4,-0.5,-0.2);cockpit.add(ck.thr);
  box(0.016,0.1,0.016,mFrame,0,0.05,0,ck.thr);
- const tgrip=box(0.05,0.045,0.08,mGrip,0,0.115,0,ck.thr);
- box(0.04,0.03,0.012,mGrip,-0.01,0.12,0.045,ck.thr);box(0.012,0.012,0.012,mBtn,0.02,0.142,-0.01,ck.thr);box(0.01,0.01,0.01,mRed,0.02,0.142,0.02,ck.thr);
+ const tgrip=add(new THREE.Mesh(new THREE.CapsuleGeometry(0.027,0.055,6,16).rotateX(PI/2),mThr),0,0.118,0,ck.thr);tgrip.scale.set(1,0.82,1);
+ box(0.045,0.03,0.014,mThr,-0.006,0.115,0.052,ck.thr);box(0.012,0.012,0.012,mBtn,0.02,0.142,-0.01,ck.thr);box(0.01,0.01,0.01,mRed,0.02,0.142,0.02,ck.thr);
  cyl(0.008,0.008,0.006,mMetal,-0.02,0.139,-0.02,ck.thr,10);box(0.006,0.02,0.03,mBtn,0.027,0.115,0.0,ck.thr);
  box(0.02,0.012,0.36,mBlack,-0.4,-0.505,-0.2); // slot
  // ---------- ejection seat: headbox, back cushion, harness, firing handle ----------
@@ -1616,9 +1612,9 @@ const DS=MOB?1:2; // display canvas scale: drawing code works in 512-unit space,
    const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;add(new THREE.Mesh(new THREE.PlaneGeometry(0.13,0.05),std({map:t,roughness:0.6})),0,0.17,-0.001,sg);}
   for(const sd of[-1,1]){box(0.05,0.55,0.01,std({color:0x3d4a3a,roughness:0.95}),0.09*sd,-0.42,-0.03,sg);box(0.03,0.62,0.05,mFrame,0.2*sd,-0.4,0.06,sg);}
   box(0.34,0.06,0.42,mShell,0,-0.86,-0.22,sg);box(0.3,0.04,0.38,mCush,0,-0.82,-0.22,sg);
-  const hd=new THREE.Mesh(new THREE.TorusGeometry(0.045,0.009,8,20,PI),mYel);hd.position.set(0,-0.82,-0.43);hd.rotation.x=-PI/2-0.6;sg.add(hd);
-  for(let i=0;i<5;i++){const s=box(0.012,0.02,0.02,mBlack,-0.04+i*0.02,-0.79,-0.44,sg);s.rotation.z=0.5;}}
- cockpit.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;o.renderOrder=2;}});}
+  {const c=document.createElement('canvas');c.width=128;c.height=8;const g=c.getContext('2d');for(let i=0;i<16;i++){g.fillStyle=i%2?'#111':'#e9bb10';g.fillRect(i*8,0,8,8);}const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;
+   const hd=new THREE.Mesh(new THREE.TorusGeometry(0.055,0.011,10,32),std({map:t,roughness:0.6}));hd.position.set(0,-0.745,-0.45);hd.rotation.x=-0.45;sg.add(hd);box(0.05,0.03,0.04,mBlack,0,-0.8,-0.43,sg);}}
+ cockpit.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;o.renderOrder=o.userData.keepOrder||2;}});}
 // ---- displays ----
 function a_stallW(){return !!ac.stallW;}
 function ckBg(d,col){const g=d.g;g.setTransform(1,0,0,1,0,0);g.fillStyle=col||'#05080b';g.fillRect(0,0,d.W,d.H);g.setTransform(DS,0,0,DS,0,0);return g;}
@@ -1666,6 +1662,16 @@ function drawCockpitDisplays(a){
    g.strokeStyle='#e3eaf2';g.lineWidth=4;g.beginPath();g.moveTo(386,420);g.lineTo(436,420);g.lineTo(436+cos(a.flaps*0.5)*36,420+sin(a.flaps*0.5)*36);g.stroke();
    g.fillStyle=a.splr?'#ffb432':'#5f6d7d';g.font='700 15px Rajdhani, sans-serif';g.fillText(a.splr?'SPD BRK OUT':'SPD BRK IN',384,470);
    osb(g,['ENG','FUEL','HYD','ELEC','FCS'],['','','MENU','',''],'ENG');d.t.needsUpdate=true;}
+  // standby attitude display
+  {const d=ckTex.stby,g=ckBg(d,'#05080b');g.save();g.translate(28,20);adiCore(g,200,a);g.restore();g.fillStyle='#e3eaf2';g.font='600 20px IBM Plex Mono, monospace';g.textBaseline='middle';
+   g.textAlign='left';g.fillText(String(Math.round(a.ias)),6,238);g.textAlign='right';g.fillText(String(Math.round(max(0,a.agl))),250,238);g.textAlign='center';g.fillStyle='#8b9aab';g.font='700 13px Rajdhani, sans-serif';g.fillText('STBY',128,240);d.t.needsUpdate=true;}
+  // round gauges: white pointers on black dials
+  {const d=ckTex.aux,g=ckBg(d,'#0a0b0c');const dial=(cy,v,max_,lbl,marks,red)=>{const cx=64,r=50,A0=0.75*PI,SW=1.5*PI;g.fillStyle='#050505';g.beginPath();g.arc(cx,cy,r+6,0,2*PI);g.fill();
+      g.strokeStyle='#e8e8e2';g.fillStyle='#e8e8e2';for(let i=0;i<=20;i++){const an=A0+SW*i/20,l=i%5===0?9:5;g.lineWidth=i%5===0?2.2:1.2;g.beginPath();g.moveTo(cx+cos(an)*r,cy+sin(an)*r);g.lineTo(cx+cos(an)*(r-l),cy+sin(an)*(r-l));g.stroke();}
+      if(red!=null){g.strokeStyle='#e0382c';g.lineWidth=4;g.beginPath();g.arc(cx,cy,r-2,A0+SW*red,A0+SW);g.stroke();}
+      g.font='600 11px IBM Plex Mono, monospace';g.textAlign='center';g.textBaseline='middle';marks.forEach((m,i)=>{const an=A0+SW*i/(marks.length-1);g.fillText(m,cx+cos(an)*(r-19),cy+sin(an)*(r-19));});
+      g.font='700 12px Rajdhani, sans-serif';g.fillText(lbl,cx,cy+24);const an=A0+SW*clamp(v/max_,0,1);g.strokeStyle='#ffffff';g.lineWidth=3;g.beginPath();g.moveTo(cx-cos(an)*8,cy-sin(an)*8);g.lineTo(cx+cos(an)*(r-8),cy+sin(an)*(r-8));g.stroke();g.fillStyle='#bfbfbf';g.beginPath();g.arc(cx,cy,5,0,2*PI);g.fill();};
+   dial(64,sim.n2,110,'RPM %',['0','','50','','100'],0.93);dial(192,sim.egt,1100,'FTIT °C',['0','','5','','10'],0.86);dial(320,ac.fuel,3000,'FUEL LB',['0','1','2','3'],null);d.t.needsUpdate=true;}
   // nav display
   if(ndMode!=='cam'){const d=ckTex.nd,g=ckBg(d,'#04070a');mapCore(g,512,MAPR[mapRi],14);d.t.needsUpdate=true;}
 }
@@ -1775,7 +1781,7 @@ function updateCockpitControls(){drawMCP();
   const L=ck.lamps,fl=((performance.now()/350)|0)%2===0,vr=vrefCalc();
   L.warn.set(a_stallW()&&fl);L.caut.set((ac.fuel<300||(ac.gearT>0.03&&ac.gearT<0.97)||(!ac.gear&&ac.agl<500&&ac.vs<0&&!ac.onGround))&&fl);L.fire.set(sim.egt>1000);
   const ia=ac.gear&&!ac.onGround;L.aoaHi.set(ia&&ac.ias<vr-5);L.aoaOn.set(ia&&abs(ac.ias-vr)<=5);L.aoaLo.set(ia&&ac.ias>vr+5);
-  ck.lcds.fuel.set(String(Math.round(ac.fuel)));const tt=ac.t|0;ck.lcds.clock.set(String((tt/60)|0).padStart(2,'0')+':'+String(tt%60).padStart(2,'0'));
+
   ck.gearArm.rotation.x=lerp(-0.45,0.45,ac.gear?1:0);ck.gearArm.position.y=ac.gear?-0.045:0.045;
   ['N','L','R'].forEach(n=>ckLights['gear'+n].material.color.setHex(ac.gearT>0.97?0x37e36e:ac.gearT>0.03?0xff3b30:0x1c2228));
   ck.flapArm.position.z=-0.05+ac.flaps*0.05;

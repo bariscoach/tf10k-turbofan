@@ -2368,6 +2368,8 @@ function updateHUD(dt){
   const gsAng=atan2(a.pos.y-AC.gearH-target.ap.elev,max(1,target.aim-lt.u))/DEG;const gsDev=clamp(3-gsAng,-0.7,0.7);
   const locAng=atan2(lt.v,max(1,target.len-lt.u))/DEG;const locDev=clamp(-locAng,-2.5,2.5);
   H.gs.setAttribute('y',String(20+gsDev/0.7*14));H.loc.setAttribute('x',String(83+locDev/2.5*40));
+  // the approach needle only means something close to the runway and below 6,000 ft above it
+  $('cdi').style.visibility=(lt.u<0&&-lt.u<37000&&a.agl<6000&&!a.onGround)?'visible':'hidden';
   // warnings
   if(ap.msgT>0){ap.msgT-=dt;if(ap.msgT<=0){ap.msg='';onApChange();}}
   if((a.t*4|0)!==(updateHUD.k||0)){updateHUD.k=a.t*4|0;onApChange();}
@@ -2441,7 +2443,7 @@ syncSys();updateThrOut();resetFlight();ac.phase='standby';applyMob();
 // Fine ground layer: 8 x 4 tiles, 220 km square, 2048 px (about 107 m per pixel) with 257 x 257 terrain heights.
 // Tiles within 170 km of the aircraft are loaded (one per tick), tiles beyond 300 km are released. Roads and rivers are drawn
 // onto each tile from OpenStreetMap vector data (r{i}{j}.json) when it loads. Not used on phones.
-const FINE={on:false,S:220000,NX:8,NY:4,tiles:[],loadN:0,tick:-1,LOAD:170000,FREE:300000};
+const FINE={on:true,S:220000,NX:8,NY:4,tiles:[],loadN:0,tick:-1,LOAD:170000,FREE:300000};
 for(let j=0;j<FINE.NY;j++)for(let i=0;i<FINE.NX;i++)FINE.tiles.push({i,j,x0:GEO.bx0+i*FINE.S,z0:GEO.bz0+j*FINE.S,mesh:null,st:0});
 FINE.tiles.forEach(t=>{t.cx=t.x0+FINE.S/2;t.cz=t.z0+FINE.S/2;});
 function fineH(t,x,z){const n=257,fx=clamp((x-t.x0)/FINE.S,0,1)*(n-1),fz=clamp((z-t.z0)/FINE.S,0,1)*(n-1);return bil(t.h,n,n,fx,fz);}
@@ -2486,7 +2488,7 @@ async function warmUp(){if(warmUp.done||/nowarm/.test(location.search))return;wa
   frame.warm=false;camMode=cm;fb.set=false;}
 // run once the scenery has loaded (or after 6 s at the latest), while the start menu is up
 {let n=0;const t=setInterval(()=>{n++;if((PHOTO.ground>=SAT.N*SAT.N&&PHOTO.base>=8)||n>12){clearInterval(t);(window.requestIdleCallback||setTimeout)(()=>warmUp());}},500);}
-window.__hawk={PHOTO,renderer,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
+window.__hawk={PHOTO,renderer,FINE,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
 requestAnimationFrame(frame);
 })();
 </script>

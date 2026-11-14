@@ -826,6 +826,7 @@ function resetFlight(){
   ac.pOm=null;ac.phiHold=null;ac.qRef=0;syncFromEuler(ac);
 }
 const sq16=h=>{const x=16*h*16*h;return x/(1+x);};
+const rollY=a=>GX.ext*cos(a.theta)-GEAR[1].l*sin(a.theta)-GX.stat*(a.wf==null?1:a.wf);
 function CL(a,f){const st=AC.aStall[f];const lin=AC.clA*(a-AC.a0)+AC.clFlap[f];if(a<=st)return max(lin,-0.9)+(ac.splr?AC.clSplr:0);const peak=AC.clA*(st-AC.a0)+AC.clFlap[f];return max(0.3,peak-(a-st)*AC.cls)+(ac.splr?AC.clSplr:0);}
 function vrefCalc(f){f=f==null?ac.flaps:f;return 1.3*sqrt(2*AC.mass*9.81/(1.225*AC.S*CL(AC.aStall[f],f)))/KT;}
 function flyStep(dt){
@@ -876,6 +877,8 @@ function flyStep(dt){
   const rd=qn*(-PM.nb*a.beta+PM.ndr*a.drTot-PM.nda*a.da)-PM.nr*sq*(a.r-(a.psiDot||0));
   // auto-trim: with the yoke centred the drone holds its attitude, like fly-by-wire
   // auto-trim holds the flight path with the yoke centred and adds back-pressure in turns (fly-by-wire style)
+  // just after liftoff the takeoff (nose-down) trim is wound towards what holds the present angle of attack, so the nose stays put when the stick is released
+  if(autoTrim&&!ap.on&&!a.onGround&&!a.stalled&&a.airT<3&&a.toPhase&&a.toPhase!=='climb'){const tq=clamp((a.alpha-PM.a0)*PM.ka/PM.kd,-1,1);if(tq>a.trim)a.trim+=(tq-a.trim)*(1-exp(-dt/0.7));}
   const normalAtt=abs(a.phi)<62*DEG&&abs(a.theta)<60*DEG;
   if(abs(pIn)>0.02||a.onGround||ap.on||!normalAtt)a.fpHold=null;else if(a.fpHold==null&&abs(a.de)<0.03&&abs(a.gamma)<30*DEG)a.fpHold=a.gamma;
   if(autoTrim&&!ap.on&&!a.onGround&&!a.stalled&&a.fpHold!=null)a.trim=clamp(a.trim+(PM.fk*(a.fpHold-a.gamma)-PM.fq*(a.q-(a.onGround?0:a.qRef||0)))*dt,-1,1);
@@ -883,7 +886,7 @@ function flyStep(dt){
   const hb=max(0,a.pos.y-a.gy-AC.gearH+1.1)/AC.span,ge=sq16(hb);
   const cl=CL(a.alpha,f)*(1+0.09*(1-ge));const cd=AC.cd0+AC.k*cl*cl*ge+AC.cdFlap[f]+AC.cdGear*a.gearT+(a.splr?AC.cdSplr:0)+(a.stalled?0.015*(a.alpha-st)/DEG:0)+0.6*a.beta*a.beta;
   const L=qbar*AC.S*cl,D=qbar*AC.S*cd;
-  const m=AC.mass,g=9.81;
+  const m=AC.mass,g=9.81;a.wf=1-clamp(L/(m*g),0,1);
   // engine net thrust with ram-drag loss
   a.thrN=sim.thrust*LBF*(1-0.35*clamp(a.V/170,0,1));
   const T=a.thrN;
@@ -897,14 +900,14 @@ function flyStep(dt){
     // rolling: tyre friction by surface, brakes, spoilers, nosewheel steering; weight on the nose gear pushes the nose down
     const W=m*g;const surf=surfaceAt(a.pos);a.surf=surf;const mu=surf==='grass'?0.09:0.02,bmu=surf==='grass'?0.18:0.33;
     a.brkF=(a.brkF||0)+((a.brk?1:0)-(a.brkF||0))*(1-exp(-dt/0.45));a.splF=(a.splF||0)+((a.splr?1:0)-(a.splF||0))*(1-exp(-dt/0.6));
-    const roll=mu*W+a.brkF*bmu*W*clamp(a.V/8,0,1)+a.splF*0.1*W*clamp(a.V/40,0,1);a.gc=[GX.stat,GX.stat,GX.stat];
+    const roll=mu*W+a.brkF*bmu*W*clamp(a.V/8,0,1)+a.splF*0.1*W*clamp(a.V/40,0,1);
     dV=(T-D-roll)/m;if(a.V<0.5&&dV<0){dV=0;a.V=0;}
-    a.gamma=0;a.pos.y=a.gy+AC.gearH;
+    a.gamma=0;{const y0=a.pos.y-a.gy,y1=rollY(a);a.yDot=(y1-y0)/dt;a.pos.y=a.gy+y1;const cm=GX.stat*a.wf;a.gc=[clamp(GX.ext*cos(a.theta)-y1-GEAR[0].l*sin(a.theta),0,GX.stroke),cm,cm];}
     {const rT=a.steer*12*DEG*clamp(a.V/20,0,1)*clamp(1.4-a.V/80,0.35,1);a.r+=(rT-a.r)*(1-exp(-dt/0.25));}a.psiB+=a.r*dt;a.psi=a.psiB;a.beta=0;a.psiDot=a.r;a.phi+=(0-a.phi)*(1-exp(-dt/0.5));a.p=0;
     {const wf=1-clamp(L/W,0,1);qd-=wf*(W*GX.arm/GX.Iy+1.5*a.q);}
     a.q+=qd*dt;a.theta+=a.q*dt;
     if(a.theta<0){a.theta=0;a.q=max(0,a.q);}if(a.theta>13.5*DEG){a.theta=13.5*DEG;a.q=min(0,a.q);if(!a.toTail&&a.V>20){a.toTail=true;onEvent('Tail strike on rotation','warn');audio.thud&&audio.thud(0.5);}}
-    if(L*cos(a.phi)+T*sin(a.alpha)>W*1.02&&a.theta>2*DEG){a.onGround=false;a.settleT=0;a.airHigh=false;a.liftPitch=a.theta;a.liftIas=a.ias;}
+    if(L*cos(a.phi)+T*sin(a.alpha)>W*1.02&&a.theta>2*DEG){a.onGround=false;a.settleT=0;a.airHigh=false;a.liftPitch=a.theta;a.liftIas=a.ias;a.gamma=Math.asin(clamp((a.yDot||0)/max(a.V,20),-0.05,0.05));}
     dG=0;
     a.V=max(0,a.V+dV*dt);syncFromEuler(a);
   }else{
@@ -961,7 +964,7 @@ function flyStep(dt){
     const tip=(a.pos.y-a.gy)+AC.tipZ*cos(a.theta)-AC.tipY*abs(sin(a.phi))+AC.tipL*sin(a.theta);if(tip<=0){crash('Wingtip strike at '+fmt(abs(a.phi)/DEG,1)+'° of bank.');return;}
     const tail=(a.pos.y-a.gy)+AC.tailZ*cos(a.theta)+AC.tailL*sin(a.theta);if(tail<=0&&a.td)a.td.tail=true;if(tail<-0.35){crash('Heavy tail strike at '+fmt(a.theta/DEG,1)+'° nose-up.');return;}
     // settle: both mains loaded and vertical motion damped out → rollout
-    if(G&&G.mains&&abs(a.vs)<0.35){a.settleT=(a.settleT||0)+dt;if(a.settleT>0.25){a.onGround=true;a.yEase=(a.pos.y-a.gy)-AC.gearH;a.pos.y=a.gy+AC.gearH;a.gamma=0;a.psi=a.psiB;a.beta=0;a.vs=0;a.V=a.va.length();a.pOm=null;syncFromEuler(a);}}else a.settleT=0;
+    if(G&&G.mains&&abs(a.vs)<0.35){a.settleT=(a.settleT||0)+dt;if(a.settleT>0.25){a.onGround=true;a.yEase=(a.pos.y-a.gy)-rollY(a);a.pos.y=a.gy+rollY(a);a.gamma=0;a.psi=a.psiB;a.beta=0;a.vs=0;a.V=a.va.length();a.pOm=null;syncFromEuler(a);}}else a.settleT=0;
   }
   if(a.onGround&&a.td){if(a.V<0.6){finish();return;}}
   if(a.toPhase==='hold'&&!a.brk&&sim.throttle>0.3){a.toPhase='roll';onEvent('Brakes released. Takeoff roll','');}

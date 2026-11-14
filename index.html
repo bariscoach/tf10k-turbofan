@@ -1118,7 +1118,7 @@ function loadPatch(ap){if(!ap.patch||ap.pl)return;ap.pl=1;const e0=ap.ends[0],cx
   const im=new Image();im.onload=()=>{const n=im.width,c=document.createElement('canvas');c.width=c.height=n;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(im,0,0);const d=g.getImageData(0,0,n,n).data,h=new Float32Array(n*n);
     for(let k=0;k<n*n;k++)h[k]=(d[k*4]*256+d[k*4+1])/10;TERR.f.push({h,n,cx,cz,half});
     loadTex('p_'+ap.id+(MOB?'_m':'')+'.jpg',t=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(2*half,2*half,MOB?64:128,MOB?64:128),addDetail(new THREE.MeshStandardMaterial({map:t,roughness:1,metalness:0,envMapIntensity:0.9}),'grass',{sat:1,gain:2.7,gamma:0.95,s1:5,s2:31,tint:0.2,k:0.6,f0:250,f1:2200,n0:25,n1:220,aer:210,ka:0.45}));
-      m.rotation.x=-PI/2;m.position.set(cx,0.01,cz);m.receiveShadow=true;relief(m);SAT.meshes.push(m);scene.add(m);addHole(cx-half+500,cz-half+500,cx+half-500,cz+half-500);ap.pl=2;});};im.src=ASSET+'h_'+ap.id+'.png';}
+      m.rotation.x=-PI/2;m.position.set(cx,0.01,cz);m.receiveShadow=true;relief(m);SAT.meshes.push(m);scene.add(m);warmMesh(m);addHole(cx-half+500,cz-half+500,cx+half-500,cz+half-500);ap.pl=2;});};im.src=ASSET+'h_'+ap.id+'.png';}
 function patchWatch(){for(const ap of AIRPORTS){if(!ap.patch||ap.pl)continue;if(ap===target.ap||(origin&&ap===origin.ap)||Math.hypot(ac.pos.x-ap.x,ac.pos.z-ap.z)<150000)loadPatch(ap);}}
 // Sentinel-2 cloudless 2017 mosaic of Istanbul, 72 km square in nine tiles (north is -z, east is +x)
 const SAT={half:GEO.half,N:3,P:MOB?512:1024,px:[],thumb:document.createElement('canvas'),ready:false,meshes:[]};SAT.thumb.width=SAT.thumb.height=768;
@@ -2420,7 +2420,29 @@ function frame(now){
   updateHUD(dt);updateRunwaySymbol();if((now/100|0)%2===0)drawMap();updatePanel(dt);renderLever();
 }
 syncSys();updateThrOut();resetFlight();ac.phase='standby';applyMob();
-window.__hawk={PHOTO,get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
+// warm-up: compile every shader and upload every texture while the menu is showing, so the first Start, camera switch
+// or afterburner doesn't stall the frame after a click (that stall was reported as a slow interaction)
+function warmMesh(m){if(!warmUp.done)return;(window.requestIdleCallback||setTimeout)(()=>{try{for(const tg of[null,eoRT]){renderer.setRenderTarget(tg);renderer.compile(m,tg?eoCam:camera,scene);}renderer.setRenderTarget(null);const t=m.material&&m.material.map;if(t)renderer.initTexture(t);}catch(e){}});}
+async function warmUp(){if(warmUp.done||/nowarm/.test(location.search))return;warmUp.done=true;
+  const hidden=[];scene.traverse(o=>{if(!o.visible&&o!==SAT.far){hidden.push(o);o.visible=true;}});
+  // the cockpit view clips the fuselage (a different shader variant) and draws its screens: do both now
+  try{setTubClip(true);updateTubClip();drawCockpitDisplays(ac);drawHUD(ac);drawMCP();drawEOOverlay(performance.now());}catch(e){}
+  // shaders differ between the screen and the nose-camera image, so compile for both targets
+  for(const tg of[null,eoRT]){try{renderer.setRenderTarget(tg);if(renderer.compileAsync)await renderer.compileAsync(scene,tg?eoCam:camera);else renderer.compile(scene,tg?eoCam:camera);}catch(e){}}renderer.setRenderTarget(null);
+  const tex=new Set();scene.traverse(o=>{const ms=o.material?(Array.isArray(o.material)?o.material:[o.material]):[];ms.forEach(m=>{for(const k in m){const v=m[k];if(v&&v.isTexture)tex.add(v);}if(m.uniforms)for(const k in m.uniforms){const v=m.uniforms[k].value;if(v&&v.isTexture)tex.add(v);}});});
+  const list=[...tex];for(let i=0;i<list.length;i++){try{renderer.initTexture(list[i]);}catch(e){}if(i%6===5)await new Promise(r=>setTimeout(r,0));}
+  // one tiny off-screen render from the cockpit eye and the nose camera finishes the GPU-side setup
+  const rt=new THREE.WebGLRenderTarget(64,64);drone.updateMatrixWorld(true);const cam=camera.clone();cam.position.copy(EYE).applyMatrix4(drone.matrixWorld);cam.quaternion.copy(drone.quaternion);
+  renderer.setRenderTarget(rt);renderer.render(scene,cam);renderer.setRenderTarget(null);try{const v=drone.visible;renderEO();drone.visible=v;}catch(e){}rt.dispose();
+  try{setTubClip(false);}catch(e){}
+  hidden.forEach(o=>{o.visible=false;});
+  // finally run real frames once in each camera (behind the start menu, which covers the canvas) so any remaining shader variant is built now
+  const raf=window.requestAnimationFrame,cm=camMode;window.requestAnimationFrame=()=>0;
+  try{for(const m of['cockpit','nose','flyby','tower','chase']){camMode=m;fb.set=false;frame(performance.now());await new Promise(r=>setTimeout(r,0));}}catch(e){}
+  window.requestAnimationFrame=raf;camMode=cm;fb.set=false;}
+// run once the scenery has loaded (or after 6 s at the latest), while the start menu is up
+{let n=0;const t=setInterval(()=>{n++;if((PHOTO.ground>=SAT.N*SAT.N&&PHOTO.base>=8)||n>12){clearInterval(t);(window.requestIdleCallback||setTimeout)(()=>warmUp());}},500);}
+window.__hawk={PHOTO,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
 requestAnimationFrame(frame);
 })();
 </script>

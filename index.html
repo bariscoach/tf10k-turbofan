@@ -1076,6 +1076,19 @@ const skyMesh=new THREE.Mesh(new THREE.SphereGeometry(40000,32,16),new THREE.Sha
   vertexShader:'varying vec3 vP;void main(){vP=position;vec4 p=projectionMatrix*modelViewMatrix*vec4(position,1.0);gl_Position=p.xyww;}',
   fragmentShader:'uniform vec3 top;uniform vec3 hor;uniform vec3 sun;varying vec3 vP;void main(){vec3 d=normalize(vP);float h=d.y;float t=pow(clamp(h,0.0,1.0),0.5);vec3 c=mix(hor,top,t);if(h<0.0)c=mix(hor,vec3(0.55,0.6,0.62),clamp(-h*4.0,0.0,1.0));float s=max(dot(d,sun),0.0);c+=vec3(1.0,0.92,0.75)*(pow(s,800.0)*4.0+pow(s,24.0)*0.25);gl_FragColor=vec4(c,1.0);}'}));
 skyMesh.frustumCulled=false;skyMesh.renderOrder=-1;scene.add(skyMesh);
+const cloudMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.BackSide,fog:false,uniforms:{map:{value:null},t:{value:0},wind:{value:new THREE.Vector2()},cover:{value:0.52}},
+  vertexShader:'varying vec3 vP;void main(){vP=position;vec4 p=projectionMatrix*modelViewMatrix*vec4(position,1.0);gl_Position=p.xyww;}',
+  fragmentShader:`uniform float t;uniform vec2 wind;uniform float cover;varying vec3 vP;
+    float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+    float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
+    float fbm(vec2 p){float a=0.5,s=0.0;for(int i=0;i<5;i++){s+=a*vn(p);p=p*2.03+vec2(1.7,9.2);a*=0.5;}return s;}
+    void main(){vec3 d=normalize(vP);if(d.y<0.015)discard;
+      vec2 q=d.xz/(d.y+0.12)*1.25;vec2 off=wind*t*0.0021+vec2(t*0.0009,t*0.0004);
+      float n=fbm(q+off);float n2=fbm(q*2.7+off*1.6+3.1);float dens=n*0.8+n2*0.35;
+      float c=smoothstep(cover,cover+0.2,dens);float fade=smoothstep(0.015,0.2,d.y);
+      vec3 col=mix(vec3(0.78,0.82,0.88),vec3(1.0,0.99,0.97),smoothstep(0.4,0.8,n));
+      gl_FragColor=linearToOutputTexel(vec4(col,c*fade*0.92));}`});
+const cloudDome=new THREE.Mesh(new THREE.SphereGeometry(38000,48,24),cloudMat);cloudDome.renderOrder=-0.5;cloudDome.frustumCulled=false;
 loadTex(MOB?'sky_m.jpg':'sky.jpg',t=>{t.anisotropy=1;t.wrapS=THREE.RepeatWrapping;t.generateMipmaps=false;t.minFilter=THREE.LinearFilter;
   // sun position in the panorama (u 0.593, 42° up) becomes the light direction
   const az=(0.593-0.5)*2*PI,el=42*DEG;SUN.set(cos(az)*cos(el),sin(el),sin(az)*cos(el));SUNOFF.copy(SUN).multiplyScalar(600);
@@ -1093,7 +1106,9 @@ loadTex(MOB?'sky_m.jpg':'sky.jpg',t=>{t.anisotropy=1;t.wrapS=THREE.RepeatWrappin
         c=mix(c,f,smoothstep(0.035,-0.012,d.y));gl_FragColor=linearToOutputTexel(vec4(c,1.0));}`});
   const env=t.clone();env.mapping=THREE.EquirectangularReflectionMapping;env.needsUpdate=true;const pm=new THREE.PMREMGenerator(renderer);scene.environment=pm.fromEquirectangular(env).texture;pm.dispose();env.dispose();
   hemi.intensity=0.5;hemi.color.setHex(0xd6e6ff);hemi.groundColor.setHex(0x4a5638);sun.intensity=2.3;sun.color.setHex(0xfff4e2);renderer.toneMappingExposure=1.0;
-  PHOTO.sky=true;clouds.forEach(c=>{c.visible=false;});});
+  PHOTO.sky=true;clouds.forEach(c=>{c.visible=false;});
+  // moving clouds: a second dome of procedural cumulus that drifts with the scenario wind (and a slow base drift), over the photo sky
+  cloudMat.uniforms.map.value=null;scene.add(cloudDome);});
 const hemi=new THREE.HemisphereLight(0xcfe0ff,0x3a4a2a,0.7);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xfff1dc,1.7);sun.position.set(-3000,5000,2000);sun.castShadow=true;sun.shadow.mapSize.set(MOB?1024:4096,MOB?1024:4096);
 Object.assign(sun.shadow.camera,{left:-45,right:45,top:45,bottom:-45,near:1,far:12000});sun.shadow.radius=3;sun.shadow.bias=-0.0003;scene.add(sun);scene.add(sun.target);
@@ -2375,8 +2390,9 @@ let W=1,Hh=1;
 function resize(){const r=view.getBoundingClientRect();W=max(1,Math.round(r.width));Hh=max(1,Math.round(r.height));renderer.setPixelRatio(min(window.devicePixelRatio||1,MOB?1.5:2));renderer.setSize(W,Hh,false);camera.aspect=W/Hh;camera.updateProjectionMatrix();}
 new ResizeObserver(resize).observe(view);resize();
 let last=performance.now(),dtFrame=0.016;
+setInterval(()=>{if(!frame.warm&&!document.hidden&&frame.beat&&performance.now()-frame.beat>1500){frame.beat=performance.now();requestAnimationFrame(frame);}},700);
 function frame(now){
-  requestAnimationFrame(frame);let dt=min(0.05,(now-last)/1000);last=now;if(document.hidden)return;dtFrame=dt;
+  if(!frame.warm)requestAnimationFrame(frame);frame.beat=now;let dt=min(0.05,(now-last)/1000);last=now;if(document.hidden)return;dtFrame=dt;
   if(timeK>1&&(ac.phase!=='fly'||ac.onGround||ac.agl<1200||ac.stalled||abs(ac.phi)>60*DEG||Math.hypot(ac.pos.x-target.thr.x,ac.pos.z-target.thr.z)<28000))setTimeK(1);
   if(ac.phase==='fly'){for(let j=0;j<timeK;j++)step(dt);const n=max(2,Math.ceil(dt*timeK/0.006));for(let i=0;i<n&&ac.phase==='fly';i++)flyStep(dt*timeK/n);}
   ac.yEase=(ac.yEase||0)*exp(-dt/0.25);
@@ -2413,15 +2429,43 @@ function frame(now){
   shake=(ac.stalled&&!ac.onGround?0.5:0)+(ac.onGround&&ac.V>3?(ac.surf==='grass'?0.18:0.025)*clamp(ac.V/60,0,1):0)+ac.jolt*0.35;
   updateCockpit(dt);updateCamera(dt);
   if(camMode==='cockpit'&&ndMode==='cam'){ck.eoT=(ck.eoT||0)+1;if(ck.eoT%(MOB?3:2)===1)renderEO();drawEOOverlay(now);}
-  if(SAT.far){SAT.far.position.x=camera.position.x;SAT.far.position.z=camera.position.z;}if((now/1000|0)!==patchWatch.t){patchWatch.t=now/1000|0;patchWatch();}
+  if(SAT.far){SAT.far.position.x=camera.position.x;SAT.far.position.z=camera.position.z;}if((now/500|0)!==FINE.tick){FINE.tick=now/500|0;fineWatch();}if((now/1000|0)!==patchWatch.t){patchWatch.t=now/1000|0;patchWatch();}
   {const R=MOB?11000:22000;for(const c of cityChunks)c.m.visible=camera.position.distanceTo(c.c)<R+c.r;}
-  skyMesh.position.copy(camera.position);clouds.forEach(c=>{c.position.x+=SCEN[scen].wind[0]*0.3*dt;});renderer.render(scene,camera);
+  skyMesh.position.copy(camera.position);cloudDome.position.copy(camera.position);{const w=SCEN[scen].wind;cloudMat.uniforms.t.value=now/1000;cloudMat.uniforms.wind.value.set(w[0],w[2]);}clouds.forEach(c=>{c.position.x+=SCEN[scen].wind[0]*0.3*dt;});renderer.render(scene,camera);
   {const m=!$('title').hidden;if(m!==frame.menu){frame.menu=m;$('app').classList.toggle('menu',m);}}
   updateHUD(dt);updateRunwaySymbol();if((now/100|0)%2===0)drawMap();updatePanel(dt);renderLever();
 }
 syncSys();updateThrOut();resetFlight();ac.phase='standby';applyMob();
 // warm-up: compile every shader and upload every texture while the menu is showing, so the first Start, camera switch
 // or afterburner doesn't stall the frame after a click (that stall was reported as a slow interaction)
+// Fine ground layer: 8 x 4 tiles, 220 km square, 2048 px (about 107 m per pixel) with 257 x 257 terrain heights.
+// Tiles within 170 km of the aircraft are loaded (one per tick), tiles beyond 300 km are released. Roads and rivers are drawn
+// onto each tile from OpenStreetMap vector data (r{i}{j}.json) when it loads. Not used on phones.
+const FINE={on:false,S:220000,NX:8,NY:4,tiles:[],loadN:0,tick:-1,LOAD:170000,FREE:300000};
+for(let j=0;j<FINE.NY;j++)for(let i=0;i<FINE.NX;i++)FINE.tiles.push({i,j,x0:GEO.bx0+i*FINE.S,z0:GEO.bz0+j*FINE.S,mesh:null,st:0});
+FINE.tiles.forEach(t=>{t.cx=t.x0+FINE.S/2;t.cz=t.z0+FINE.S/2;});
+function fineH(t,x,z){const n=257,fx=clamp((x-t.x0)/FINE.S,0,1)*(n-1),fz=clamp((z-t.z0)/FINE.S,0,1)*(n-1);return bil(t.h,n,n,fx,fz);}
+function fineRelief(m,t){const pa=m.geometry.attributes.position;for(let k=0;k<pa.count;k++){const wx=m.position.x+pa.getX(k),wz=m.position.z-pa.getY(k);pa.setZ(k,fineH(t,wx,wz));}pa.needsUpdate=true;m.geometry.computeVertexNormals();m.geometry.computeBoundingSphere();}
+function drawRoadsOn(canvas,data,S){const g=canvas.getContext('2d');const px=(v)=>v*canvas.width;
+  const ways=(list,w,col,cas)=>{if(!list)return;for(const pts of list){if(pts.length<4)continue;g.beginPath();g.moveTo(px(pts[0]),px(pts[1]));for(let k=2;k<pts.length;k+=2)g.lineTo(px(pts[k]),px(pts[k+1]));if(cas){g.strokeStyle=cas;g.lineWidth=w*1.8;g.lineCap='round';g.lineJoin='round';g.stroke();}g.strokeStyle=col;g.lineWidth=w;g.stroke();}};
+  if(!data)return;
+  ways(data.r,1.3,'#3f7fa3');                  // rivers: blue, thin
+  ways(data.p,1.6,'#e6dfc7','#8a7f66');        // primary roads
+  ways(data.t,2.2,'#f0d78a','#6f5b2b');        // trunk roads
+  ways(data.m,3.0,'#ffe9a8','#5e4a1f');        // motorways, with dark casing
+}
+function loadFine(t){if(t.st)return;t.st=1;FINE.loadN++;
+  const tex=new Image();tex.onload=()=>{const cv=document.createElement('canvas');cv.width=cv.height=2048;const g=cv.getContext('2d');g.drawImage(tex,0,0,2048,2048);
+    const hi=new Image();hi.onload=()=>{const n=hi.width,hc=document.createElement('canvas');hc.width=hc.height=n;const hg=hc.getContext('2d',{willReadFrequently:true});hg.drawImage(hi,0,0);const d=hg.getImageData(0,0,n,n).data,h=new Float32Array(n*n);for(let k=0;k<n*n;k++)h[k]=(d[k*4]*256+d[k*4+1])/10;t.h=h;
+      fetch(ASSET+'r'+t.i+t.j+'.json').then(r=>r.ok?r.json():null).catch(()=>null).then(data=>{drawRoadsOn(cv,data,FINE.S);
+        const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace;tx.anisotropy=MOB?4:16;
+        const m=new THREE.Mesh(new THREE.PlaneGeometry(FINE.S,FINE.S,96,96),addDetail(new THREE.MeshStandardMaterial({map:tx,roughness:1,metalness:0,envMapIntensity:0.9}),'grass',{sat:1,base:1,gain:2.7,gamma:0.95,s1:5,s2:31,tint:0.2,k:0.6,f0:250,f1:2200,n0:25,n1:220,aer:210,ka:0.45}));
+        m.rotation.x=-PI/2;m.position.set(t.cx,0,t.cz);fineRelief(m,t);scene.add(m);t.mesh=m;t.st=2;warmMesh(m);FINE.loadN--;});};
+    hi.onerror=()=>{t.st=3;FINE.loadN--;};hi.src=ASSET+'hf'+t.i+t.j+'.png';};
+  tex.onerror=()=>{t.st=3;FINE.loadN--;};tex.src=ASSET+'f'+t.i+t.j+'.jpg';}
+function fineWatch(){if(MOB||!FINE.on)return;const c=camera.position;for(const t of FINE.tiles){const d=Math.hypot(c.x-t.cx,c.z-t.cz)-FINE.S*0.7;
+    if(t.mesh&&d>FINE.FREE){scene.remove(t.mesh);t.mesh.geometry.dispose();t.mesh.material.map.dispose();t.mesh.material.dispose();t.mesh=null;t.st=0;t.h=null;}}
+  if(FINE.loadN>0)return;let best=null,bd=FINE.LOAD;for(const t of FINE.tiles){if(t.st)continue;const d=Math.hypot(c.x-t.cx,c.z-t.cz)-FINE.S*0.7;if(d<bd){bd=d;best=t;}}if(best)loadFine(best);}
 function warmMesh(m){if(!warmUp.done)return;(window.requestIdleCallback||setTimeout)(()=>{try{for(const tg of[null,eoRT]){renderer.setRenderTarget(tg);renderer.compile(m,tg?eoCam:camera,scene);}renderer.setRenderTarget(null);const t=m.material&&m.material.map;if(t)renderer.initTexture(t);}catch(e){}});}
 async function warmUp(){if(warmUp.done||/nowarm/.test(location.search))return;warmUp.done=true;
   const hidden=[];scene.traverse(o=>{if(!o.visible&&o!==SAT.far){hidden.push(o);o.visible=true;}});
@@ -2437,12 +2481,12 @@ async function warmUp(){if(warmUp.done||/nowarm/.test(location.search))return;wa
   try{setTubClip(false);}catch(e){}
   hidden.forEach(o=>{o.visible=false;});
   // finally run real frames once in each camera (behind the start menu, which covers the canvas) so any remaining shader variant is built now
-  const raf=window.requestAnimationFrame,cm=camMode;window.requestAnimationFrame=()=>0;
+  const cm=camMode;frame.warm=true;
   try{for(const m of['cockpit','nose','flyby','tower','chase']){camMode=m;fb.set=false;frame(performance.now());await new Promise(r=>setTimeout(r,0));}}catch(e){}
-  window.requestAnimationFrame=raf;camMode=cm;fb.set=false;}
+  frame.warm=false;camMode=cm;fb.set=false;}
 // run once the scenery has loaded (or after 6 s at the latest), while the start menu is up
 {let n=0;const t=setInterval(()=>{n++;if((PHOTO.ground>=SAT.N*SAT.N&&PHOTO.base>=8)||n>12){clearInterval(t);(window.requestIdleCallback||setTimeout)(()=>warmUp());}},500);}
-window.__hawk={PHOTO,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
+window.__hawk={PHOTO,renderer,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
 requestAnimationFrame(frame);
 })();
 </script>

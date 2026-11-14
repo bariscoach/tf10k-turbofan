@@ -72,6 +72,9 @@ main{display:grid;grid-template-columns:1fr 372px;min-height:0}
 #aiL{display:none}
 #ai .ref{position:absolute;left:50%;top:50%;width:64px;height:10px;transform:translate(-50%,-50%);border:3px solid #ffd23f;border-top:0;border-radius:0 0 5px 5px}
 #ai .ball{position:absolute;left:50%;bottom:6px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px #000}
+.route{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin:6px 0 10px}.route label{display:flex;flex-direction:column;gap:4px;font-family:var(--font-display);font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted,#8b9aab);flex:1;min-width:160px}
+.route select{font:500 15px var(--font-body,inherit);padding:9px 10px;border-radius:8px;border:1px solid rgba(125,245,160,.35);background:#0e141c;color:#e3eaf2;min-width:0;width:100%}.route .rarrow{font-size:22px;color:#7df5a0;padding-bottom:8px}
+#routeMap{width:100%;height:auto;border-radius:10px;border:1px solid rgba(125,245,160,.25);background:#16283c;display:block}
 #hdgTape{position:absolute;left:50%;top:112px;transform:translateX(-50%);width:360px;height:52px;pointer-events:none}
 #view.ckView #hdgTape{top:40px} #app.mob #hdgTape{top:30px;width:250px;height:36px} #app.menu #hdgTape{display:none}
 #fma{position:absolute;left:50%;top:62px;transform:translateX(-50%);display:flex;gap:0;border:1px solid rgba(125,245,160,.45);border-radius:4px;background:rgba(10,14,20,.55);font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:.08em;white-space:nowrap}
@@ -294,7 +297,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
 <body>
 <div id="app" class="menu">
   <header>
-    <h1 class="brand"><button type="button" class="logo" id="logoHome" title="Home: back to the start menu" aria-label="Red Apple, home"><svg class="logoMark" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="lgA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff6b5a"/><stop offset="1" stop-color="#c3261c"/></linearGradient><linearGradient id="lgS" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f7fa"/><stop offset="1" stop-color="#a9b4bf"/></linearGradient></defs><path d="M24 4.2 C24.6 2.6 25.6 1.6 27 1.2" stroke="#7a4a2a" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M26.2 3.4 C29.5 0.6 33.4 1.2 34.6 2.4 C32.6 5.2 28.8 5.6 26.2 3.4 Z" fill="#4fbf6a"/><circle cx="24" cy="25" r="21.5" fill="#120c0d" stroke="url(#lgA)" stroke-width="2.6"/><path d="M5 38 L43 26" stroke="#ffb432" stroke-width="1.6" stroke-dasharray="2.6 2" fill="none" opacity=".9"/><path fill="url(#lgS)" d="M24 7 L26.3 15 L26.8 20.5 L39 32 L39 34.4 L27.8 35.8 L28.4 40.4 L31.2 43.4 L26.3 42.6 L24 44.4 L21.7 42.6 L16.8 43.4 L19.6 40.4 L20.2 35.8 L9 34.4 L9 32 L21.2 20.5 L21.7 15 Z"/><path fill="url(#lgS)" d="M21.6 16.2 L16.2 20.2 L16.2 21.6 L21.3 20.6 Z M26.4 16.2 L31.8 20.2 L31.8 21.6 L26.7 20.6 Z"/><circle cx="24" cy="39.6" r="1.1" fill="#ff5a4a"/></svg><span class="wm"><b><em>RED</em> APPLE</b><i>UAV FLIGHT</i></span></button><small>Kızılelma unmanned fighter · TF-10K engine</small></h1>
+    <h1 class="brand"><button type="button" class="logo" id="logoHome" title="Home: back to the start menu" aria-label="Red Apple, home"><svg class="logoMark" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="lgA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff6b5a"/><stop offset="1" stop-color="#c3261c"/></linearGradient><linearGradient id="lgS" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f7fa"/><stop offset="1" stop-color="#a9b4bf"/></linearGradient></defs><path d="M24 4.2 C24.6 2.6 25.6 1.6 27 1.2" stroke="#7a4a2a" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M26.2 3.4 C29.5 0.6 33.4 1.2 34.6 2.4 C32.6 5.2 28.8 5.6 26.2 3.4 Z" fill="#4fbf6a"/><circle cx="24" cy="25" r="21.5" fill="#120c0d" stroke="url(#lgA)" stroke-width="2.6"/><path d="M5 38 L43 26" stroke="#ffb432" stroke-width="1.6" stroke-dasharray="2.6 2" fill="none" opacity=".9"/><path fill="url(#lgS)" d="M24 7 L26.3 15 L26.8 20.5 L39 32 L39 34.4 L27.8 35.8 L28.4 40.4 L31.2 43.4 L26.3 42.6 L24 44.4 L21.7 42.6 L16.8 43.4 L19.6 40.4 L20.2 35.8 L9 34.4 L9 32 L21.2 20.5 L21.7 15 Z"/><path fill="url(#lgS)" d="M21.6 16.2 L16.2 20.2 L16.2 21.6 L21.3 20.6 Z M26.4 16.2 L31.8 20.2 L31.8 21.6 L26.7 20.6 Z"/><circle cx="24" cy="39.6" r="1.1" fill="#ff5a4a"/></svg><span class="wm"><b><em>RED</em> APPLE</b><i>UAV FLIGHT</i></span></button><small>Unmanned fighter · TF-10K engine</small></h1>
     <div class="status"><span class="credit">Made by Baris Hiz</span><a href="testcell" id="tcLink">Engine test cell</a><span id="pill" class="pill done">Standby</span><span id="clock">T+00:00</span></div>
   </header>
   <main>
@@ -366,11 +369,14 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
             <h2>Set up your flight</h2>
             <h3>Mission</h3>
             <div class="mcards" id="mission">
-              <button type="button" class="mcard" data-m="takeoff" aria-pressed="false"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M5 40 H43" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M8 33 L38 13" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2.5 2.5" opacity=".7"/><path d="M38 9 L41.5 12.5 L35 18 L37 26 L34.5 27 L30.5 20.5 L24 25 L24 28.5 L22 29.5 L20.5 25.5 L16.5 24 L17.5 22 L21 22 L25.5 15.5 L19 11.5 L20 9 L28 11 Z" fill="currentColor"/></svg><span><b>Take off</b>Lined up on the runway, engine at idle, parking brake set. Rotate at Vr, about 124 kt.</span></button>
-              <button type="button" class="mcard" data-m="approach" aria-pressed="true"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M5 40 H43" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M10 12 L34 34" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2.5 2.5" opacity=".7"/><g transform="translate(48 0) scale(-1 1) rotate(-38 24 24)"><path d="M38 9 L41.5 12.5 L35 18 L37 26 L34.5 27 L30.5 20.5 L24 25 L24 28.5 L22 29.5 L20.5 25.5 L16.5 24 L17.5 22 L21 22 L25.5 15.5 L19 11.5 L20 9 L28 11 Z" fill="currentColor" transform="translate(-6 6)"/></g></svg><span><b>Land</b>Start 5 nm out on final at 1,800 ft and 160 kt. Touch down, stop, or go around.</span></button>
+              <button type="button" class="mcard" data-m="takeoff" aria-pressed="false"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M5 40 H43" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M8 33 L38 13" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2.5 2.5" opacity=".7"/><path d="M38 9 L41.5 12.5 L35 18 L37 26 L34.5 27 L30.5 20.5 L24 25 L24 28.5 L22 29.5 L20.5 25.5 L16.5 24 L17.5 22 L21 22 L25.5 15.5 L19 11.5 L20 9 L28 11 Z" fill="currentColor"/></svg><span><b>Take off</b>Lined up at the departure airport, engine at idle, parking brake set. Rotate at Vr, about 124 kt, then fly the route.</span></button>
+              <button type="button" class="mcard" data-m="approach" aria-pressed="true"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M5 40 H43" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M10 12 L34 34" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2.5 2.5" opacity=".7"/><g transform="translate(48 0) scale(-1 1) rotate(-38 24 24)"><path d="M38 9 L41.5 12.5 L35 18 L37 26 L34.5 27 L30.5 20.5 L24 25 L24 28.5 L22 29.5 L20.5 25.5 L16.5 24 L17.5 22 L21 22 L25.5 15.5 L19 11.5 L20 9 L28 11 Z" fill="currentColor" transform="translate(-6 6)"/></g></svg><span><b>Land</b>Start 5 nm out on final at the arrival airport, 1,800 ft above it at 160 kt. Touch down, stop, or go around.</span></button>
             </div>
-            <h3>Runway</h3>
-            <div class="scen dest" id="dest"></div>
+            <h3>Route</h3>
+            <div class="route"><label>Departure<select id="selDep"></select></label><span class="rarrow" aria-hidden="true">→</span><label>Arrival<select id="selArr"></select></label></div>
+            <canvas id="routeMap" width="1024" height="468" aria-label="Map of Turkey with the selected route"></canvas>
+            <p class="lead" id="routeInfo"></p>
+            <div class="scen dest" id="dest" hidden></div>
             <h3>Weather</h3>
           <div class="scen" id="scen">
             <button type="button" data-s="0" aria-pressed="true"><b>Calm</b>No wind, smooth air.</button>
@@ -399,10 +405,12 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
               <li><b>Clean up.</b> It lifts off around 140 kt. At "positive rate" raise the gear (G), then flaps up (F) above 180 kt.</li>
             </ol>
             <p class="lead">After a landing you can also add full power before you stop and rotate again for a touch-and-go.</p>
+            <h3>Turkey</h3>
+            <p class="lead">The whole country is there: satellite imagery and terrain from the Aegean to Mount Ararat, with a detailed 24 km patch around each of 18 airports. Pick a departure and an arrival on the setup screen; the route is drawn on the map (M changes its range up to 640 nm) and the magenta diamond on the heading tape points at the arrival runway. Away from the airports the picture is coarse, about 200 m per pixel.</p>
             <h3>Istanbul</h3>
-            <p class="lead">The world is a 72 km square of real Istanbul satellite imagery draped over the city's real hills; the altitude readout is above sea level, with height above the ground shown below 2,500 ft. Land at Istanbul Airport (IST), Sabiha Gökçen (SAW), Atatürk (ISL) or the short strip at Samandıra (SMD). Fly the Bosphorus past the 15 July Martyrs, Fatih Sultan Mehmet and Yavuz Sultan Selim bridges; you can fly under them, but the decks, ramps and towers are solid. Look for Hagia Sophia, the Blue Mosque, Galata Tower, the Maiden's Tower, the Çamlıca tower and the Levent, Maslak and Ataşehir skylines. The map shows the same imagery.</p>
+            <p class="lead">Istanbul is the most detailed area, a 72 km square of real satellite imagery draped over the city's real hills; the altitude readout is above sea level, with height above the ground shown below 2,500 ft. Land at Istanbul Airport (IST), Sabiha Gökçen (SAW), Atatürk (ISL) or the short strip at Samandıra (SMD). Fly the Bosphorus past the 15 July Martyrs, Fatih Sultan Mehmet and Yavuz Sultan Selim bridges; you can fly under them, but the decks, ramps and towers are solid. Look for Hagia Sophia, the Blue Mosque, Galata Tower, the Maiden's Tower, the Çamlıca tower and the Levent, Maslak and Ataşehir skylines. The map shows the same imagery.</p>
             <h3>Aerobatics</h3>
-            <p class="lead">The Kızılelma flies like a fighter: roll it inverted, loop it, pull a 9 g turn. Climb to 8,000 ft at full power and over 350 kt first. A full-stick loop from 400 kt takes about 16 s. Pull too hard when slow and it stalls; hard turns bleed speed fast.</p>
+            <p class="lead">The aircraft flies like a fighter: roll it inverted, loop it, pull a 9 g turn. Climb to 8,000 ft at full power and over 350 kt first. A full-stick loop from 400 kt takes about 16 s. Pull too hard when slow and it stalls; hard turns bleed speed fast.</p>
             <h3>Controls</h3>
           <dl class="keys">
             <dt>↓ ↑ / S W</dt><dd>Pull back (nose up) / push forward (nose down), as in flight sims <button type="button" class="chip" id="chipInv" aria-pressed="false" style="margin-left:6px;padding:1px 6px;font-size:11px">Arcade pitch (↑ nose up)</button></dd>
@@ -470,6 +478,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
           <button class="chip" id="bBrk" type="button">Brakes</button>
           <button class="chip on" id="bTrim" type="button">Auto-trim on</button>
           <button class="chip on" id="bRud" type="button">Auto-rudder on</button>
+          <button class="chip" id="bTime" type="button" title="Speed up time in cruise (Y)">Time ×1</button>
         </div>
       </div>
       <div class="fltRow">
@@ -492,7 +501,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
       <div>
         <div class="sec-h">Aircraft data</div>
         <dl class="spec">
-          <dt>Type</dt><dd>Canard-delta unmanned fighter, a fan-made likeness of the Kızılelma (not affiliated with its maker)</dd>
+          <dt>Type</dt><dd>Canard-delta unmanned fighter</dd>
           <dt>Landing weight</dt><dd>12,800 lb (5,800 kg)</dd>
           <dt>Wing</dt><dd>10.0 m span · 26 m² · AR 3.9 · cranked delta</dd>
           <dt>Length</dt><dd>14.9 m · twin canted tails</dd>
@@ -500,7 +509,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
           <dt>Stall, clean</dt><dd>103 kt at 24° AoA</dd>
           <dt>Engine</dt><dd>TF-10K, 10,000 lbf · T/W 0.78</dd>
           <dt>Tail clearance</dt><dd>about 13° nose-up on the mains</dd>
-          <dt>Airfields</dt><dd>Istanbul IST 16R/34L 3,758 m · Sabiha Gökçen SAW 06L/24R 2,991 m · Atatürk ISL 05/23 2,443 m · Samandıra SMD 18/36 1,417 m</dd>
+          <dt>Airfields</dt><dd>18 across Turkey: Istanbul (IST, SAW, ISL, SMD), Ankara, İzmir, Antalya, Dalaman, Bodrum, Adana, Kayseri, Konya, Samsun, Trabzon, Gaziantep, Diyarbakır, Erzurum and Van</dd>
         </dl>
       </div>
       <ul id="msgs"></ul>
@@ -682,13 +691,29 @@ const AC={mass:5800,S:26,span:10,cd0:0.024,k:1/(PI*0.75*3.85),clA:2.9,a0:-1*DEG,
 // world: a 72 km square of Istanbul centred on 41.07 N 29.00 E; x is east, z is south, metres. The ground is flat at sea level.
 const GEO={lat0:41.07,lon0:29.00,half:36000};
 const ll=(lat,lon)=>[(lon-GEO.lon0)*111320*cos(GEO.lat0*DEG),-(lat-GEO.lat0)*111320];
-// runways from their real threshold coordinates (OpenStreetMap); the first end is the default landing direction
-const rwy=(id,name,a,b,w,num,o)=>{const [x,z]=ll(a[0],a[1]),[x1,z1]=ll(b[0],b[1]);const len=Math.round(Math.hypot(x1-x,z1-z));o=o||{};return Object.assign({id,name,x,z,hdg:(atan2(x1-x,-(z1-z))/DEG+360)%360,len,w,num,real:true,ts:-1,elev:0},o,{flat:[-(o.fu||900),len+(o.fu||900),o.v0||-500,o.v1||500]});};
+// the whole country: base imagery and terrain cover 25.5-45 E, 35.7-42.4 N; Istanbul and each airport have a detailed patch on top
+{const [x0,z0]=ll(42.4,25.5),[x1,z1]=ll(35.7,45.0);Object.assign(GEO,{bx0:x0,bz0:z0,bx1:x1,bz1:z1});}
+// runways from their real threshold coordinates (OpenStreetMap); the ends are ordered to match the runway numbers
+const rwy=(id,name,a,b,w,num,o)=>{{const br=(atan2((b[1]-a[1])*cos(a[0]*DEG),b[0]-a[0])/DEG+360)%360,d=abs(((br-parseInt(num[0])*10+540)%360)-180);if(d>90){const t=a;a=b;b=t;}}const [x,z]=ll(a[0],a[1]),[x1,z1]=ll(b[0],b[1]);const len=Math.round(Math.hypot(x1-x,z1-z));o=o||{};return Object.assign({id,name,x,z,hdg:(atan2(x1-x,-(z1-z))/DEG+360)%360,len,w,num,real:true,ts:-1,elev:0},o,{flat:[-(o.fu||900),len+(o.fu||900),o.v0||-500,o.v1||500]});};
 const AIRPORTS=[
   rwy('IST','Istanbul Airport',[41.29859,28.70673],[41.26483,28.70739],60,['16R','34L'],{ts:1,elev:99,fu:1300,v0:-4800,v1:700}),
   rwy('SAW','Sabiha Gökçen',[40.89264,29.29321],[40.90444,29.32524],45,['06L','24R'],{elev:93,v0:-900,v1:1900}),
   rwy('ISL','Atatürk Airport',[40.96627,28.81131],[40.97773,28.83614],60,['05','23'],{elev:24,v0:-900,v1:700}),
-  rwy('SMD','Samandıra Air Base',[40.99912,29.21604],[40.98639,29.21601],30,['18','36'],{elev:118})];
+  rwy('SMD','Samandıra Air Base',[40.99912,29.21604],[40.98639,29.21601],30,['18','36'],{elev:118}),
+  rwy('ESB','Ankara Esenboğa',[40.10036, 32.98976],[40.12757, 33.01556],45,["03R", "21L"],{elev:956,patch:1,fu:1200,v0:-1600,v1:1600}),
+  rwy('ADB','İzmir Adnan Menderes',[38.30658, 27.15269],[38.28172, 27.16014],45,["16L", "34R"],{elev:122,patch:1,fu:1200,v0:-1600,v1:1600}),
+  rwy('AYT','Antalya',[36.91544, 30.79474],[36.8851, 30.79059],45,["18C", "36C"],{elev:52,patch:1,fu:1200,v0:-1600,v1:1600}),
+  rwy('DLM','Dalaman',[36.70021, 28.78807],[36.72612, 28.79688],45,["01", "19"],{elev:3,patch:1,fu:1200,v0:-1600,v1:1600}),
+  rwy('BJV','Milas–Bodrum',[37.24723, 27.68158],[37.25496, 27.64917],45,["10L", "28R"],{elev:3,patch:1,fu:1200,v0:-1600,v1:1600}),
+  rwy('ADA','Adana',[36.97481, 35.26804],[36.98943, 35.29272],45,["05", "23"],{elev:18,patch:1,fu:1200,v0:-1600,v1:1600}),
+  rwy('ASR','Kayseri',[38.76729, 35.47878],[38.77351, 35.51207],45,["07L", "25R"],{elev:1054,patch:1,fu:1200,v0:-1600,v1:1600}),
+  rwy('KYA','Konya',[37.9647, 32.55653],[37.9866, 32.56485],45,["01R", "19L"],{elev:1027,patch:1,fu:1200,v0:-1600,v1:1600}),
+  rwy('SZF','Samsun Çarşamba',[41.24517, 36.58008],[41.26378, 36.55415],45,["13", "31"],{elev:4,patch:1,fu:1200,v0:-1600,v1:1600}),
+  rwy('TZX','Trabzon',[40.99956, 39.77514],[40.99055, 39.80417],45,["11", "29"],{elev:26,patch:1,fu:1200,v0:-1600,v1:1600}),
+  rwy('GZT','Gaziantep',[36.94462, 37.49451],[36.95133, 37.4635],45,["10", "28"],{elev:689,patch:1,fu:1200,v0:-1600,v1:1600}),
+  rwy('DIY','Diyarbakır',[37.87865, 40.20708],[37.91037, 40.19449],45,["16L", "34R"],{elev:677,patch:1,fu:1200,v0:-1600,v1:1600}),
+  rwy('ERZ','Erzurum',[39.9568, 41.14794],[39.95796, 41.19234],45,["08L", "26R"],{elev:1756,patch:1,fu:1200,v0:-1600,v1:1600}),
+  rwy('VAN','Van Ferit Melen',[38.45848, 43.32274],[38.47803, 43.34194],45,["03", "21"],{elev:1657,patch:1,fu:1200,v0:-1600,v1:1600})];
 // Bosphorus bridges: ends of the structure (lat, lon), main span, deck and tower height in metres; s = suspension, c = cable-stayed hybrid
 const BRIDGE_RAMP=600;
 const BRIDGES=[
@@ -703,13 +728,17 @@ AIRPORTS.forEach(ap=>{const h=ap.hdg*DEG;ap.d=new THREE.Vector3(sin(h),0,-cos(h)
   ap.tower=t0.clone().addScaledVector(ap.d,ap.len*0.3).addScaledVector(ap.r,(ap.ts||-1)*380);ap.tower.y=52+ap.elev;
   ap.ends=[{ap,idx:0,id:ap.id+' '+ap.num[0],thr:t0,d:ap.d.clone(),r:ap.r.clone(),hdg:ap.hdg,len:ap.len,w:ap.w,aim:ap.len>=2000?300:200},
            {ap,idx:1,id:ap.id+' '+ap.num[1],thr:t1,d:ap.d.clone().negate(),r:ap.r.clone().negate(),hdg:(ap.hdg+180)%360,len:ap.len,w:ap.w,aim:ap.len>=2000?300:200}];});
-let target=AIRPORTS[0].ends[0];
+let target=AIRPORTS[0].ends[0],origin=null; // origin: runway end a takeoff starts from (the target is where you are going)
 // terrain: metres above sea level. TERR.h is the height map once it has loaded; until then (and in tests) the ground is sea level, rising to each airport's elevation around it.
 // Around every airport the ground is levelled to the runway elevation and blended back into the hills.
-const TERR={h:null,n:0};
-function terrRaw(x,z){const h=TERR.h;if(!h)return 0;const n=TERR.n,fx=clamp((x+GEO.half)/(2*GEO.half),0,1)*(n-1),fz=clamp((z+GEO.half)/(2*GEO.half),0,1)*(n-1);const i=min(n-2,fx|0),j=min(n-2,fz|0),a=fx-i,b=fz-j,k=j*n+i;
-  return (h[k]*(1-a)+h[k+1]*a)*(1-b)+(h[k+n]*(1-a)+h[k+n+1]*a)*b;}
-function gnd(x,z){let bw=0,be=0;const R=TERR.h?900:4000;for(const ap of AIRPORTS){const e=ap.ends[0],dx=x-e.thr.x,dz=z-e.thr.z,u=dx*e.d.x+dz*e.d.z,v=dx*e.r.x+dz*e.r.z,F=ap.flat;
+const TERR={h:null,n:0,c:null,f:[]}; // h: Istanbul fine grid, c: coarse country grid {h,nx,ny}, f: fine airport patches {h,n,cx,cz,half}
+const bil=(h,n,m,fx,fz)=>{const i=min(n-2,fx|0),j=min(m-2,fz|0),a=fx-i,b=fz-j,k=j*n+i;return (h[k]*(1-a)+h[k+1]*a)*(1-b)+(h[k+n]*(1-a)+h[k+n+1]*a)*b;};
+function terrRaw(x,z){const c=TERR.c;let h=c?bil(c.h,c.nx,c.ny,clamp((x-GEO.bx0)/(GEO.bx1-GEO.bx0),0,1)*(c.nx-1),clamp((z-GEO.bz0)/(GEO.bz1-GEO.bz0),0,1)*(c.ny-1)):0;
+  // fine grids take over inside their square and blend into the coarse grid over the last 3 km
+  if(TERR.h){const d=GEO.half-max(abs(x),abs(z));if(d>0){const w=c?clamp(d/3000,0,1):1,n=TERR.n;return h*(1-w)+bil(TERR.h,n,n,(x+GEO.half)/(2*GEO.half)*(n-1),(z+GEO.half)/(2*GEO.half)*(n-1))*w;}}
+  for(const F of TERR.f){const d=F.half-max(abs(x-F.cx),abs(z-F.cz));if(d>0){const w=clamp(d/3000,0,1),n=F.n;return h*(1-w)+bil(F.h,n,n,(x-F.cx+F.half)/(2*F.half)*(n-1),(z-F.cz+F.half)/(2*F.half)*(n-1))*w;}}
+  return h;}
+function gnd(x,z){let bw=0,be=0;const R=(TERR.h||TERR.c)?900:4000;for(const ap of AIRPORTS){const e=ap.ends[0],dx=x-e.thr.x,dz=z-e.thr.z,u=dx*e.d.x+dz*e.d.z,v=dx*e.r.x+dz*e.r.z,F=ap.flat;
     const du=u<F[0]?F[0]-u:u>F[1]?u-F[1]:0,dv=v<F[2]?F[2]-v:v>F[3]?v-F[3]:0,d=Math.hypot(du,dv);if(d>=R)continue;const t=1-d/R,w=t*t*(3-2*t);if(w>bw){bw=w;be=ap.elev;}}
   return bw>=1?be:terrRaw(x,z)*(1-bw)+be*bw;}
 /* landing gear: nose + two mains as oleo struts (spring + damper). l = metres forward of CG, y = metres right */
@@ -819,8 +848,8 @@ function resetFlight(){
   Object.assign(sim,{phase:'run',n1:40,n2:72,egt:520,ff:900,thrust:1800,lit:true,fuelOn:true,starter:false,ignition:false,throttle:0.3,fuelUsed:0});
   thr.value=30;updateThrOut();syncSys();
   ac.toPhase=null;ac.toLift=null;ac.toTail=false;ac.flapWarn=false;ac.airHigh=true;
-  if(mission==='takeoff'){const e=target;ac.pos.copy(worldAt(e,60,0,AC.gearH));ac.V=0;ac.gamma=0;ac.theta=0;ac.q=0;ac.psi=ac.psiB=e.hdg*DEG;ac.phi=0;ac.p=0;ac.r=0;ac.beta=0;
-    ac.onGround=true;ac.gear=1;ac.gearT=1;ac.flaps=1;ac.brk=true;ac.splr=false;ac.trim=-0.35;ac.gc=[GX.stat,GX.stat,GX.stat];ac.gy=e.ap.elev;ac.agl=0;ac.alt=e.ap.elev/FT;ap.sel.alt=Math.round((ac.alt+1800)/100)*100;ac.vs=0;ac.ias=0;ac.fuel=3000;ac.rwy=e;ac.surf='runway';
+  if(mission==='takeoff'){const e=origin||target;ac.pos.copy(worldAt(e,60,0,AC.gearH));ac.V=0;ac.gamma=0;ac.theta=0;ac.q=0;ac.psi=ac.psiB=e.hdg*DEG;ac.phi=0;ac.p=0;ac.r=0;ac.beta=0;
+    ac.onGround=true;ac.gear=1;ac.gearT=1;ac.flaps=1;ac.brk=true;ac.splr=false;ac.trim=-0.35;ac.gc=[GX.stat,GX.stat,GX.stat];ac.gy=e.ap.elev;ac.agl=0;ac.alt=e.ap.elev/FT;ap.sel.alt=Math.round((ac.alt+1800)/100)*100;ac.vs=0;ac.ias=0;ac.fuel=6000;ac.rwy=e;ap.sel.hdg=Math.round(e.hdg)%360;ac.surf='runway';
     Object.assign(sim,{phase:'run',n1:22,n2:60,egt:430,ff:520,thrust:600,lit:true,fuelOn:true,starter:false,ignition:false,throttle:0});thr.value=0;updateThrOut();ac.toPhase='hold';ac.airHigh=false;syncSys();
     onEvent('Lined up on '+e.id+'. Parking brake set. Press B to release, then full thrust.','');}
   ac.pOm=null;ac.phiHold=null;ac.qRef=0;syncFromEuler(ac);
@@ -939,7 +968,7 @@ function flyStep(dt){
   // touchdown: first wheel contact is recorded, then the struts carry the aircraft until it settles
   if(!a.onGround){
     const sink=-a.vs/FT*60;
-    if(a.gearT<0.95&&(a.pos.y-a.gy)<=0.9){a.td=a.td||{vsFpm:sink,x:0,dist:0,ias:a.ias,bank:abs(a.phi)/DEG,pitch:a.theta/DEG,gear:false,onRwy:false,flaps:a.flaps,rwy:'none',aim:300,planned:target.id};crash('Gear was up. The Kızılelma slid in on its belly.');return;}
+    if(a.gearT<0.95&&(a.pos.y-a.gy)<=0.9){a.td=a.td||{vsFpm:sink,x:0,dist:0,ias:a.ias,bank:abs(a.phi)/DEG,pitch:a.theta/DEG,gear:false,onRwy:false,flaps:a.flaps,rwy:'none',aim:300,planned:target.id};crash('Gear was up. The aircraft slid in on its belly.');return;}
     {const bh=bridgeHit(a.pos);if(bh){a.td=a.td||{vsFpm:sink,x:0,dist:0,ias:a.ias,bank:abs(a.phi)/DEG,pitch:a.theta/DEG,gear:a.gearT>0.95,onRwy:false,flaps:a.flaps,rwy:'none',aim:300,planned:target.id};crash('Hit the '+bh.name+' at '+fmt(a.ias)+' kt.');return;}}
     if(a.agl>15)a.airHigh=true;
     if((a.pos.y-a.gy)<1.2&&(abs(a.phi)>75*DEG||a.theta<-25*DEG||(a.pos.y-a.gy)<0.2)&&!(G&&G.any)){a.td=a.td||{vsFpm:sink,x:0,dist:0,ias:a.ias,bank:abs(a.phi)/DEG,pitch:a.theta/DEG,gear:a.gearT>0.95,onRwy:false,flaps:a.flaps,rwy:'none',aim:300,planned:target.id};crash('Flew into the ground at '+fmt(a.ias)+' kt, '+fmt(abs(a.phi)/DEG)+'° of bank.');return;}
@@ -1007,7 +1036,7 @@ const view=$('view'),canvas=$('gl');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance',logarithmicDepthBuffer:true});
 renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;renderer.localClippingEnabled=true;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const scene=new THREE.Scene();scene.fog=new THREE.Fog(0xaebfd0,9000,42000);
-const camera=new THREE.PerspectiveCamera(55,1,1,60000);
+const camera=new THREE.PerspectiveCamera(55,1,1,450000);
 /* photo assets: sky photo, Sentinel-2 satellite ground and surface photos load from assets/; everything procedural below stays as the fallback */
 const ASSET='assets/';const PHOTO={sky:false,ground:0};const procScenery=[];
 const texLoader=new THREE.TextureLoader();
@@ -1019,11 +1048,14 @@ function detSlot(name,file){const d=DET[name]={map:{value:null},on:{value:0},gai
   const c=document.createElement('canvas');c.width=c.height=32;const g=c.getContext('2d');g.drawImage(t.image,0,0,32,32);const px=g.getImageData(0,0,32,32).data;let a=0;for(let i=0;i<px.length;i+=4)a+=0.3*pow(px[i]/255,2.2)+0.59*pow(px[i+1]/255,2.2)+0.11*pow(px[i+2]/255,2.2);
   d.gain.value=1/max(0.01,a/1024);d.map.value=t;d.on.value=1;});return d;}
 detSlot('grass','grass.jpg');detSlot('aerial','aerial.jpg');detSlot('asphalt','asphalt.jpg');detSlot('concrete','concrete.jpg');
+const HOLES={value:Array.from({length:20},()=>new THREE.Vector4())},HOLEN={value:0};
+function addHole(x0,z0,x1,z1){if(HOLEN.value<20)HOLES.value[HOLEN.value++].set(x0,z0,x1,z1);}
 function addDetail(mat,slot,o){const d=DET[slot];o=o||{};
-  mat.onBeforeCompile=sh=>{sh.uniforms.detMap=d.map;sh.uniforms.detOn=d.on;sh.uniforms.detGain=d.gain;sh.uniforms.aerMap=DET.aerial.map;sh.uniforms.aerOn=DET.aerial.on;sh.uniforms.aerGain=DET.aerial.gain;
+  mat.onBeforeCompile=sh=>{sh.uniforms.detMap=d.map;sh.uniforms.detOn=d.on;sh.uniforms.uHoles=HOLES;sh.uniforms.uHoleN=HOLEN;sh.uniforms.detGain=d.gain;sh.uniforms.aerMap=DET.aerial.map;sh.uniforms.aerOn=DET.aerial.on;sh.uniforms.aerGain=DET.aerial.gain;
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec2 vWp;').replace('#include <begin_vertex>','#include <begin_vertex>\nvWp=(modelMatrix*vec4(transformed,1.0)).xz;');
-    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec2 vWp;uniform sampler2D detMap;uniform float detOn;uniform float detGain;uniform sampler2D aerMap;uniform float aerOn;uniform float aerGain;')
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec2 vWp;uniform sampler2D detMap;uniform float detOn;uniform vec4 uHoles[20];uniform int uHoleN;uniform float detGain;uniform sampler2D aerMap;uniform float aerOn;uniform float aerGain;')
       .replace('#include <map_fragment>',`#include <map_fragment>
+      ${o.base?'for(int i=0;i<20;i++){if(i>=uHoleN)break;vec4 r=uHoles[i];if(vWp.x>r.x&&vWp.x<r.z&&vWp.y>r.y&&vWp.y<r.w)discard;}':''}
       float wtr=0.0;
       ${o.sat?`{vec3 c0=diffuseColor.rgb;float l0=dot(c0,vec3(0.3,0.59,0.11));wtr=smoothstep(0.0,0.008,c0.b-c0.g*1.02)*(1.0-smoothstep(0.05,0.11,l0));
         c0=mix(vec3(l0),c0,0.86);c0*=${(o.gain||1).toFixed(2)};c0=c0/(1.0+2.0*c0);diffuseColor.rgb=pow(c0,vec3(${(o.gamma||1).toFixed(2)}))*vec3(1.06,1.02,0.93);}`:''}
@@ -1047,7 +1079,7 @@ skyMesh.frustumCulled=false;skyMesh.renderOrder=-1;scene.add(skyMesh);
 loadTex(MOB?'sky_m.jpg':'sky.jpg',t=>{t.anisotropy=1;t.wrapS=THREE.RepeatWrapping;t.generateMipmaps=false;t.minFilter=THREE.LinearFilter;
   // sun position in the panorama (u 0.593, 42° up) becomes the light direction
   const az=(0.593-0.5)*2*PI,el=42*DEG;SUN.set(cos(az)*cos(el),sin(el),sin(az)*cos(el));SUNOFF.copy(SUN).multiplyScalar(600);
-  scene.fog.color.setRGB(0.66,0.76,0.90);scene.fog.near=5000;scene.fog.far=62000;
+  scene.fog.color.setRGB(0.66,0.76,0.90);scene.fog.near=8000;scene.fog.far=230000;
   skyMesh.material=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,uniforms:{map:{value:t},fogC:{value:scene.fog.color}},
     vertexShader:'varying vec3 vP;void main(){vP=position;vec4 p=projectionMatrix*modelViewMatrix*vec4(position,1.0);gl_Position=p.xyww;}',
     fragmentShader:`uniform sampler2D map;uniform vec3 fogC;varying vec3 vP;
@@ -1073,15 +1105,30 @@ Object.assign(sun.shadow.camera,{left:-45,right:45,top:45,bottom:-45,near:1,far:
  // fields: large darker patches
  const fm=new THREE.MeshStandardMaterial({color:0x8a7a4a,roughness:1});for(let i=0;i<220;i++){const w=300+Math.random()*900,d=300+Math.random()*900;const f=new THREE.Mesh(new THREE.PlaneGeometry(w,d),i%2?fm:new THREE.MeshStandardMaterial({color:0x3f5a30,roughness:1}));f.rotation.x=-PI/2;f.position.set((Math.random()-0.5)*44000,0.03,(Math.random()-0.5)*44000);if(AIRPORTS.some(ap=>Math.hypot(f.position.x-(ap.x+ap.d.x*ap.len/2),f.position.z-(ap.z+ap.d.z*ap.len/2))<2600))continue;f.position.y=0.03;scene.add(f);procScenery.push(f);}
 }
+// the whole country: eight low-resolution tiles (about 200 m per pixel) draped over the coarse terrain; drawn 6 m low so detailed patches always sit on top
+const TRTHUMB=document.createElement('canvas');TRTHUMB.width=1024;TRTHUMB.height=468;const BASE={meshes:[],n:0};
+{const tw=(GEO.bx1-GEO.bx0)/4,th=(GEO.bz1-GEO.bz0)/2,tg=TRTHUMB.getContext('2d');tg.fillStyle='#16283c';tg.fillRect(0,0,1024,468);
+ for(let j=0;j<2;j++)for(let i=0;i<4;i++)loadTex('b'+i+j+(MOB?'_m':'')+'.jpg',t=>{
+   const m=new THREE.Mesh(new THREE.PlaneGeometry(tw,th,MOB?128:256,MOB?117:234),addDetail(new THREE.MeshStandardMaterial({map:t,roughness:1,metalness:0,envMapIntensity:0.9}),'grass',{sat:1,base:1,gain:2.7,gamma:0.95,s1:5,s2:31,tint:0.2,k:0.5,f0:250,f1:2200,n0:25,n1:220,aer:900,ka:0.5}));
+   m.rotation.x=-PI/2;m.position.set(GEO.bx0+(i+0.5)*tw,-6,GEO.bz0+(j+0.5)*th);m.userData.relief=true;relief(m);BASE.meshes.push(m);scene.add(m);tg.drawImage(t.image,i*256,j*234,256,234);BASE.n++;PHOTO.base=BASE.n;if(SAT.far)SAT.far.visible=true;drawRoute&&drawRoute();});
+ const im=new Image();im.onload=()=>{const nx=im.width,ny=im.height,c=document.createElement('canvas');c.width=nx;c.height=ny;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(im,0,0);const d=g.getImageData(0,0,nx,ny).data,h=new Float32Array(nx*ny);
+   for(let k=0;k<nx*ny;k++)h[k]=(d[k*4]*256+d[k*4+1])/10;TERR.c={h,nx,ny};PHOTO.coarse=true;terrainChanged();};im.src=ASSET+'height_tr.png';}
+// detailed 24 km patch (imagery + 125 m terrain) around each airport outside Istanbul, loaded when the aircraft comes within range or it is on the route
+function loadPatch(ap){if(!ap.patch||ap.pl)return;ap.pl=1;const e0=ap.ends[0],cx=e0.thr.x+ap.d.x*ap.len/2,cz=e0.thr.z+ap.d.z*ap.len/2,half=12000;
+  const im=new Image();im.onload=()=>{const n=im.width,c=document.createElement('canvas');c.width=c.height=n;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(im,0,0);const d=g.getImageData(0,0,n,n).data,h=new Float32Array(n*n);
+    for(let k=0;k<n*n;k++)h[k]=(d[k*4]*256+d[k*4+1])/10;TERR.f.push({h,n,cx,cz,half});
+    loadTex('p_'+ap.id+(MOB?'_m':'')+'.jpg',t=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(2*half,2*half,MOB?64:128,MOB?64:128),addDetail(new THREE.MeshStandardMaterial({map:t,roughness:1,metalness:0,envMapIntensity:0.9}),'grass',{sat:1,gain:2.7,gamma:0.95,s1:5,s2:31,tint:0.2,k:0.6,f0:250,f1:2200,n0:25,n1:220,aer:210,ka:0.45}));
+      m.rotation.x=-PI/2;m.position.set(cx,0.01,cz);m.receiveShadow=true;relief(m);SAT.meshes.push(m);scene.add(m);addHole(cx-half+500,cz-half+500,cx+half-500,cz+half-500);ap.pl=2;});};im.src=ASSET+'h_'+ap.id+'.png';}
+function patchWatch(){for(const ap of AIRPORTS){if(!ap.patch||ap.pl)continue;if(ap===target.ap||(origin&&ap===origin.ap)||Math.hypot(ac.pos.x-ap.x,ac.pos.z-ap.z)<150000)loadPatch(ap);}}
 // Sentinel-2 cloudless 2017 mosaic of Istanbul, 72 km square in nine tiles (north is -z, east is +x)
 const SAT={half:GEO.half,N:3,P:MOB?512:1024,px:[],thumb:document.createElement('canvas'),ready:false,meshes:[]};SAT.thumb.width=SAT.thumb.height=768;
 // relief: lift a ground mesh's vertices to the terrain height (plane local z is world up)
 const ONTERR=[];
 function relief(m){const pa=m.geometry.attributes.position;for(let k=0;k<pa.count;k++)pa.setZ(k,gnd(m.position.x+pa.getX(k),m.position.z-pa.getY(k)));pa.needsUpdate=true;m.geometry.computeVertexNormals();m.geometry.computeBoundingSphere();}
-function terrainChanged(){SAT.meshes.forEach(relief);procScenery.forEach(o=>{if(o.userData.relief)relief(o);});ONTERR.forEach(g=>{g.position.y=gnd(g.position.x,g.position.z)+(g.userData.dy||0);});if(SAT.ready){plantTrees&&plantTrees();plantCity&&plantCity();}}
+function terrainChanged(){SAT.meshes.forEach(relief);BASE.meshes.forEach(relief);procScenery.forEach(o=>{if(o.userData.relief)relief(o);});ONTERR.forEach(g=>{g.position.y=gnd(g.position.x,g.position.z)+(g.userData.dy||0);});if(SAT.ready){plantTrees&&plantTrees();plantCity&&plantCity();}}
 {const im=new Image();im.onload=()=>{const n=im.width,c=document.createElement('canvas');c.width=c.height=n;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(im,0,0);const d=g.getImageData(0,0,n,n).data,h=new Float32Array(n*n);
    for(let k=0;k<n*n;k++)h[k]=(d[k*4]*256+d[k*4+1])/10;TERR.h=h;TERR.n=n;PHOTO.terrain=true;terrainChanged();};im.src=ASSET+'height.png';}
-{const far=new THREE.Mesh(new THREE.PlaneGeometry(500000,500000),new THREE.MeshStandardMaterial({color:0x1d3048,roughness:0.5}));far.rotation.x=-PI/2;far.position.y=-3;far.visible=false;scene.add(far);
+{const far=new THREE.Mesh(new THREE.PlaneGeometry(500000,500000),new THREE.MeshStandardMaterial({color:0x1d3048,roughness:0.5}));far.rotation.x=-PI/2;far.position.y=-9;far.visible=false;scene.add(far);SAT.far=far;
  const N=SAT.N,T=2*SAT.half/N,P=SAT.P,tg=SAT.thumb.getContext('2d');
  for(let j=0;j<N;j++)for(let i=0;i<N;i++)loadTex('g'+i+j+(MOB?'_m':'')+'.jpg',t=>{
    const m=new THREE.Mesh(new THREE.PlaneGeometry(T,T,MOB?96:180,MOB?96:180),addDetail(new THREE.MeshStandardMaterial({map:t,roughness:1,metalness:0,envMapIntensity:0.9}),'grass',{sat:1,gain:2.7,gamma:0.95,s1:5,s2:31,tint:0.2,k:0.6,f0:250,f1:2200,n0:25,n1:220,aer:210,ka:0.45}));
@@ -1089,7 +1136,7 @@ function terrainChanged(){SAT.meshes.forEach(relief);procScenery.forEach(o=>{if(
    // keep a copy of the pixels: trees go on forest, buildings on built-up land, and the moving map uses a thumbnail
    const c=document.createElement('canvas');c.width=c.height=P;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(t.image,0,0,P,P);SAT.px[i+j*N]=g.getImageData(0,0,P,P).data;
    tg.drawImage(t.image,i*256,j*256,256,256);
-   if(++PHOTO.ground===N*N){SAT.ready=true;far.visible=true;procScenery.forEach(o=>{o.visible=false;});plantTrees&&plantTrees();plantCity&&plantCity();}});}
+   if(++PHOTO.ground===N*N){SAT.ready=true;far.visible=true;addHole(-SAT.half+600,-SAT.half+600,SAT.half-600,SAT.half-600);procScenery.forEach(o=>{o.visible=false;});plantTrees&&plantTrees();plantCity&&plantCity();}});}
 function satAt(x,z){if(abs(x)>=SAT.half||abs(z)>=SAT.half)return null;const N=SAT.N,T=2*SAT.half/N,P=SAT.P,i=min(N-1,Math.floor((x+SAT.half)/T)),j=min(N-1,Math.floor((z+SAT.half)/T)),d=SAT.px[i+j*N];if(!d)return null;
   const u=min(P-1,((x+SAT.half-i*T)/T*P)|0),v=min(P-1,((z+SAT.half-j*T)/T*P)|0);const k=(v*P+u)*4;return [d[k],d[k+1],d[k+2]];}
 const lightMat=(c)=>new THREE.MeshBasicMaterial({color:c});
@@ -1106,8 +1153,8 @@ let plantTrees=null;
    for(let k=0;k<90&&n<N;k++){const a2=Math.random()*2*PI,rr=Math.sqrt(Math.random())*cr;const x=cx+cos(a2)*rr,z=cz+sin(a2)*rr;const h=9+Math.random()*12,w=h*0.32;
      pv.set(x,0,z);sc.set(w,h,w);m4.compose(pv,q,sc);trees.setMatrixAt(n,m4);col.setHSL(0.27+Math.random()*0.06,0.45,0.18+Math.random()*0.1);trees.setColorAt(n,col);n++;}}
  trees.count=n;trees.instanceMatrix.needsUpdate=true;if(trees.instanceColor)trees.instanceColor.needsUpdate=true;scene.add(trees);
- plantTrees=()=>{let n=0,tries=0;const per=Math.floor(N/AIRPORTS.length);
-   AIRPORTS.forEach((ap,ai)=>{const lim=(ai+1)*per;const e=ap.ends[0];while(n<lim&&tries++<N*40){const u=-2600+Math.random()*(ap.len+5200),v=(Math.random()-0.5)*5200;
+ plantTrees=()=>{let n=0,tries=0;const per=Math.floor(N/4);
+   AIRPORTS.filter(ap=>!ap.patch).forEach((ap,ai)=>{const lim=(ai+1)*per;const e=ap.ends[0];while(n<lim&&tries++<N*40){const u=-2600+Math.random()*(ap.len+5200),v=(Math.random()-0.5)*5200;
        if(abs(v)<(u>-1100&&u<ap.len+1100?520:0)||(v>0&&v<620&&u>-300&&u<ap.len+300))continue;const w=worldAt(e,u,v,0);const c=satAt(w.x,w.z);if(!c)continue;
        const lum=c[0]*0.3+c[1]*0.59+c[2]*0.11;if(!(lum<52&&c[1]>c[2]*1.12&&c[1]>=c[0]))continue; // dark green = forest
        const h=11+Math.random()*13,wd=h*(0.26+Math.random()*0.12);pv.set(w.x,gnd(w.x,w.z)-0.5,w.z);sc.set(wd,h,wd);m4.compose(pv,q,sc);trees.setMatrixAt(n,m4);
@@ -1170,7 +1217,7 @@ function buildAirport(ap){
 AIRPORTS.forEach(buildAirport);
 /* ================= Istanbul: Bosphorus and Golden Horn bridges, landmarks, towers and city blocks (positions from OpenStreetMap) ================= */
 const llv=(lat,lon,y)=>{const [x,z]=ll(lat,lon);return new THREE.Vector3(x,y||0,z);};
-let plantCity=null;const cityChunks=[];
+let plantCity=null,drawRoute=null;const cityChunks=[];
 {const S=o=>new THREE.MeshStandardMaterial(o);
  const mSteel=S({color:0x8d9399,roughness:0.55,metalness:0.5}),mConc=S({color:0xc9c6bd,roughness:0.9}),mDeck=S({color:0x3b3e43,roughness:0.9}),mStone=S({color:0xb9ab92,roughness:0.95}),
   mLead=S({color:0x7b858c,roughness:0.6,metalness:0.3}),mWhite=S({color:0xe8e6df,roughness:0.85}),mRed=S({color:0xb98670,roughness:0.9}),mGrey=S({color:0xb4b7ba,roughness:0.9}),
@@ -1306,7 +1353,7 @@ let canopyG,leSurf=[],rudders=[],sbrakes=[],gearDoors=[],mLiner;const anim={flap
   const rivets=(fg,bg,x0,y0,x1,y1,sc)=>{const L=Math.hypot(x1-x0,y1-y0),n=L/(7*sc)|0;for(let i=0;i<=n;i++){const x=x0+(x1-x0)*i/n,y=y0+(y1-y0)*i/n;fg.fillStyle='rgba(0,0,0,0.2)';fg.fillRect(x,y,1.3*sc,1.3*sc);bg.fillStyle='#5a5a5a';bg.fillRect(x,y,1.3*sc,1.3*sc);}};
 
   // ---------- fuselage section spline ----------
-  // Kızılelma-style body: a sharp chine runs from the nose to the wing, flat-sided diamond section forward, rounder aft
+  // body: a sharp chine runs from the nose to the wing, flat-sided diamond section forward, rounder aft
   const S0=[{z:-7.45,w:0.02,t:0.02,b:0.02,n:1.3},{z:-6.9,w:0.31,t:0.14,b:0.13,n:1.3},{z:-6.0,w:0.64,t:0.3,b:0.27,n:1.35},{z:-4.8,w:0.96,t:0.46,b:0.4,n:1.45},{z:-3.4,w:1.2,t:0.57,b:0.5,n:1.55},
     {z:-1.6,w:1.36,t:0.63,b:0.56,n:1.7},{z:0.4,w:1.4,t:0.62,b:0.56,n:1.9},{z:2.6,w:1.25,t:0.56,b:0.5,n:2.1},{z:4.7,w:0.98,t:0.5,b:0.46,n:2.3},{z:6.3,w:0.66,t:0.46,b:0.45,n:2.3},{z:7.05,w:0.56,t:0.43,b:0.43,n:2.1}];
   const cA=new THREE.CatmullRomCurve3(S0.map(s=>new THREE.Vector3(s.z,s.w,s.t))),cB=new THREE.CatmullRomCurve3(S0.map(s=>new THREE.Vector3(s.b,s.n,0)));
@@ -1825,7 +1872,7 @@ function drawCockpitDisplays(a){
       if(red!=null){g.strokeStyle='#e0382c';g.lineWidth=4;g.beginPath();g.arc(cx,cy,r-2,A0+SW*red,A0+SW);g.stroke();}
       g.font='600 11px IBM Plex Mono, monospace';g.textAlign='center';g.textBaseline='middle';marks.forEach((m,i)=>{const an=A0+SW*i/(marks.length-1);g.fillText(m,cx+cos(an)*(r-19),cy+sin(an)*(r-19));});
       g.font='700 12px Rajdhani, sans-serif';g.fillText(lbl,cx,cy+24);const an=A0+SW*clamp(v/max_,0,1);g.strokeStyle='#ffffff';g.lineWidth=3;g.beginPath();g.moveTo(cx-cos(an)*8,cy-sin(an)*8);g.lineTo(cx+cos(an)*(r-8),cy+sin(an)*(r-8));g.stroke();g.fillStyle='#bfbfbf';g.beginPath();g.arc(cx,cy,5,0,2*PI);g.fill();};
-   dial(64,sim.n2,110,'RPM %',['0','','50','','100'],0.93);dial(192,sim.egt,1100,'FTIT °C',['0','','5','','10'],0.86);dial(320,ac.fuel,3000,'FUEL LB',['0','1','2','3'],null);d.t.needsUpdate=true;}
+   dial(64,sim.n2,110,'RPM %',['0','','50','','100'],0.93);dial(192,sim.egt,1100,'FTIT °C',['0','','5','','10'],0.86);dial(320,ac.fuel,6000,'FUEL LB',['0','2','4','6'],null);d.t.needsUpdate=true;}
   // nav display
   if(ndMode!=='cam'){const d=ckTex.nd,g=ckBg(d,'#04070a');mapCore(g,512,MAPR[mapRi],14);d.t.needsUpdate=true;}
 }
@@ -2085,6 +2132,7 @@ window.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.ta
   if(k==='ArrowUp'||k==='w'||k==='W')inp.kUp=true;else if(k==='ArrowDown'||k==='s'||k==='S')inp.kDn=true;else if(k==='ArrowLeft'||k==='a'||k==='A')inp.kL=true;else if(k==='ArrowRight'||k==='d'||k==='D')inp.kR=true;
   else if(k==='PageUp'||k==='+'||k==='='||k==='PageDown'||k==='-'||k==='_'){if(ap.athr){ap.athr=false;ap.msg='A/THR OFF · manual thrust';ap.msgT=3;onApChange();}setThrottle(+thr.value+(k==='PageUp'||k==='+'||k==='='?4:-4));}
   else if(k==='f'||k==='F')cycleFlaps();else if(k==='g'||k==='G')toggleGear();else if(k==='b'||k==='B')toggleBrk();else if(k===' ')toggleSplr();
+  else if(k==='y'||k==='Y')cycleTime();
   else if(k==='m'||k==='M')$('mapRange').click();else if(k==='v'||k==='V')camMode=camMode==='chase'?'cockpit':camMode==='cockpit'?'nose':camMode==='nose'?'tower':'chase';else if(k==='c'||k==='C')camMode=camMode==='cockpit'?'chase':'cockpit';else if(k==='r'||k==='R')startGame();else return;
   e.preventDefault();});
 window.addEventListener('keyup',e=>{const k=e.key;if(k==='x'||k==='X')ck.glance=false;if(k==='q'||k==='Q'||k===',')inp.kRudL=false;if(k==='e'||k==='E'||k==='.')inp.kRudR=false;if(k===']'||k==='Home')inp.trimUp=false;if(k==='['||k==='End')inp.trimDn=false;if(k==='ArrowUp'||k==='w'||k==='W')inp.kUp=false;else if(k==='ArrowDown'||k==='s'||k==='S')inp.kDn=false;else if(k==='ArrowLeft'||k==='a'||k==='A')inp.kL=false;else if(k==='ArrowRight'||k==='d'||k==='D')inp.kR=false;});
@@ -2106,6 +2154,9 @@ $('vol').addEventListener('input',e=>{audio.vol=+e.target.value/100;applyVolume(
 $('chipInv').addEventListener('click',e=>{invert=!invert;e.currentTarget.setAttribute('aria-pressed',String(!invert));});
 function toggleAutoTrim(){autoTrim=!autoTrim;syncSys();}
 function toggleAutoRudder(){autoRudder=!autoRudder;syncSys();}
+let timeK=1;function setTimeK(k){timeK=k;const b=$('bTime');b.textContent='Time ×'+k;b.classList.toggle('on',k>1);}
+function cycleTime(){const ok=ac.phase==='fly'&&!ac.onGround&&ac.agl>1500&&!ac.stalled;setTimeK(ok?(timeK===1?4:timeK===4?8:1):1);if(!ok)onEvent('Time can be sped up above 1,500 ft','');}
+$('bTime').addEventListener('click',cycleTime);
 $('bRud').addEventListener('click',toggleAutoRudder);
 document.querySelectorAll('.apb').forEach(b=>b.addEventListener('click',()=>{ensureGameAudio();apMode(b.dataset.m);}));
 document.querySelectorAll('.ud button').forEach(b=>b.addEventListener('click',e=>apSel(b.dataset.k,+b.dataset.d,e.shiftKey)));
@@ -2155,12 +2206,27 @@ $('mApClose').addEventListener('click',()=>{$('mApDrawer').hidden=true;});
 function showScr(n){['home','play','help'].forEach(k=>{$('scr'+k[0].toUpperCase()+k.slice(1)).hidden=k!==n;});const l=document.querySelector('#title .land');if(l)l.scrollTop=0;}
 document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showScr(b.dataset.go)));
 $('btnMenu').addEventListener('click',()=>{$('result').hidden=true;$('title').hidden=false;$('app').classList.add('menu');frame.menu=true;ac.phase='standby';showScr('play');});
-function startGame(){$('title').hidden=true;$('result').hidden=true;$('app').classList.remove('menu');frame.menu=false;applyMob();resetFlight();camPos.copy(ac.pos).add(new THREE.Vector3(0,8,30));camLook.copy(ac.pos);}
+function startGame(){setTimeK(1);$('title').hidden=true;$('result').hidden=true;$('app').classList.remove('menu');frame.menu=false;applyMob();resetFlight();camPos.copy(ac.pos).add(new THREE.Vector3(0,8,30));camLook.copy(ac.pos);}
 
 /* ================= Destination & moving map ================= */
 function setTarget(end){target=end;document.querySelectorAll('#dest button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.end===end.id)));const hd=$('hDEST');if(hd)hd.textContent=end.id+' · '+end.ap.name;}
 {const d=$('dest');AIRPORTS.forEach(ap=>ap.ends.forEach(e=>{const b=document.createElement('button');b.type='button';b.dataset.end=e.id;b.innerHTML='<b></b><small></small>';b.querySelector('b').textContent=e.id;b.querySelector('small').textContent=ap.name+' · '+fmt(ap.len)+' m · '+String(Math.round(e.hdg)%360).padStart(3,'0')+'°';b.addEventListener('click',()=>setTarget(e));d.appendChild(b);}));setTarget(target);}
-const mapC=$('map'),mapX=mapC.getContext('2d');const MAPR=[20,40];let mapRi=0;
+/* route: pick departure and arrival airports; runway ends are chosen to suit the direction of travel */
+let depAp=AIRPORTS[0],arrAp=AIRPORTS.find(a=>a.id==='ESB')||AIRPORTS[1];
+const apMid=ap=>({x:ap.x+ap.d.x*ap.len/2,z:ap.z+ap.d.z*ap.len/2});
+function routeGeom(){const A=apMid(depAp),B=apMid(arrAp),d=Math.hypot(B.x-A.x,B.z-A.z);return {A,B,d,brg:depAp===arrAp?depAp.ends[0].hdg:(atan2(B.x-A.x,-(B.z-A.z))/DEG+360)%360};}
+function pickEnds(){const r=routeGeom(),df=h=>abs(((h-r.brg+540)%360)-180),best=ap=>ap.ends.reduce((p,c)=>df(c.hdg)<df(p.hdg)?c:p);origin=best(depAp);setTarget(best(arrAp));loadPatch(depAp);loadPatch(arrAp);drawRoute();}
+{const fill=(sel,cur)=>{AIRPORTS.forEach(ap=>{const o=document.createElement('option');o.value=ap.id;o.textContent=ap.id+' · '+ap.name+' · '+fmt(ap.len)+' m';sel.appendChild(o);});sel.value=cur.id;};
+ fill($('selDep'),depAp);fill($('selArr'),arrAp);$('selDep').addEventListener('change',e=>{depAp=AIRPORTS.find(a=>a.id===e.target.value);pickEnds();});$('selArr').addEventListener('change',e=>{arrAp=AIRPORTS.find(a=>a.id===e.target.value);pickEnds();});}
+drawRoute=()=>{const c=$('routeMap'),g=c.getContext('2d'),W=c.width,H=c.height,X=x=>(x-GEO.bx0)/(GEO.bx1-GEO.bx0)*W,Y=z=>(z-GEO.bz0)/(GEO.bz1-GEO.bz0)*H;g.clearRect(0,0,W,H);g.drawImage(TRTHUMB,0,0,W,H);g.fillStyle='rgba(6,10,16,.25)';g.fillRect(0,0,W,H);
+  const r=routeGeom();g.font='700 15px Rajdhani, sans-serif';g.textBaseline='middle';
+  for(const ap of AIRPORTS){const m=apMid(ap),on=ap===depAp||ap===arrAp;if(!on&&!ap.patch&&ap.id!=='IST')continue;g.fillStyle=on?'#ffffff':'rgba(227,234,242,.85)';g.beginPath();g.arc(X(m.x),Y(m.z),on?6:3.5,0,2*PI);g.fill();if(!on){g.textAlign='left';g.fillText(ap.id,X(m.x)+7,Y(m.z)-1);}}
+  g.strokeStyle='#ff5fd2';g.lineWidth=3;g.setLineDash([10,6]);g.beginPath();g.moveTo(X(r.A.x),Y(r.A.z));g.lineTo(X(r.B.x),Y(r.B.z));g.stroke();g.setLineDash([]);
+  const tag=(p,t,col,dy)=>{g.fillStyle=col;g.beginPath();g.arc(X(p.x),Y(p.z),7,0,2*PI);g.fill();g.font='700 20px Rajdhani, sans-serif';g.textAlign='center';const w=g.measureText(t).width+12;g.fillStyle='rgba(6,10,16,.8)';g.fillRect(X(p.x)-w/2,Y(p.z)+dy-13,w,26);g.fillStyle=col;g.fillText(t,X(p.x),Y(p.z)+dy+1);};
+  tag(r.A,depAp.id,'#7df5a0',-24);if(depAp!==arrAp)tag(r.B,arrAp.id,'#3fd3e6',24);
+  const nm=r.d/1852;$('routeInfo').textContent=depAp===arrAp?depAp.name+': circuits at one airport, runway '+origin.id.split(' ')[1]+'.':origin.id+' → '+target.id+' · '+fmt(nm)+' nm on a heading of '+String(Math.round(r.brg)%360).padStart(3,'0')+'° · about '+fmt(max(1,nm/420*60))+' min at 420 kt. In flight the magenta line on the map and the magenta diamond on the heading tape show the way; time can be sped up with Y once you are above 1,500 ft.';};
+pickEnds();
+const mapC=$('map'),mapX=mapC.getContext('2d');const MAPR=[20,40,80,160,320,640];let mapRi=0;
 $('mapRange').addEventListener('click',()=>{mapRi=(mapRi+1)%MAPR.length;$('mapRange').textContent='Map '+MAPR[mapRi]+' nm';});
 function mapXY(x,z,S,sc){return [S/2+(x-ac.pos.x)*sc,S/2+(z-ac.pos.z)*sc];}
 function drawMap(){
@@ -2188,9 +2254,12 @@ function drawHdgTape(hd){const g=hdgG,W=720,H=104,cx=W/2,ppd=W/72,y0=56;g.clearR
   g.fillStyle='rgba(8,12,18,0.9)';g.strokeStyle='#7df5a0';g.lineWidth=2.5;g.beginPath();g.rect(cx-44,2,88,32);g.fill();g.stroke();g.fillStyle='#7df5a0';g.font='700 26px IBM Plex Mono, monospace';g.textAlign='center';g.textBaseline='middle';g.fillText(String(Math.round(hd)%360).padStart(3,'0')+'°',cx+2,19);
   g.font='600 17px IBM Plex Mono, monospace';g.textAlign='left';g.fillStyle='#3fd3e6';g.fillText('SEL '+String(ap.sel.hdg).padStart(3,'0'),cx+54,19);}
 function mapCore(g,S,RNG,fs){const sc=(S/2)/(RNG*1852);const k=fs/10;
+  if(BASE.n){const [mx,my]=mapXY(GEO.bx0,GEO.bz0,S,sc);g.save();g.globalAlpha=0.8;g.drawImage(TRTHUMB,mx,my,(GEO.bx1-GEO.bx0)*sc,(GEO.bz1-GEO.bz0)*sc);g.restore();}
   if(SAT.ready){const [mx,my]=mapXY(-SAT.half,-SAT.half,S,sc);g.save();g.globalAlpha=0.8;g.drawImage(SAT.thumb,mx,my,2*SAT.half*sc,2*SAT.half*sc);g.restore();
     g.strokeStyle='#ffb432';g.lineWidth=2*k;for(const b of BRIDGES){const [ax,ay]=mapXY(b.cx-b.dx*b.len/2,b.cz-b.dz*b.len/2,S,sc),[bx,by]=mapXY(b.cx+b.dx*b.len/2,b.cz+b.dz*b.len/2,S,sc);g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke();}}
-  g.strokeStyle='rgba(63,211,230,.25)';g.lineWidth=1*k;for(let r=5;r<=RNG;r+=5){g.beginPath();g.arc(S/2,S/2,r*1852*sc,0,2*PI);g.stroke();}
+  g.strokeStyle='rgba(63,211,230,.25)';g.lineWidth=1*k;for(let r=RNG/4;r<=RNG;r+=RNG/4){g.beginPath();g.arc(S/2,S/2,r*1852*sc,0,2*PI);g.stroke();}
+  // planned route
+  if(origin&&origin.ap!==target.ap){const A=apMid(origin.ap),[ax,ay]=mapXY(A.x,A.z,S,sc),[bx,by]=mapXY(target.thr.x,target.thr.z,S,sc);g.strokeStyle='#ff5fd2';g.lineWidth=2*k;g.setLineDash([7*k,5*k]);g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke();g.setLineDash([]);}
   g.fillStyle='rgba(139,154,171,.9)';g.font='600 '+fs+'px IBM Plex Mono, monospace';g.textAlign='center';g.fillText('N',S/2,fs);
   // wind arrow
   const w=SCEN[scen].wind;if(w[0]||w[2]){const a=atan2(w[0],-w[2]);g.save();g.translate(S-18,18);g.rotate(a);g.strokeStyle='#ffb432';g.lineWidth=1.5;g.beginPath();g.moveTo(0,-8);g.lineTo(0,8);g.moveTo(-4,4);g.lineTo(0,8);g.lineTo(4,4);g.stroke();g.restore();}
@@ -2198,7 +2267,7 @@ function mapCore(g,S,RNG,fs){const sc=(S/2)/(RNG*1852);const k=fs/10;
   {const t=target;const a=worldAt(t,0,0),b=worldAt(t,-10*1852,0);const [ax,ay]=mapXY(a.x,a.z,S,sc),[bx,by]=mapXY(b.x,b.z,S,sc);g.setLineDash([4,4]);g.strokeStyle='rgba(63,211,230,.7)';g.lineWidth=1;g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke();g.setLineDash([]);}
   for(const ap of AIRPORTS){const e0=ap.ends[0],e1=ap.ends[1];const [ax,ay]=mapXY(e0.thr.x,e0.thr.z,S,sc),[bx,by]=mapXY(e1.thr.x,e1.thr.z,S,sc);const sel=target.ap===ap;
     g.strokeStyle=sel?'#3fd3e6':'#c9d2dc';g.lineWidth=(sel?4:3)*k;g.lineCap='butt';g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke();
-    g.fillStyle=sel?'#3fd3e6':'#c9d2dc';g.font='600 '+fs+'px Rajdhani, sans-serif';g.textAlign='left';const mx=(ax+bx)/2,my=(ay+by)/2;g.fillText(ap.id+' '+ap.num[0]+'/'+ap.num[1],mx+6,my+4);
+    g.fillStyle=sel?'#3fd3e6':'#c9d2dc';g.font='600 '+fs+'px Rajdhani, sans-serif';g.textAlign='left';const mx=(ax+bx)/2,my=(ay+by)/2;if(RNG<=40||sel||(origin&&origin.ap===ap)||(RNG<=320&&(ap.patch||ap.id==='IST')))g.fillText(RNG<=40?ap.id+' '+ap.num[0]+'/'+ap.num[1]:ap.id,mx+6,my+4);
     if(sel){const [tx,ty]=mapXY(target.thr.x,target.thr.z,S,sc);g.beginPath();g.arc(tx,ty,4,0,2*PI);g.fillStyle='#3fd3e6';g.fill();}}
   // compass ring, current heading line and the autopilot's selected heading (cyan dashed line with its bug on the ring)
   {const c=S/2,R=S/2-3*k,hd=((ac.psiB/DEG)%360+360)%360,sel=ap.sel.hdg,act=ap.on&&ap.lat==='HDG';g.save();g.translate(c,c);
@@ -2299,7 +2368,8 @@ new ResizeObserver(resize).observe(view);resize();
 let last=performance.now(),dtFrame=0.016;
 function frame(now){
   requestAnimationFrame(frame);let dt=min(0.05,(now-last)/1000);last=now;if(document.hidden)return;dtFrame=dt;
-  if(ac.phase==='fly'){step(dt);const n=max(2,Math.ceil(dt/0.006));for(let i=0;i<n;i++)flyStep(dt/n);}
+  if(timeK>1&&(ac.phase!=='fly'||ac.onGround||ac.agl<1200||ac.stalled||abs(ac.phi)>60*DEG||Math.hypot(ac.pos.x-target.thr.x,ac.pos.z-target.thr.z)<28000))setTimeK(1);
+  if(ac.phase==='fly'){for(let j=0;j<timeK;j++)step(dt);const n=max(2,Math.ceil(dt*timeK/0.006));for(let i=0;i<n&&ac.phase==='fly';i++)flyStep(dt*timeK/n);}
   ac.yEase=(ac.yEase||0)*exp(-dt/0.25);
   updateAudio(dt);updateGameAudio(dt);
   // drone pose
@@ -2334,13 +2404,14 @@ function frame(now){
   shake=(ac.stalled&&!ac.onGround?0.5:0)+(ac.onGround&&ac.V>3?(ac.surf==='grass'?0.18:0.025)*clamp(ac.V/60,0,1):0)+ac.jolt*0.35;
   updateCockpit(dt);updateCamera(dt);
   if(camMode==='cockpit'&&ndMode==='cam'){ck.eoT=(ck.eoT||0)+1;if(ck.eoT%(MOB?3:2)===1)renderEO();drawEOOverlay(now);}
+  if(SAT.far){SAT.far.position.x=camera.position.x;SAT.far.position.z=camera.position.z;}if((now/1000|0)!==patchWatch.t){patchWatch.t=now/1000|0;patchWatch();}
   {const R=MOB?11000:22000;for(const c of cityChunks)c.m.visible=camera.position.distanceTo(c.c)<R+c.r;}
   skyMesh.position.copy(camera.position);clouds.forEach(c=>{c.position.x+=SCEN[scen].wind[0]*0.3*dt;});renderer.render(scene,camera);
   {const m=!$('title').hidden;if(m!==frame.menu){frame.menu=m;$('app').classList.toggle('menu',m);}}
   updateHUD(dt);updateRunwaySymbol();if((now/100|0)%2===0)drawMap();updatePanel(dt);renderLever();
 }
 syncSys();updateThrOut();resetFlight();ac.phase='standby';applyMob();
-window.__hawk={PHOTO,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
+window.__hawk={PHOTO,get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
 requestAnimationFrame(frame);
 })();
 </script>

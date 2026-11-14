@@ -16,7 +16,11 @@ Made by Baris Hiz.
 
 ## Aircraft
 
-The aircraft is a fan-made likeness of the Kızılelma unmanned fighter, shaped from public photos on Wikimedia Commons: chined diamond-section body, side intakes under the chine, canards, twin canted fins, no canopy, two-tone grey finish, with no name, flag or national markings. It is not affiliated with or endorsed by the aircraft's maker. Above about 90 % thrust an afterburner flame with shock diamonds lights (visual only).
+The aircraft is a canard-delta unmanned fighter: chined diamond-section body, side intakes under the chine, canards, twin canted fins, no canopy, two-tone grey finish, with no name, flag or national markings. Above about 90 % thrust an afterburner flame with shock diamonds lights (visual only).
+
+## Turkey
+
+The world covers the whole country (25.5-45 E, 35.7-42.4 N): eight low-resolution Sentinel-2 tiles at about 200 m per pixel over a 1.6 km terrain grid, with a detailed 24 km imagery and 125 m terrain patch around each airport, loaded as you approach. There are 18 airports with real runway coordinates: Istanbul (IST, SAW, ISL, SMD), Ankara ESB, İzmir ADB, Antalya AYT, Dalaman DLM, Milas-Bodrum BJV, Adana ADA, Kayseri ASR, Konya KYA, Samsun SZF, Trabzon TZX, Gaziantep GZT, Diyarbakır DIY, Erzurum ERZ and Van VAN. On the setup screen you pick a departure and an arrival; the route is drawn on a map of Turkey and on the in-flight map (ranges up to 640 nm). Time can be sped up 4x or 8x in cruise with Y. The map projection is a simple flat one centred on Istanbul, so east-west distances in the south are a few percent short.
 
 ## Istanbul scenery
 

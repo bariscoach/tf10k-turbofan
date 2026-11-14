@@ -492,7 +492,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
       <div>
         <div class="sec-h">Aircraft data</div>
         <dl class="spec">
-          <dt>Type</dt><dd>Modelled on the Bayraktar Kızılelma unmanned fighter (a fan-made likeness, not affiliated with Baykar)</dd>
+          <dt>Type</dt><dd>Canard-delta unmanned fighter, a fan-made likeness of the Kızılelma (not affiliated with its maker)</dd>
           <dt>Landing weight</dt><dd>12,800 lb (5,800 kg)</dd>
           <dt>Wing</dt><dd>10.0 m span · 26 m² · AR 3.9 · cranked delta</dd>
           <dt>Length</dt><dd>14.9 m · twin canted tails</dd>
@@ -1346,12 +1346,6 @@ let canopyG,leSurf=[],rudders=[],sbrakes=[],gearDoors=[],mLiner;const anim={flap
     // stencils (no national markings)
     const perim=z=>{const p=fusAt(z),a=p.w,b=(p.t+p.b)/2;return PI*(3*(a+b)-Math.sqrt((3*a+b)*(a+3*b)));};
     const sten=(s,z,ang,hM,col)=>{const pa=FW/perim(z),pz=FH/14.5;const right=ang<90||ang>270;txt(fg,s,FU(ang),FY(z),right?PI/2:-PI/2,hM*pa,col,pz/pa);};
-    for(const a of[341,199]){sten('KIZILELMA',-4.35,a,0.2,'rgba(236,239,242,0.92)');sten('TC-ÖZB',5.2,a,0.1,'rgba(236,239,242,0.8)');
-      // low-visibility crescent and star roundel ahead of the name
-      const pa=FW/perim(-5.45),pz=FH/14.5,r=0.16*pa;fg.save();fg.translate(FU(a),FY(-5.45));fg.rotate(a>270?PI/2:-PI/2);fg.scale(pz/pa,1);fg.strokeStyle='rgba(236,239,242,0.9)';fg.fillStyle='rgba(236,239,242,0.9)';fg.lineWidth=r*0.14;
-      fg.beginPath();fg.arc(0,0,r,0,2*PI);fg.stroke();fg.beginPath();fg.arc(-r*0.12,0,r*0.55,0,2*PI);fg.fill();fg.fillStyle=PAINT2;fg.beginPath();fg.arc(r*0.04,0,r*0.44,0,2*PI);fg.fill();
-      fg.fillStyle='rgba(236,239,242,0.9)';fg.beginPath();for(let k=0;k<5;k++){const an=k*4*PI/5+PI;fg.lineTo(r*0.42+cos(an)*r*0.2,sin(an)*r*0.2);}fg.closePath();fg.fill();fg.restore();}
-    sten('KIZILELMA',-1.4,60,0.24,'rgba(236,239,242,0.85)');sten('KIZILELMA',-1.4,120,0.24,'rgba(236,239,242,0.85)');
     for(const a of[338,202]){sten('DANGER  ·  INTAKE',-3.25,a,0.045,'rgba(205,64,52,0.85)');sten('GND PWR',0.9,a,0.035,'rgba(226,231,236,0.7)');sten('JACK PT',2.3,a,0.03,'rgba(226,231,236,0.6)');}
     for(const a of[28,152]){sten('FUEL  JP-8',-0.6,a,0.035,'rgba(226,231,236,0.7)');sten('NO STEP',3.6,a,0.04,'rgba(226,231,236,0.65)');}}
   const fTex=toTex(fc,true),fBump=toTex(bc,false);
@@ -1446,9 +1440,6 @@ let canopyG,leSurf=[],rudders=[],sbrakes=[],gearDoors=[],mLiner;const anim={flap
     const fin=new THREE.Group();fin.position.set(2.15*sd,0.3,0);fin.rotation.z=-sd*26*DEG;drone.add(fin);fin.add(new THREE.Mesh(tg,mSkinG));
     // formation light strip and tip light on the fin
     const fl=new THREE.Mesh(new THREE.BoxGeometry(0.012,0.04,0.55),std({color:0x1c2a1e,emissive:0x8dffb0,emissiveIntensity:0.6}));fl.position.set(sd>0?0.035:-0.125,1.25,5.6);fin.add(fl);
-    {const [c,g]=mkCan(192,160);g.fillStyle='#d6202c';g.fillRect(0,0,192,112);g.fillStyle='#fff';g.beginPath();g.arc(70,56,30,0,2*PI);g.fill();g.fillStyle='#d6202c';g.beginPath();g.arc(79,56,24,0,2*PI);g.fill();
-      g.fillStyle='#fff';g.beginPath();for(let k=0;k<5;k++){const an=k*4*PI/5+PI;g.lineTo(112+cos(an)*15,56+sin(an)*15);}g.closePath();g.fill();g.fillStyle='#eef0f2';g.font='700 34px Rajdhani, Arial Narrow, sans-serif';g.textAlign='center';g.fillText('TC-ÖZB',96,150);
-      const fm=new THREE.Mesh(new THREE.PlaneGeometry(0.62,0.52),new THREE.MeshStandardMaterial({map:toTex(c,true),transparent:true,roughness:0.5,alphaTest:0.05}));fm.position.set(sd>0?0.027:-0.117,1.32,6.0);fm.rotation.y=sd>0?PI/2:-PI/2;fin.add(fm);}
     const th=Math.atan(0.1351);const rp=new THREE.Group();rp.position.set(-0.045,0.15,H(0.15));rp.rotation.x=th;fin.add(rp);
     const loc=(dz,dy)=>[dz*cos(th)-dy*sin(th),dz*sin(th)+dy*cos(th)];
     const rs=new THREE.Shape();[loc(0.02,0),loc(0.42,0),loc(0.42+0.1351*1.55,1.55),loc(0.02+0.1351*1.55,1.55)].map(([a,b])=>[b,a]).forEach(([z,y],i)=>i?rs.lineTo(z,y):rs.moveTo(z,y));

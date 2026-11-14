@@ -16,7 +16,7 @@ Made by Baris Hiz.
 
 ## Aircraft
 
-The aircraft is a fan-made likeness of the Bayraktar Kızılelma unmanned fighter, shaped from public photos on Wikimedia Commons: chined diamond-section body, side intakes under the chine, canards, twin canted fins, no canopy, two-tone grey finish. It is not affiliated with or endorsed by Baykar. Above about 90 % thrust an afterburner flame with shock diamonds lights (visual only).
+The aircraft is a fan-made likeness of the Kızılelma unmanned fighter, shaped from public photos on Wikimedia Commons: chined diamond-section body, side intakes under the chine, canards, twin canted fins, no canopy, two-tone grey finish, with no name, flag or national markings. It is not affiliated with or endorsed by the aircraft's maker. Above about 90 % thrust an afterburner flame with shock diamonds lights (visual only).
 
 ## Istanbul scenery
 

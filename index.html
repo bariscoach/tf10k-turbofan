@@ -761,7 +761,7 @@ function local(end,p){const dx=p.x-end.thr.x,dz=p.z-end.thr.z;return {u:dx*end.d
 function worldAt(end,u,v,y){return new THREE.Vector3(end.thr.x+end.d.x*u+end.r.x*v,(y||0)+end.ap.elev,end.thr.z+end.d.z*u+end.r.z*v);}
 function findRunway(p){for(const ap of AIRPORTS){const l=local(ap.ends[0],p);if(l.u>=0&&l.u<=ap.len&&abs(l.v)<=ap.w/2)return {ap,l};}return null;}
 function approachEnd(ap,p){return local(ap.ends[0],p).u<ap.len/2?ap.ends[0]:ap.ends[1];}
-const SCEN=[{name:'Calm',wind:[0,0,0],gust:0,label:'calm',cloud:0.5},{name:'Crosswind',wind:[-6.2,0,0],gust:0,label:'12 kt from 090',cloud:0.47},{name:'Gusty',wind:[-9.3,0,2],gust:1,label:'18 kt from 100, gusts',cloud:0.44}];
+const SCEN=[{name:'Calm',wind:[0,0,0],gust:0,label:'calm',cloud:0.4},{name:'Crosswind',wind:[-6.2,0,0],gust:0,label:'12 kt from 090',cloud:0.55},{name:'Gusty',wind:[-9.3,0,2],gust:1,label:'18 kt from 100, gusts',cloud:0.7}];
 let scen=0,invert=true,autoTrim=true,autoRudder=true;
 // pitch/roll model (normalised moments): trim AoA, AoA stiffness, elevator power, pitch damping, aileron power, roll damping, dihedral, auto-trim gain
 const PM={qref:0.5*1.225*61.7*61.7,a0:6*DEG,ka:6,kd:1.3,kq:3.2,la:1.3,lp:2.4,ld:0.12,at:1.6,
@@ -1076,57 +1076,61 @@ const skyMesh=new THREE.Mesh(new THREE.SphereGeometry(40000,32,16),new THREE.Sha
   vertexShader:'varying vec3 vP;void main(){vP=position;vec4 p=projectionMatrix*modelViewMatrix*vec4(position,1.0);gl_Position=p.xyww;}',
   fragmentShader:'uniform vec3 top;uniform vec3 hor;uniform vec3 sun;varying vec3 vP;void main(){vec3 d=normalize(vP);float h=d.y;float t=pow(clamp(h,0.0,1.0),0.5);vec3 c=mix(hor,top,t);if(h<0.0)c=mix(hor,vec3(0.55,0.6,0.62),clamp(-h*4.0,0.0,1.0));float s=max(dot(d,sun),0.0);c+=vec3(1.0,0.92,0.75)*(pow(s,800.0)*4.0+pow(s,24.0)*0.25);gl_FragColor=vec4(c,1.0);}'}));
 skyMesh.frustumCulled=false;skyMesh.renderOrder=-1;scene.add(skyMesh);
-/* Volumetric cloud layer: a slab of cumulus between about 1,500 and 3,200 m above sea level, ray-marched per pixel with
-   sun-lit scattering. You can fly into it (the view goes milky inside), and from above you see its top surface. */
-const CLOUD={y0:1500,y1:3200,steps:MOB?10:18,R:60000};
-const cloudMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,depthTest:true,side:THREE.BackSide,fog:false,
-  blending:THREE.CustomBlending,blendSrc:THREE.OneFactor,blendDst:THREE.OneMinusSrcAlphaFactor,
-  uniforms:{t:{value:0},wind:{value:new THREE.Vector2()},cover:{value:0.5},sun:{value:new THREE.Vector3(0,1,0)},cam:{value:new THREE.Vector3()},
-    y0:{value:CLOUD.y0},y1:{value:CLOUD.y1}},
-  vertexShader:`varying vec3 vW;
-    #include <common>
-    #include <logdepthbuf_pars_vertex>
-    void main(){vec4 w=modelMatrix*vec4(position,1.0);vW=w.xyz;vec4 mv=viewMatrix*w;gl_Position=projectionMatrix*mv;
-    #include <logdepthbuf_vertex>
-    }`,
-  fragmentShader:`#include <logdepthbuf_pars_fragment>
-    uniform float t;uniform vec2 wind;uniform float cover;uniform vec3 sun;uniform vec3 cam;uniform float y0;uniform float y1;varying vec3 vW;
-    float hash(vec3 p){p=fract(p*0.3183099+vec3(0.1,0.2,0.3));p*=17.0;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
-    float vn(vec3 x){vec3 i=floor(x),f=fract(x);f=f*f*(3.0-2.0*f);
-      return mix(mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),
-                 mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z);}
-    float dens(vec3 p){
-      float prof=smoothstep(y0,y0+260.0,p.y)*smoothstep(y1,y1-420.0,p.y);
-      if(prof<=0.0)return 0.0;
-      vec3 q=p/vec3(1900.0,260.0,1900.0)+vec3(wind.x,0.0,wind.y)*t*0.00006+vec3(t*0.00003,0.0,t*0.00002);
-      float n=vn(q)*0.55+vn(q*2.1+7.3)*0.28+vn(q*4.3+2.9)*0.17;
-      return max(0.0,(n-(1.0-cover))*2.2)*prof;}
-    void main(){
-      #include <logdepthbuf_fragment>
-      vec3 ro=cam,rd=normalize(vW-cam);
-      float tmin=0.0,tmax=60000.0;
-      if(abs(rd.y)>1e-5){float ta=(y0-ro.y)/rd.y,tb=(y1-ro.y)/rd.y;tmin=max(tmin,min(ta,tb));tmax=min(tmax,max(ta,tb));}
-      else{if(ro.y<y0||ro.y>y1)discard;}
-      if(tmax<=tmin)discard;
-      float len=(tmax-tmin)/float(${CLOUD.steps});
-      float T=1.0;vec3 L=vec3(0.0);
-      float cosS=dot(rd,sun);float phase=0.55+0.45*(0.5+0.5*cosS);
-      for(int i=0;i<${CLOUD.steps};i++){
-        float tt=tmin+(float(i)+0.5)*len;vec3 p=ro+rd*tt;
-        float d=dens(p);
-        if(d>0.002){
-          float sh=0.0;for(int k=1;k<=2;k++){sh+=dens(p+sun*float(k)*240.0);}
-          float light=exp(-sh*0.45)*0.85+0.15;
-          vec3 sc=mix(vec3(0.62,0.68,0.78),vec3(1.0,0.97,0.92),light)*light*phase;
-          float a=1.0-exp(-d*len*0.0016*6.0);
-          L+=T*a*sc;T*=1.0-a;
-          if(T<0.02)break;
-        }
-      }
-      float alpha=1.0-T;
-      if(alpha<0.003)discard;
-      gl_FragColor=linearToOutputTexel(vec4(L,alpha));}`});
-const cloudDome=new THREE.Mesh(new THREE.SphereGeometry(CLOUD.R,40,20),cloudMat);cloudDome.renderOrder=2;cloudDome.frustumCulled=false;
+/* Cumulus clouds, built the way classic flight simulators do it: each cloud is a cluster of soft camera-facing puffs with a flat
+   base and a domed top, brighter on the sun side and greyer underneath. Clouds are scattered around the aircraft and recycled as it
+   moves, drift with the wind, hide in the haze with distance, and can be flown through (puffs thin out close to the eye and the view
+   whites out inside a cloud). */
+const CLD={R:MOB?32000:46000,n:MOB?38:96,list:[],N:0,tick:0,drift:new THREE.Vector2(),white:0};
+{let sd=977;const rnd=()=>((sd=(sd*16807)%2147483647)/2147483647);
+ // puff texture: a lumpy soft blob
+ const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');
+ for(let i=0;i<26;i++){const an=rnd()*2*PI,rr=Math.sqrt(rnd())*30,x=64+cos(an)*rr,y=64+sin(an)*rr,r=20+rnd()*22;const gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba(255,255,255,0.20)');gr.addColorStop(0.6,'rgba(255,255,255,0.08)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);}
+ const tex=new THREE.CanvasTexture(c);
+ for(let i=0;i<CLD.n;i++){const W=900+rnd()*rnd()*3200,H=W*(0.32+rnd()*0.3),np=Math.round((MOB?9:15)+W/260+rnd()*6),puffs=[];
+   for(let k=0;k<np;k++){const an=rnd()*2*PI,rr=Math.pow(rnd(),0.7)*W/2,x=cos(an)*rr,z=sin(an)*rr*0.8,prof=1-Math.pow(rr/(W/2),2),y=rnd()*H*prof,size=W*(0.3+rnd()*0.26)*(0.75+0.5*prof);
+     const nx=x/(W/2),ny=(y/H)*2-0.6,nz=z/(W/2),nl=Math.hypot(nx,ny,nz)||1;puffs.push({x,y:y+size*0.22,z,size,n:[nx/nl,ny/nl,nz/nl],hf:y/H,rot:rnd()*6.28});}
+   CLD.list.push({hx:(rnd()*2-1)*CLD.R,hz:(rnd()*2-1)*CLD.R,base:1500+rnd()*700,W,H,puffs,x:0,y:0,z:0});CLD.N+=np;}
+ const geo=new THREE.InstancedBufferGeometry();const q=new THREE.PlaneGeometry(1,1);geo.index=q.index;geo.setAttribute('position',q.attributes.position);geo.setAttribute('uv',q.attributes.uv);
+ CLD.aPos=new THREE.InstancedBufferAttribute(new Float32Array(CLD.N*3),3);CLD.aPar=new THREE.InstancedBufferAttribute(new Float32Array(CLD.N*4),4);CLD.aPos.setUsage(THREE.DynamicDrawUsage);CLD.aPar.setUsage(THREE.DynamicDrawUsage);
+ geo.setAttribute('iPos',CLD.aPos);geo.setAttribute('iPar',CLD.aPar);
+ CLD.mat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,fog:false,uniforms:{map:{value:tex},fogC:{value:new THREE.Color(0.66,0.76,0.90)},R:{value:CLD.R}},
+   vertexShader:`#include <common>
+     #include <logdepthbuf_pars_vertex>
+     attribute vec3 iPos;attribute vec4 iPar;varying vec2 vUv;varying float vLit;varying float vD;varying float vA;
+     void main(){float cs=cos(iPar.z),sn=sin(iPar.z);vec2 pp=vec2(position.x*cs-position.y*sn,position.x*sn+position.y*cs)*iPar.x;
+       vec4 mv=viewMatrix*vec4(iPos,1.0);vD=length(mv.xyz);mv.xy+=pp;vUv=uv;vLit=iPar.y;vA=iPar.w;gl_Position=projectionMatrix*mv;
+       #include <logdepthbuf_vertex>
+     }`,
+   fragmentShader:`#include <logdepthbuf_pars_fragment>
+     uniform sampler2D map;uniform vec3 fogC;uniform float R;varying vec2 vUv;varying float vLit;varying float vD;varying float vA;
+     void main(){
+       #include <logdepthbuf_fragment>
+       float a=texture2D(map,vUv).a;a=smoothstep(0.03,0.75,a);
+       a*=vA*smoothstep(60.0,700.0,vD)*(1.0-smoothstep(R*0.78,R*0.98,vD));if(a<0.004)discard;
+       vec3 col=mix(vec3(0.50,0.55,0.63),vec3(1.0,0.985,0.96),vLit);
+       col=mix(col,fogC*1.04,smoothstep(9000.0,R*0.95,vD)*0.8);
+       gl_FragColor=linearToOutputTexel(vec4(col,a*0.9));}`});
+ CLD.mesh=new THREE.Mesh(geo,CLD.mat);CLD.mesh.frustumCulled=false;CLD.mesh.renderOrder=3;scene.add(CLD.mesh);
+ // inside-cloud whiteout: a veil placed just beyond the aircraft (or just outside the cockpit), so the aircraft stays visible
+ CLD.veil=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({color:0xdfe5ea,transparent:true,opacity:0,depthWrite:false,depthTest:true,fog:false,toneMapped:false}));CLD.veil.frustumCulled=false;CLD.veil.renderOrder=1;CLD.veil.visible=false;scene.add(CLD.veil);
+ CLD.order=new Uint32Array(CLD.N);CLD.dist=new Float32Array(CLD.N);CLD.px=new Float32Array(CLD.N*3);CLD.pp=new Float32Array(CLD.N*4);
+}
+function updateClouds(now,dt){const cam=camera.position,w=SCEN[scen].wind,R=CLD.R,wrap=(v,c)=>c+((((v-c)+R)%(2*R))+2*R)%(2*R)-R;
+  CLD.drift.x+=(w[0]*2.2+5)*dt;CLD.drift.y+=(w[2]*2.2+2)*dt;
+  const cover=SCEN[scen].cloud??0.5,show=Math.round(CLD.list.length*clamp(cover*1.5,0.25,1));
+  // cloud centres (recycled around the camera) and how deep the eye is inside the nearest one
+  let inside=0;for(let i=0;i<CLD.list.length;i++){const c=CLD.list[i];c.x=wrap(c.hx+CLD.drift.x,cam.x);c.z=wrap(c.hz+CLD.drift.y,cam.z);c.y=c.base;c.on=i<show;
+    if(c.on){const dx=(cam.x-c.x)/(c.W*0.5),dz=(cam.z-c.z)/(c.W*0.42),dy=(cam.y-(c.y+c.H*0.45))/(c.H*0.62),d=Math.sqrt(dx*dx+dy*dy+dz*dz);if(d<1)inside=max(inside,1-d);}}
+  CLD.white+=(clamp(inside*2.2,0,0.93)-CLD.white)*(1-exp(-dt/0.35));
+  {const v=CLD.veil;v.visible=CLD.white>0.01;if(v.visible){const d=camMode==='cockpit'?6:camera.position.distanceTo(ac.pos)+28;camera.getWorldDirection(_v1);v.position.copy(cam).addScaledVector(_v1,d);v.quaternion.copy(camera.quaternion);v.scale.setScalar(d*6);v.material.opacity=CLD.white;}}
+  // puffs are re-sorted back to front four times a second
+  if(now-CLD.tick<250)return;CLD.tick=now;const S=SUN;let n=0;
+  for(const c of CLD.list){if(!c.on)continue;for(const p of c.puffs){const x=c.x+p.x,y=c.y+p.y,z=c.z+p.z,k3=n*3,k4=n*4;CLD.px[k3]=x;CLD.px[k3+1]=y;CLD.px[k3+2]=z;
+      CLD.pp[k4]=p.size;CLD.pp[k4+1]=clamp(0.42+0.38*(p.n[0]*S.x+p.n[1]*S.y+p.n[2]*S.z)+0.3*p.hf,0,1);CLD.pp[k4+2]=p.rot;CLD.pp[k4+3]=1;
+      const dx=x-cam.x,dy=y-cam.y,dz=z-cam.z;CLD.dist[n]=dx*dx+dy*dy+dz*dz;CLD.order[n]=n;n++;}}
+  const ord=CLD.order.subarray(0,n);ord.sort((a,b)=>CLD.dist[b]-CLD.dist[a]);const P=CLD.aPos.array,Q=CLD.aPar.array;
+  for(let i=0;i<n;i++){const j=ord[i];P[i*3]=CLD.px[j*3];P[i*3+1]=CLD.px[j*3+1];P[i*3+2]=CLD.px[j*3+2];Q[i*4]=CLD.pp[j*4];Q[i*4+1]=CLD.pp[j*4+1];Q[i*4+2]=CLD.pp[j*4+2];Q[i*4+3]=CLD.pp[j*4+3];}
+  CLD.aPos.needsUpdate=true;CLD.aPar.needsUpdate=true;CLD.mesh.geometry.instanceCount=n;CLD.mat.uniforms.fogC.value.copy(scene.fog.color);}
 loadTex(MOB?'sky_m.jpg':'sky.jpg',t=>{t.anisotropy=1;t.wrapS=THREE.RepeatWrapping;t.generateMipmaps=false;t.minFilter=THREE.LinearFilter;
   // sun position in the panorama (u 0.593, 42° up) becomes the light direction
   const az=(0.593-0.5)*2*PI,el=42*DEG;SUN.set(cos(az)*cos(el),sin(el),sin(az)*cos(el));SUNOFF.copy(SUN).multiplyScalar(600);
@@ -1146,7 +1150,7 @@ loadTex(MOB?'sky_m.jpg':'sky.jpg',t=>{t.anisotropy=1;t.wrapS=THREE.RepeatWrappin
   hemi.intensity=0.5;hemi.color.setHex(0xd6e6ff);hemi.groundColor.setHex(0x4a5638);sun.intensity=2.3;sun.color.setHex(0xfff4e2);renderer.toneMappingExposure=1.0;
   PHOTO.sky=true;clouds.forEach(c=>{c.visible=false;});
   // moving clouds: a second dome of procedural cumulus that drifts with the scenario wind (and a slow base drift), over the photo sky
-  scene.add(cloudDome);});
+});
 const hemi=new THREE.HemisphereLight(0xcfe0ff,0x3a4a2a,0.7);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xfff1dc,1.7);sun.position.set(-3000,5000,2000);sun.castShadow=true;sun.shadow.mapSize.set(MOB?1024:4096,MOB?1024:4096);
 Object.assign(sun.shadow.camera,{left:-45,right:45,top:45,bottom:-45,near:1,far:12000});sun.shadow.radius=3;sun.shadow.bias=-0.0003;scene.add(sun);scene.add(sun.target);
@@ -2471,7 +2475,7 @@ function frame(now){
   if(camMode==='cockpit'&&ndMode==='cam'){ck.eoT=(ck.eoT||0)+1;if(ck.eoT%(MOB?3:2)===1)renderEO();drawEOOverlay(now);}
   if(SAT.far){SAT.far.position.x=camera.position.x;SAT.far.position.z=camera.position.z;}if((now/500|0)!==FINE.tick){FINE.tick=now/500|0;fineWatch();}if((now/1000|0)!==patchWatch.t){patchWatch.t=now/1000|0;patchWatch();}
   {const R=MOB?11000:22000;for(const c of cityChunks)c.m.visible=camera.position.distanceTo(c.c)<R+c.r;}
-  skyMesh.position.copy(camera.position);cloudDome.position.copy(camera.position);{const w=SCEN[scen].wind,U=cloudMat.uniforms;U.t.value=now/1000;U.wind.value.set(w[0],w[2]);U.cover.value=SCEN[scen].cloud??0.5;U.sun.value.copy(SUN);U.cam.value.copy(camera.position);}clouds.forEach(c=>{c.position.x+=SCEN[scen].wind[0]*0.3*dt;});renderer.render(scene,camera);
+  skyMesh.position.copy(camera.position);updateClouds(now,dtFrame);clouds.forEach(c=>{c.position.x+=SCEN[scen].wind[0]*0.3*dt;});renderer.render(scene,camera);
   {const m=!$('title').hidden;if(m!==frame.menu){frame.menu=m;$('app').classList.toggle('menu',m);}}
   updateHUD(dt);updateRunwaySymbol();if((now/100|0)%2===0)drawMap();updatePanel(dt);renderLever();
 }
@@ -2526,7 +2530,7 @@ async function warmUp(){if(warmUp.done||/nowarm/.test(location.search))return;wa
   frame.warm=false;camMode=cm;fb.set=false;}
 // run once the scenery has loaded (or after 6 s at the latest), while the start menu is up
 {let n=0;const t=setInterval(()=>{n++;if((PHOTO.ground>=SAT.N*SAT.N&&PHOTO.base>=8)||n>12){clearInterval(t);(window.requestIdleCallback||setTimeout)(()=>warmUp());}},500);}
-window.__hawk={PHOTO,renderer,FINE,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
+window.__hawk={PHOTO,renderer,CLD,camera,FINE,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
 requestAnimationFrame(frame);
 })();
 </script>

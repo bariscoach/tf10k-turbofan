@@ -1992,6 +1992,7 @@ function drawCockpitDisplays(a){
    g.fillStyle='#e3eaf2';g.font='600 16px IBM Plex Mono, monospace';g.textAlign='left';g.fillText('G '+nzOf(a).toFixed(1),12,412);g.textAlign='right';g.fillText('M '+(a.V/340).toFixed(2),500,412);g.textAlign='center';
    osb(g,['PFD','FPM','HSI','BARO','DCLT'],['SWAP','','MENU','','TEST'],'PFD');
    if(a.stallW){g.fillStyle='#ff5347';g.font='700 28px Rajdhani, sans-serif';g.fillText('STALL',256,140);}d.t.needsUpdate=true;}
+  if(!ck.slow){
   // engine and systems display: N1/EGT dials, N2/FF/oil/hydraulic bars, fuel, gear/flap/speed-brake synoptic
   {const d=ckTex.eng,g=ckBg(d);
    const arc=(cx,cy,r,v,max_,lbl,txt,red)=>{g.lineWidth=10;g.strokeStyle='#1d252e';g.beginPath();g.arc(cx,cy,r,0.75*PI,2.25*PI);g.stroke();const f=clamp(v/max_,0,1);g.strokeStyle=v>=red?'#ff5347':'#3fd3e6';g.beginPath();g.arc(cx,cy,r,0.75*PI,0.75*PI+1.5*PI*f);g.stroke();
@@ -2029,6 +2030,7 @@ function drawCockpitDisplays(a){
    dial(64,sim.n2,110,'RPM %',['0','','50','','100'],0.93);dial(192,sim.egt,1100,'FTIT °C',['0','','5','','10'],0.86);dial(320,ac.fuel,6000,'FUEL LB',['0','2','4','6'],null);d.t.needsUpdate=true;}
   // nav display
   if(ndMode!=='cam'){const d=ckTex.nd,g=ckBg(d,'#04070a');mapCore(g,512,MAPR[mapRi],14);d.t.needsUpdate=true;}
+  }
 }
 function drawHUD(a){const d=ckTex.hud,g=d.g;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,d.W,d.H);g.setTransform(DS,0,0,DS,0,0);const C='#7dff9f';g.strokeStyle=C;g.fillStyle=C;g.lineWidth=3;const ppd=25,c=256;
   g.save();g.beginPath();g.rect(40,40,432,432);g.clip();g.translate(c,c);g.rotate(-a.phi);g.translate(0,a.theta/DEG*ppd);
@@ -2057,7 +2059,9 @@ function updateTubClip(){drone.updateMatrixWorld(true);tubPlanes.forEach((p,i)=>
 function updateCockpit(dt){const on=camMode==='cockpit';cockpit.visible=on;view.classList.toggle('ckView',on);if(on!==ck.was){ck.t=1;setTubClip(on);const sn=drone.getObjectByName('sensor');if(sn)sn.visible=!on;$('app').classList.toggle('ckFull',on);if(!on){ckTip.hidden=true;canvas.style.cursor='';}}ck.was=on;if(!on)return;updateTubClip();updateCockpitControls();
   ck.stick.rotation.x=(ac.de||0)*0.3;ck.stick.rotation.z=-(ac.da||0)*0.3;ck.thr.position.z=-0.2+0.15-sim.throttle*0.3;
   ck.ped[0].position.z=-0.92-(ac.drTot||0)*0.05;ck.ped[1].position.z=-0.92+(ac.drTot||0)*0.05;
-  drawHUD(ac);ck.t+=dt;if(ck.t>0.1){ck.t=0;drawCockpitDisplays(ac);}}
+  // canvases are re-uploaded to the GPU each time they are redrawn, so redraw only as often as the eye needs:
+  // HUD 30 times a second, flight display 10, engine/standby/gauges/map about 3
+  ck.ht=(ck.ht||0)+dt;if(ck.ht>=0.033){ck.ht=0;drawHUD(ac);}ck.t+=dt;if(ck.t>0.1){ck.t=0;ck.slow=((ck.slow||0)+1)%3;drawCockpitDisplays(ac);}}
 canvas.addEventListener('pointerdown',e=>{if(camMode!=='cockpit')return;const p=ckPick(e);
   if(p){if(p.h.drag==='thr'){manualThrust();ck.drag={x:e.clientX,y:e.clientY,thr:true};canvas.setPointerCapture(e.pointerId);}else p.h.click(p.uv,e);return;}
   ck.drag={x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);canvas.style.cursor='grabbing';});
@@ -2070,6 +2074,8 @@ canvas.addEventListener('pointerleave',()=>{ckTip.hidden=true;});
 canvas.addEventListener('wheel',e=>{if(camMode!=='cockpit')return;e.preventDefault();const p=ckPick(e);if(p&&p.h.wheel&&p.h.wheel(p.uv,e.deltaY,e))return;ck.fov=clamp(ck.fov+e.deltaY*0.03,28,85);},{passive:false});
 canvas.addEventListener('dblclick',()=>{ck.headY=0;ck.headP=MOB?-0.26:CKP;ck.fov=74;});
 /* ================= Cockpit controls: glareshield autopilot, gear and flap levers, switches, draggable throttle ================= */
+// cockpit display canvases are re-uploaded many times a second: skip building mipmaps on every upload (the main cost)
+Object.values(ckTex).forEach(d=>{if(d&&d.t){d.t.generateMipmaps=false;d.t.minFilter=THREE.LinearFilter;}});
 const ckHits=[];const ckLights={};
 {const mPlate=std({color:0x1b1f24,roughness:0.8,metalness:0.2}),mMetal=std({color:0x7d8690,roughness:0.4,metalness:0.7}),mBlack=std({color:0x0d0f12,roughness:0.9});
  const add=(m,x,y,z,parent)=>{m.position.set(x,y,z);(parent||cockpit).add(m);return m;};
@@ -2156,7 +2162,7 @@ const ckRay=new THREE.Raycaster(),ckNdc=new THREE.Vector2();const ckTip=document
 function ckPick(e){const r=canvas.getBoundingClientRect();ckNdc.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);ckRay.setFromCamera(ckNdc,camera);
   const hits=ckRay.intersectObjects(ckHits.map(h=>h.mesh),false);if(!hits.length)return null;const h=ckHits.find(x=>x.mesh===hits[0].object);return h?{h,uv:hits[0].uv||new THREE.Vector2()}:null;}
 /* ================= Nose sensor camera (live feed on the right display) ================= */
-const eoCam=new THREE.PerspectiveCamera(20,1,2,60000);const eoRT=new THREE.WebGLRenderTarget(MOB?320:768,MOB?320:768,{samples:MOB?0:2});eoRT.texture.colorSpace=THREE.SRGBColorSpace;
+const eoCam=new THREE.PerspectiveCamera(20,1,2,60000);const eoRT=new THREE.WebGLRenderTarget(MOB?320:640,MOB?320:640,{samples:MOB?0:2});eoRT.texture.colorSpace=THREE.SRGBColorSpace;
 let ndMode='cam';const eoMat=new THREE.MeshBasicMaterial({map:eoRT.texture,toneMapped:true});let ndMatCanvas=null;
 const EOPOS=new THREE.Vector3(0,-0.42,-7.75);
 function eoAim(){return worldAt(target,target.aim,0,0.5);}
@@ -2541,12 +2547,17 @@ function updatePanel(dt){gaN1.draw(sim.n1);gaN2.draw(sim.n2);gaEGT.draw(sim.egt)
 
 /* ================= Frame loop ================= */
 let W=1,Hh=1;
-function resize(){const r=view.getBoundingClientRect();W=max(1,Math.round(r.width));Hh=max(1,Math.round(r.height));renderer.setPixelRatio(min(window.devicePixelRatio||1,MOB?1.5:2));renderer.setSize(W,Hh,false);camera.aspect=W/Hh;camera.updateProjectionMatrix();}
+// adaptive resolution: render at the screen's full pixel density while frames are quick; if the last two seconds averaged
+// slower than about 42 fps, step the density down (to a floor of 1), and step it back up when there is headroom
+const PR={max:min(window.devicePixelRatio||1,MOB?1.5:2),cur:0,acc:0,n:0,t:0};PR.cur=PR.max;
+function adaptRes(dt){if(frame.warm)return;PR.acc+=dt;PR.n++;PR.t+=dt;if(PR.t<2)return;const avg=PR.acc/PR.n;PR.t=PR.acc=PR.n=0;
+  let next=PR.cur;if(avg>0.024)next=max(1,PR.cur-0.25);else if(avg<0.0135)next=min(PR.max,PR.cur+0.25);if(next!==PR.cur){PR.cur=next;resize();}}
+function resize(){const r=view.getBoundingClientRect();W=max(1,Math.round(r.width));Hh=max(1,Math.round(r.height));renderer.setPixelRatio(PR.cur);renderer.setSize(W,Hh,false);camera.aspect=W/Hh;camera.updateProjectionMatrix();}
 new ResizeObserver(resize).observe(view);resize();
 let last=performance.now(),dtFrame=0.016;
 setInterval(()=>{if(!frame.warm&&!document.hidden&&frame.beat&&performance.now()-frame.beat>1500){frame.beat=performance.now();requestAnimationFrame(frame);}},700);
 function frame(now){
-  if(!frame.warm)requestAnimationFrame(frame);frame.beat=now;if(window.__testHold)window.__testHold();let dt=min(0.05,(now-last)/1000);last=now;if(document.hidden)return;dtFrame=dt;
+  if(!frame.warm)requestAnimationFrame(frame);frame.beat=now;if(window.__testHold)window.__testHold();let dt=min(0.05,(now-last)/1000);last=now;if(document.hidden)return;dtFrame=dt;adaptRes(dt);
   if(timeK>1&&(ac.phase!=='fly'||ac.onGround||ac.agl<1200||ac.stalled||abs(ac.phi)>60*DEG||Math.hypot(ac.pos.x-target.thr.x,ac.pos.z-target.thr.z)<28000))setTimeK(1);
   if(ac.phase==='fly'){for(let j=0;j<timeK;j++)step(dt);const n=max(2,Math.ceil(dt*timeK/0.006));for(let i=0;i<n&&ac.phase==='fly';i++)flyStep(dt*timeK/n);}
   ac.yEase=(ac.yEase||0)*exp(-dt/0.25);
@@ -2588,7 +2599,7 @@ function frame(now){
   {const gl=$('bGear');gl.classList.toggle('down',ac.gearT>0.97);gl.classList.toggle('transit',ac.gearT>0.03&&ac.gearT<0.97);}
   shake=(ac.stalled&&!ac.onGround?0.5:0)+(ac.onGround&&ac.V>3?(ac.surf==='grass'?0.18:0.025)*clamp(ac.V/60,0,1):0)+ac.jolt*0.35;
   updateCockpit(dt);updateCamera(dt);
-  if(camMode==='cockpit'&&ndMode==='cam'){ck.eoT=(ck.eoT||0)+1;if(ck.eoT%(MOB?3:2)===1)renderEO();drawEOOverlay(now);}
+  if(camMode==='cockpit'&&ndMode==='cam'){ck.eoT=(ck.eoT||0)+1;if(ck.eoT%(MOB?4:3)===1){renderEO();drawEOOverlay(now);}}
   if(SAT.far){SAT.far.position.x=camera.position.x;SAT.far.position.z=camera.position.z;}if((now/500|0)!==FINE.tick){FINE.tick=now/500|0;fineWatch();}if((now/1000|0)!==patchWatch.t){patchWatch.t=now/1000|0;patchWatch();}
   {const R=MOB?11000:22000;for(const c of cityChunks)c.m.visible=camera.position.distanceTo(c.c)<R+c.r;}
   skyMesh.position.copy(camera.position);updateClouds(now,dtFrame);clouds.forEach(c=>{c.position.x+=SCEN[scen].wind[0]*0.3*dt;});renderer.render(scene,camera);
@@ -2651,7 +2662,7 @@ setInterval(()=>{if(!warmUp.done||camMode==='cockpit'||document.hidden)return;(w
   const cv=cockpit.visible;cockpit.visible=true;renderer.compile(cockpit,camera,scene);cockpit.visible=cv;}catch(e){}});},3000);
 // run once the scenery has loaded (or after 6 s at the latest), while the start menu is up
 {let n=0;const t=setInterval(()=>{n++;if((PHOTO.ground>=SAT.N*SAT.N&&PHOTO.base>=8)||n>12){clearInterval(t);(window.requestIdleCallback||setTimeout)(()=>warmUp());}},500);}
-window.__hawk={PHOTO,LIGHTS,setTod:(t)=>{tod=t;applyTOD();},GLU,renderer,CLD,camera,FINE,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
+window.__hawk={PHOTO,PR,LIGHTS,setTod:(t)=>{tod=t;applyTOD();},GLU,renderer,CLD,camera,FINE,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
 requestAnimationFrame(frame);
 })();
 </script>

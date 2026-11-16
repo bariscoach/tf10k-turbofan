@@ -142,6 +142,7 @@ main{display:grid;grid-template-columns:1fr 372px;min-height:0}
 .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,14,20,.78);backdrop-filter:blur(4px);z-index:5;padding:16px;overflow:auto}
 #app.menu main{grid-template-columns:1fr;grid-template-rows:1fr} #app.menu #panel,#app.menu #hud,#app.menu .viewbar,#app.menu #map,#app.menu #mapRange,#app.menu #stick,#app.menu #ckTip{display:none!important}
 #perf{position:absolute;left:50%;top:max(6px,env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:4;padding:3px 10px;border-radius:5px;background:rgba(5,8,11,.78);border:1px solid var(--line-2);font-family:var(--font-mono);font-size:11px;color:var(--hud);white-space:nowrap;pointer-events:none}
+#loading{z-index:6}
 #loading .lcard{width:min(440px,100%);padding:22px 24px;border-radius:10px;background:var(--panel);border:1px solid var(--line-2);display:grid;gap:12px}
 #loading h3{margin:0;color:var(--fg);font-family:var(--font-display);font-size:22px;letter-spacing:.08em;text-transform:uppercase}
 #loading .lrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-family:var(--font-mono);font-size:12px;color:var(--fg-dim)}
@@ -2477,7 +2478,7 @@ window.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.ta
   else if(k==='f'||k==='F')cycleFlaps();else if(k==='g'||k==='G')toggleGear();else if(k==='b'||k==='B')toggleBrk();else if(k===' ')toggleSplr();
   else if(k==='l'||k==='L')toggleLight('ldg');else if(k==='k'||k==='K')toggleLight('taxi');
   else if(k==='y'||k==='Y')cycleTime();else if(k==='p'||k==='P'){PERF.on=!PERF.on;PERF.el=$('perf');PERF.el.hidden=!PERF.on;}
-  else if(k==='m'||k==='M')$('mapRange').click();else if(k==='v'||k==='V'){camMode=camMode==='chase'?'cockpit':camMode==='cockpit'?'nose':camMode==='nose'?'tower':camMode==='tower'?'flyby':'chase';fb.set=false;}else if(k==='c'||k==='C')camMode=camMode==='cockpit'?'chase':'cockpit';else if(k==='r'||k==='R')startGame();else return;
+  else if(k==='m'||k==='M')$('mapRange').click();else if(k==='v'||k==='V'){camMode=camMode==='chase'?'cockpit':camMode==='cockpit'?'nose':camMode==='nose'?'tower':camMode==='tower'?'flyby':'chase';fb.set=false;}else if(k==='c'||k==='C')camMode=camMode==='cockpit'?'chase':'cockpit';else if(k==='r'||k==='R')requestStart();else return;
   e.preventDefault();});
 window.addEventListener('keyup',e=>{const k=e.key;if(k==='x'||k==='X')ck.glance=false;if(k==='q'||k==='Q'||k===',')inp.kRudL=false;if(k==='e'||k==='E'||k==='.')inp.kRudR=false;if(k===']'||k==='Home')inp.trimUp=false;if(k==='['||k==='End')inp.trimDn=false;if(k==='ArrowUp'||k==='w'||k==='W')inp.kUp=false;else if(k==='ArrowDown'||k==='s'||k==='S')inp.kDn=false;else if(k==='ArrowLeft'||k==='a'||k==='A')inp.kL=false;else if(k==='ArrowRight'||k==='d'||k==='D')inp.kR=false;});
 {const st=$('stick'),kn=st.querySelector('.knob');let id=null,cx=0,cy=0;
@@ -2531,8 +2532,17 @@ onApChange=function(){
 $('bTrim').addEventListener('click',toggleAutoTrim);
 document.querySelectorAll('#tod button').forEach(b=>b.addEventListener('click',()=>{tod=+b.dataset.t;document.querySelectorAll('#tod button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));applyTOD();}));
 document.querySelectorAll('#scen button').forEach(b=>b.addEventListener('click',()=>{scen=+b.dataset.s;document.querySelectorAll('#scen button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}));
-$('btnGo').addEventListener('click',()=>{ensureGameAudio();startGame();});
-$('btnAgain').addEventListener('click',()=>{startGame();});
+// Start, Fly again and R only put the loading card up (over the menu) and return, so the browser paints straight away; the flight
+// is set up on the next frame behind the card. Doing it inside the click (menu reflow, canvas resize, first frame of the new
+// scene) held the click for over 200 ms
+function requestStart(){if(requestStart.p)return;requestStart.p=true;
+  $('lPct').textContent='0%';$('lBar').style.width='0%';$('lStep').textContent='Preparing';$('lWhere').textContent='';$('loading').hidden=false;
+  requestAnimationFrame(()=>setTimeout(()=>{requestStart.p=false;startGame();},0));}
+$('btnGo').addEventListener('click',()=>{ensureGameAudio();requestStart();});
+// build the sound engine (noise buffers, engine and wind voices) while the menu is idle: the browser keeps it paused until the
+// Start click, which then only has to resume it instead of spending 30 ms building it
+(window.requestIdleCallback||setTimeout)(()=>{try{ensureGameAudio();}catch(e){}},{timeout:5000});
+$('btnAgain').addEventListener('click',()=>{requestStart();});
 function goHome(){if(ap.on)apEngage(false);ap.athr=false;ac.phase='standby';$('result').hidden=true;$('title').hidden=false;$('app').classList.add('menu');frame.menu=true;$('mApDrawer').hidden=true;showScr('home');inp.kUp=inp.kDn=inp.kL=inp.kR=false;onApChange();}
 $('logoHome').addEventListener('click',goHome);
 function setMission(m){mission=m;document.querySelectorAll('#mission .mcard').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.m===m)));$('btnGo').textContent=m==='takeoff'?'Line up for takeoff':'Start approach';}
@@ -2560,7 +2570,7 @@ function showScr(n){['home','play','help'].forEach(k=>{$('scr'+k[0].toUpperCase(
 document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showScr(b.dataset.go)));
 $('btnMenu').addEventListener('click',()=>{$('result').hidden=true;$('title').hidden=false;$('app').classList.add('menu');frame.menu=true;ac.phase='standby';showScr('play');});
 function startGame(){setTimeK(1);camMode='chase';warmUp.cam='chase';fb.set=false;ORB.yaw=ORB.pitch=0;ORB.zoom=1;Object.assign(LIGHTS,{nav:true,bcn:true,strb:true,ldg:true,taxi:mission==='takeoff'});syncLights();applyTOD();$('title').hidden=true;$('result').hidden=true;$('app').classList.remove('menu');frame.menu=false;applyMob();resetFlight();camPos.copy(ac.pos).add(new THREE.Vector3(0,8,30));camLook.copy(ac.pos);
-  LOAD.on=true;LOAD.t0=performance.now();LOAD.shown=false;camera.position.copy(camPos);if(osmCity){osmCity.OSMB.t=performance.now();osmCity.watch();}}
+  LOAD.on=true;LOAD.t0=performance.now();LOAD.shown=!$('loading').hidden;camera.position.copy(camPos);if(osmCity){osmCity.OSMB.t=performance.now();osmCity.watch();}}
 
 /* ================= Destination & moving map ================= */
 function setTarget(end){target=end;document.querySelectorAll('#dest button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.end===end.id)));const hd=$('hDEST');if(hd)hd.textContent=end.id+' · '+end.ap.name;}
@@ -2748,7 +2758,7 @@ function loadStatus(){const it=[['Shaders',warmUp.done?1:0,1,1]];
 function loadTick(now){let w=0,s=0,step=null;for(const[n,d,t,k]of loadStatus()){w+=k;s+=k*min(1,d/t);if(!step&&d<t)step=[n,d,t];}
   const el=performance.now()-LOAD.t0;
   if(!step||el>30000){LOAD.on=false;$('loading').hidden=true;return;}
-  if(!LOAD.shown&&el>150){LOAD.shown=true;$('loading').hidden=false;let near=null,nd=60000;for(const a of AIRPORTS){const d=Math.hypot(ac.pos.x-a.x,ac.pos.z-a.z);if(d<nd){nd=d;near=a;}}$('lWhere').textContent=near?near.name:'';}
+  if(!LOAD.shown&&el>150){LOAD.shown=true;$('loading').hidden=false;}if(LOAD.shown&&!$('lWhere').textContent){let near=null,nd=60000;for(const a of AIRPORTS){const d=Math.hypot(ac.pos.x-a.x,ac.pos.z-a.z);if(d<nd){nd=d;near=a;}}$('lWhere').textContent=near?near.name:'';}
   if(LOAD.shown){const pc=Math.floor(100*s/w);$('lPct').textContent=pc+'%';$('lBar').style.width=pc+'%';$('lCard').setAttribute('aria-valuenow',pc);
     $('lStep').textContent=step[0]+(step[2]>1?' · '+step[1]+' of '+step[2]:'');}}
 // frame timing: the main thread time of each part of the frame, the slowest recent frames (with the input that came just before

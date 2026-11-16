@@ -485,7 +485,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
           <button type="button" class="apb" data-m="AP" id="mAP">AP</button><button type="button" class="apb" data-m="ATHR" id="mATHR">A/THR</button><button type="button" class="apb" data-m="HDG" id="mHDG">HDG</button>
           <button type="button" class="apb" data-m="ALT" id="mALT">ALT</button><button type="button" class="apb" data-m="VS" id="mVS">V/S</button><button type="button" class="apb" data-m="APP" id="mAPP">APP</button>
         </div>
-        <div class="note" id="apMsg">Shift with − / + for big steps. Scroll over a window to dial. Click a window to sync.</div>
+        <div class="note" id="apMsg">Hold − / + to dial faster; Shift for big steps. Scroll over a window to dial. Click a window to sync.</div>
       </div>
       <div class="sys">
         <div class="sec-h">Systems <span>F · G · Space · B</span></div>
@@ -820,6 +820,12 @@ function apMode(m){
 function apSel(k,dir,big){const st={ias:big?10:1,hdg:big?10:1,alt:big?1000:100,vs:100}[k];ap.sel[k]+=dir*st;
   if(k==='hdg')ap.sel.hdg=((ap.sel.hdg%360)+360)%360;if(k==='ias')ap.sel.ias=clamp(ap.sel.ias,90,220);if(k==='alt')ap.sel.alt=clamp(ap.sel.alt,0,20000);if(k==='vs')ap.sel.vs=clamp(ap.sel.vs,-4000,4000);
   if(k==='alt'&&ap.on)ap.altArm=true;onApChange();}
+// press and hold a − / + (panel button or glareshield window): one step at once, repeating after 0.4 s and quicker after 0.8 s;
+// held past 1.5 s it moves in big steps (10 kt, 10°, 1,000 ft), like spinning a real autopilot knob faster
+function apHold(k,dir,big){apHold.stop();apSel(k,dir,big);const t0=performance.now();
+  const go=()=>{const held=performance.now()-t0,fast=held>1500;apSel(k,dir,big||fast);apHold.t=setTimeout(go,fast?140:held>800?60:110);};
+  apHold.t=setTimeout(go,400);}
+apHold.stop=()=>{clearTimeout(apHold.t);apHold.t=0;};
 /* autopilot guidance: returns elevator, aileron, throttle commands (or null) */
 function apGuidance(a,dt){
   if(!ap.on&&!ap.athr)return null;
@@ -2205,8 +2211,8 @@ canvas.addEventListener('pointermove',e=>{if(camMode!=='cockpit'){ckTip.hidden=t
   if(ck.drag){if(ck.drag.thr)setThrottle(+thr.value-(e.clientY-ck.drag.y)*0.5);else{ck.headY=clamp(ck.headY-(e.clientX-ck.drag.x)*0.005,-2.4,2.4);ck.headP=clamp(ck.headP-(e.clientY-ck.drag.y)*0.005,-1.1,1.0);}ck.drag.x=e.clientX;ck.drag.y=e.clientY;return;}
   const p=ckPick(e);if(p){const t=p.h.tip(p.uv);canvas.style.cursor='pointer';if(t){ckTip.textContent=t;ckTip.hidden=false;const r=view.getBoundingClientRect();ckTip.style.left=min(e.clientX-r.left+14,r.width-270)+'px';ckTip.style.top=(e.clientY-r.top+16)+'px';}else ckTip.hidden=true;}
   else{canvas.style.cursor='grab';ckTip.hidden=true;}});
-canvas.addEventListener('pointerup',()=>{ck.drag=null;canvas.style.cursor='grab';});canvas.addEventListener('pointercancel',()=>{ck.drag=null;});
-canvas.addEventListener('pointerleave',()=>{ckTip.hidden=true;});
+canvas.addEventListener('pointerup',()=>{ck.drag=null;apHold.stop();canvas.style.cursor='grab';});canvas.addEventListener('pointercancel',()=>{ck.drag=null;apHold.stop();});
+canvas.addEventListener('pointerleave',()=>{ckTip.hidden=true;apHold.stop();});
 canvas.addEventListener('wheel',e=>{if(camMode!=='cockpit')return;e.preventDefault();const p=ckPick(e);if(p&&p.h.wheel&&p.h.wheel(p.uv,e.deltaY,e))return;ck.fov=clamp(ck.fov+e.deltaY*0.03,28,85);},{passive:false});
 canvas.addEventListener('dblclick',()=>{ck.headY=0;ck.headP=MOB?-0.26:CKP;ck.fov=74;});
 /* ================= Cockpit controls: glareshield autopilot, gear and flap levers, switches, draggable throttle ================= */
@@ -2227,7 +2233,7 @@ const ckHits=[];const ckLights={};
  const btnX=i=>620+i*68;
  ckHits.push({mesh:mcpMesh,
    region(uv){const x=uv.x*1024;for(const[k,l,x0]of WIN)if(x>=x0&&x<x0+140)return{t:'win',k,l,dir:x<x0+70?-1:1};for(let i=0;i<6;i++)if(x>=btnX(i)&&x<btnX(i)+60)return{t:'btn',m:BTN[i][0],l:BTN[i][1]};return null;},
-   click(uv,e){const r=this.region(uv);if(!r)return;if(r.t==='win')apSel(r.k,r.dir,e.shiftKey);else{ensureGameAudio();apMode(r.m);}audio.click&&audio.click();},
+   click(uv,e){const r=this.region(uv);if(!r)return;if(r.t==='win')apHold(r.k,r.dir,e.shiftKey);else{ensureGameAudio();apMode(r.m);}audio.click&&audio.click();},
    wheel(uv,dy,e){const r=this.region(uv);if(r&&r.t==='win'){apSel(r.k,dy<0?1:-1,e.shiftKey);return true;}return false;},
    tip(uv){const r=this.region(uv);if(!r)return'';return r.t==='win'?r.l+': click left to decrease, right to increase, or scroll (Shift for big steps)':r.l+': '+({AP:'autopilot on/off',ATHR:'auto-thrust holds the SPD window',HDG:'fly the HDG window',ALT:'hold altitude',VS:'climb or descend at the V/S window',APP:'arm ILS approach and autoland'}[r.m]);}});
  // gear lever with wheel knob + three lights (left of the main panel)
@@ -2495,7 +2501,12 @@ function cycleTime(){const ok=ac.phase==='fly'&&!ac.onGround&&ac.agl>1500&&!ac.s
 $('bTime').addEventListener('click',cycleTime);
 $('bRud').addEventListener('click',toggleAutoRudder);
 document.querySelectorAll('.apb').forEach(b=>b.addEventListener('click',()=>{ensureGameAudio();apMode(b.dataset.m);}));
-document.querySelectorAll('.ud button').forEach(b=>b.addEventListener('click',e=>apSel(b.dataset.k,+b.dataset.d,e.shiftKey)));
+window.addEventListener('blur',()=>apHold.stop());
+document.querySelectorAll('.ud button').forEach(b=>{
+  b.addEventListener('pointerdown',e=>{if(e.button)return;try{b.setPointerCapture(e.pointerId);}catch(_){}apHold(b.dataset.k,+b.dataset.d,e.shiftKey);});
+  ['pointerup','pointercancel','lostpointercapture'].forEach(t=>b.addEventListener(t,()=>apHold.stop()));
+  b.addEventListener('contextmenu',e=>e.preventDefault());
+  b.addEventListener('click',e=>{if(e.detail===0)apSel(b.dataset.k,+b.dataset.d,e.shiftKey);});});  // keyboard Enter/Space: one step
 document.querySelectorAll('.lcd').forEach(b=>{b.addEventListener('click',()=>{const k=b.dataset.k;if(k==='ias')ap.sel.ias=Math.round(ac.ias);else if(k==='hdg')ap.sel.hdg=Math.round(((ac.psiB/DEG)%360+360)%360);else if(k==='alt')ap.sel.alt=apCurAlt();else ap.sel.vs=apCurVs();onApChange();});
   b.addEventListener('wheel',e=>{e.preventDefault();apSel(b.dataset.k,e.deltaY<0?1:-1,e.shiftKey);},{passive:false});});
 const pad3=n=>String(Math.round(n)).padStart(3,'0');
@@ -2510,7 +2521,7 @@ onApChange=function(){
   lab(F.v,!ap.on?'—':ap.vert==='ROLLOUT'?'ROLLOUT':ap.vert==='FLARE'?'FLARE':ap.vert==='GS'?'G/S':ap.vert==='ALT'?'ALT '+ap.sel.alt:'V/S '+(ap.sel.vs>0?'+':'')+ap.sel.vs,!ap.on?'off':'act');
   lab(F.s,ap.on?'AP1':(ap.msg||'AP OFF'),ap.on?'act':ap.msg?'warn':'off');
   {const b=$('mApBtn');if(b)b.classList.toggle('on',ap.on);}
-  const m=$('apMsg');if(ap.msg){m.textContent=ap.msg;m.classList.add('warn');}else{m.textContent='Shift with − / + for big steps. Scroll over a window to dial. Click a window to sync.';m.classList.remove('warn');}
+  const m=$('apMsg');if(ap.msg){m.textContent=ap.msg;m.classList.add('warn');}else{m.textContent='Hold − / + to dial faster; Shift for big steps. Scroll over a window to dial. Click a window to sync.';m.classList.remove('warn');}
 };
 $('bTrim').addEventListener('click',toggleAutoTrim);
 document.querySelectorAll('#tod button').forEach(b=>b.addEventListener('click',()=>{tod=+b.dataset.t;document.querySelectorAll('#tod button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));applyTOD();}));

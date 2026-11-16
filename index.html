@@ -2748,11 +2748,16 @@ function frame(now){
   ac.yEase=(ac.yEase||0)*exp(-dt/0.25);
   updateAudio(dt);updateGameAudio(dt);
   // drone pose
-  drone.position.copy(ac.pos);drone.position.y+=ac.yEase||0;if(ac.Q)drone.quaternion.copy(ac.Q);else{drone.rotation.set(0,0,0);drone.rotateY(-ac.psiB);drone.rotateX(ac.theta);drone.rotateZ(-ac.phi);}
+  // the runway, taxiway and grass meshes sit a few centimetres above the ground the physics uses (12 cm for runway asphalt), so the
+  // drawn aircraft rides up by the thickness of the surface under it; below 100 ft it looks ahead at the surface it will land on
+  {const sf=ac.onGround?ac.surf:ac.agl<100?surfaceAt(ac.pos):null;if(sf){const tgt=sf==='runway'?0.12:sf==='pavement'?0.1:0.01;ac.surfY=ac.surfY==null?tgt:ac.surfY+(tgt-ac.surfY)*(1-exp(-dt/0.15));}}
+  drone.position.copy(ac.pos);drone.position.y+=(ac.yEase||0)+(ac.surfY||0);if(ac.Q)drone.quaternion.copy(ac.Q);else{drone.rotation.set(0,0,0);drone.rotateY(-ac.psiB);drone.rotateX(ac.theta);drone.rotateZ(-ac.phi);}
   // gear: retract forward into the pods/nose, struts compress, wheels spin with ground speed and spin down in the air
   const gE=clamp((ac.gearT-0.03)/0.94,0,1);
   gearUnits.forEach((u,i)=>{u.pivot.rotation.x=(1-gE)*PI/2*(u.fold||1);u.slide.position.y=u.axleY+(ac.gc?ac.gc[i]||0:0);
-    const rolling=ac.onGround||(ac.gc&&ac.gc[i]>0);u.spin=rolling?ac.V/u.wr:u.spin*exp(-dtFrame*0.6);u.wheels.forEach(w=>{w.rotation.x-=u.spin*dtFrame;});
+    const rolling=ac.onGround||(ac.gc&&ac.gc[i]>0);u.spin=rolling?ac.V/u.wr:u.spin*exp(-dtFrame*0.6);
+    // past about 0.45 rad a frame a turning wheel strobes (it seems to stop or run backwards), so the drawn turn is capped there
+    const da=min(u.spin*dtFrame,0.45);u.wheels.forEach(w=>{w.rotation.x-=da;});
     if(u.isNose&&ac.onGround)u.pivot.rotation.y=-(ac.steer||0)*0.35;else if(u.isNose)u.pivot.rotation.y=0;});
   updateSmoke(dtFrame);
   {// control surfaces, LE flaps, speed brakes, gear doors (visual only)
@@ -2850,7 +2855,7 @@ setInterval(()=>{if(!warmUp.done||camMode==='cockpit'||document.hidden)return;(w
   const cv=cockpit.visible;cockpit.visible=true;renderer.compile(cockpit,camera,scene);cockpit.visible=cv;}catch(e){}});},3000);
 // run once the scenery has loaded (or after 6 s at the latest), while the start menu is up
 {let n=0;const t=setInterval(()=>{n++;if((PHOTO.ground>=SAT.N*SAT.N&&PHOTO.base>=8)||n>12){clearInterval(t);(window.requestIdleCallback||setTimeout)(()=>warmUp());}},500);}
-window.__hawk={PHOTO,LOAD,get OSMB(){return osmCity&&osmCity.OSMB;},ORB,PR,LIGHTS,setTod:(t)=>{tod=t;applyTOD();},GLU,renderer,CLD,camera,FINE,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
+window.__hawk={PHOTO,drone,gearUnits,LOAD,get OSMB(){return osmCity&&osmCity.OSMB;},ORB,PR,LIGHTS,setTod:(t)=>{tod=t;applyTOD();},GLU,renderer,CLD,camera,FINE,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
 requestAnimationFrame(frame);
 })();
 </script>

@@ -2543,7 +2543,7 @@ $('mApClose').addEventListener('click',()=>{$('mApDrawer').hidden=true;});
 function showScr(n){['home','play','help'].forEach(k=>{$('scr'+k[0].toUpperCase()+k.slice(1)).hidden=k!==n;});const l=document.querySelector('#title .land');if(l)l.scrollTop=0;}
 document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showScr(b.dataset.go)));
 $('btnMenu').addEventListener('click',()=>{$('result').hidden=true;$('title').hidden=false;$('app').classList.add('menu');frame.menu=true;ac.phase='standby';showScr('play');});
-function startGame(){setTimeK(1);Object.assign(LIGHTS,{nav:true,bcn:true,strb:true,ldg:true,taxi:mission==='takeoff'});syncLights();applyTOD();$('title').hidden=true;$('result').hidden=true;$('app').classList.remove('menu');frame.menu=false;applyMob();resetFlight();camPos.copy(ac.pos).add(new THREE.Vector3(0,8,30));camLook.copy(ac.pos);
+function startGame(){setTimeK(1);camMode='chase';warmUp.cam='chase';fb.set=false;ORB.yaw=ORB.pitch=0;ORB.zoom=1;Object.assign(LIGHTS,{nav:true,bcn:true,strb:true,ldg:true,taxi:mission==='takeoff'});syncLights();applyTOD();$('title').hidden=true;$('result').hidden=true;$('app').classList.remove('menu');frame.menu=false;applyMob();resetFlight();camPos.copy(ac.pos).add(new THREE.Vector3(0,8,30));camLook.copy(ac.pos);
   LOAD.on=true;LOAD.t0=performance.now();LOAD.shown=false;camera.position.copy(camPos);if(osmCity){osmCity.OSMB.t=performance.now();osmCity.watch();}}
 
 /* ================= Destination & moving map ================= */
@@ -2830,7 +2830,8 @@ async function warmUp(){if(warmUp.done||/nowarm/.test(location.search))return;wa
   // finally run real frames once in each camera (behind the start menu, which covers the canvas) so any remaining shader variant is built now
   const cm=camMode;frame.warm=true;
   try{for(const m of['cockpit','nose','flyby','tower','chase']){camMode=m;fb.set=false;frame(performance.now());await new Promise(r=>setTimeout(r,0));}}catch(e){}
-  frame.warm=false;camMode=cm;fb.set=false;}
+  // a flight started meanwhile keeps the chase view it began with
+  frame.warm=false;camMode=warmUp.cam||cm;warmUp.cam=null;fb.set=false;}
 // keep the cockpit's nose-camera image (and the cockpit itself) prepared as new scenery loads in flight: every 3 s, when the
 // browser is idle and the cockpit isn't showing, render the camera image once so new shader variants are built in the
 // background, not in the frame after the player presses V or clicks Cockpit

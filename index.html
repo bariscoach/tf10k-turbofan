@@ -141,6 +141,12 @@ main{display:grid;grid-template-columns:1fr 372px;min-height:0}
 /* overlays */
 .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,14,20,.78);backdrop-filter:blur(4px);z-index:5;padding:16px;overflow:auto}
 #app.menu main{grid-template-columns:1fr;grid-template-rows:1fr} #app.menu #panel,#app.menu #hud,#app.menu .viewbar,#app.menu #map,#app.menu #mapRange,#app.menu #stick,#app.menu #ckTip{display:none!important}
+#loading .lcard{width:min(440px,100%);padding:22px 24px;border-radius:10px;background:var(--panel);border:1px solid var(--line-2);display:grid;gap:12px}
+#loading h3{margin:0;color:var(--fg);font-family:var(--font-display);font-size:22px;letter-spacing:.08em;text-transform:uppercase}
+#loading .lrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-family:var(--font-mono);font-size:12px;color:var(--fg-dim)}
+#lPct{font-family:var(--font-display);font-weight:700;font-size:22px;color:var(--hud)}
+#loading .lbar{height:10px;border-radius:5px;background:var(--bay);border:1px solid var(--line);overflow:hidden}
+#lBar{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--hud));transition:width .2s}
 .overlay.home{background:radial-gradient(120% 90% at 50% 0%,rgba(40,14,14,.55),rgba(8,11,16,.88) 60%);backdrop-filter:blur(6px)}
 .land{width:min(900px,100%);max-height:100%;overflow:auto}
 .scr{background:rgba(17,25,35,.92);border:1px solid var(--line-2);border-radius:12px;padding:28px 30px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
@@ -438,6 +444,9 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
         </div>
       </div>
 
+      <div class="overlay" id="loading" hidden><div class="lcard" id="lCard" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Loading scenery">
+        <div class="lrow"><h3>Loading scenery</h3><span id="lPct">0%</span></div><div class="lbar"><i id="lBar"></i></div>
+        <div class="lrow"><span id="lStep">Shaders</span><span id="lWhere"></span></div></div></div>
       <div class="overlay" id="result" hidden>
         <div class="card">
           <h2 id="resTitle">Landed</h2>
@@ -1454,7 +1463,7 @@ let plantCity=null,drawRoute=null,osmCity=null;const cityChunks=[];
  // {u8 type,u8 0,u16 height dm,u8 wall colour,u8 roof colour,u16 n,n x (i16 x,i16 z dm from the cell centre)} (far ones first) and
  // nTrees x {i16 x,i16 z,u8 seed}. Types: 0 building, 2 mosque, 3 industrial, 4 stadium, 5 city wall, 6 aqueduct.
  const OSMB={on:!MOB&&typeof DecompressionStream!=='undefined',X0:-46158.7,Z0:-25603.6,CELL:2000,BLK:8,NB:[6,4],NEAR:3500,FAR:22000,
-   blocks:new Map(),cells:[],queue:[],job:null,ok:false,t:0,loading:0,tris:0};
+   blocks:new Map(),cells:[],queue:[],job:null,ok:false,t:0,loading:0,nearPend:0,needN:0,needDone:0,inArea:false,tris:0};
  {const lin=c=>c.map(v=>Math.round(255*Math.pow(v/255,2.2)));
   OSMB.WALL=[[233,225,207],[238,238,234],[212,212,208],[217,199,168],[232,217,160],[217,166,140],[185,198,207],[207,168,110],[181,170,154],[227,195,189],[201,210,176],[224,214,196]].map(lin);
   OSMB.ROOF=[[180,97,63],[143,74,51],[142,143,140],[169,169,163],[109,111,112],[123,133,140],[156,143,128],[196,190,178]].map(lin);
@@ -1474,14 +1483,19 @@ let plantCity=null,drawRoute=null,osmCity=null;const cityChunks=[];
      for(let k=0;k<n;k++){const o=6+20*k,i=dv.getUint16(o,true),j=dv.getUint16(o+2,true);
        OSMB.cells.push({i,j,dv,nFar:dv.getUint32(o+4,true),nAll:dv.getUint32(o+8,true),nTrees:dv.getUint32(o+12,true),off:6+20*n+dv.getUint32(o+16,true),
          cx:OSMB.X0+(i+0.5)*OSMB.CELL,cz:OSMB.Z0+(j+0.5)*OSMB.CELL,have:0,mesh:null,trees:null,farIdx:0,q:0});}
-     OSMB.blocks.set(key,2);OSMB.loading--;
+     OSMB.blocks.set(key,2);OSMB.loading--;OSMB.dirty=true;OSMB.t=0;
      if(!OSMB.ok){OSMB.ok=true;cityChunks.forEach(c=>{scene.remove(c.m);c.m.dispose();});cityChunks.length=0;PHOTO.city=0;}
    }).catch(()=>{OSMB.blocks.set(key,3);OSMB.loading--;});}
  function dropCell(c){if(c.mesh){scene.remove(c.mesh);c.mesh.geometry.dispose();c.mesh=null;}if(c.trees){scene.remove(c.trees);c.trees.dispose();c.trees=null;}c.have=0;c.q=0;}
- function watch(){const p=camera.position,C=OSMB.CELL,BS=C*OSMB.BLK;
-   if(!OSMB.loading)for(let bx=0;bx<OSMB.NB[0];bx++)for(let bz=0;bz<OSMB.NB[1];bz++){const x0=OSMB.X0+bx*BS,z0=OSMB.Z0+bz*BS;
-     const d=Math.hypot(max(0,x0-p.x,p.x-x0-BS),max(0,z0-p.z,p.z-z0-BS));if(d<OSMB.FAR+1000&&!OSMB.blocks.has(bx+'_'+bz)){loadBlock(bx,bz);break;}}
+ function watch(){const p=camera.position,C=OSMB.CELL,BS=C*OSMB.BLK;OSMB.dirty=false;
+   // blocks in reach, nearest first, two downloads at a time; nearPend counts the ones the loading screen waits for
+   OSMB.inArea=false;OSMB.nearPend=0;const want=[];for(let bx=0;bx<OSMB.NB[0];bx++)for(let bz=0;bz<OSMB.NB[1];bz++){const x0=OSMB.X0+bx*BS,z0=OSMB.Z0+bz*BS;
+     const d=Math.hypot(max(0,x0-p.x,p.x-x0-BS),max(0,z0-p.z,p.z-z0-BS)),st=OSMB.blocks.get(bx+'_'+bz);if(d<OSMB.FAR)OSMB.inArea=true;
+     if(d<OSMB.NEAR+500&&st!==2&&st!==3)OSMB.nearPend++;if(d<OSMB.FAR+1000&&!st)want.push([d,bx,bz]);}
+   want.sort((a,b)=>a[0]-b[0]);for(const[,bx,bz]of want){if(OSMB.loading>=2)break;loadBlock(bx,bz);}
+   OSMB.needN=OSMB.needDone=0;
    for(const c of OSMB.cells){const d=Math.hypot(max(0,abs(p.x-c.cx)-C/2),max(0,abs(p.z-c.cz)-C/2));
+     if(d<OSMB.NEAR){OSMB.needN++;if(c.have===2)OSMB.needDone++;}
      let want=d<OSMB.NEAR?2:d<OSMB.FAR?1:0;if(c.have===2&&d<OSMB.NEAR+1200)want=2;else if(c.have>=1&&want===0&&d<OSMB.FAR+2500)want=1;
      if(want===0){if(c.have)dropCell(c);continue;}
      if(c.mesh&&c.mesh.userData.full){ // a fully built cell switches between near and far by draw range alone
@@ -1534,6 +1548,14 @@ let plantCity=null,drawRoute=null,osmCity=null;const cityChunks=[];
      if(A>120){let fi=0,fd=0;_ring.forEach((q,i)=>{const d=(q[0]-mx)**2+(q[1]-mz)**2;if(d>fd){fd=d;fi=i;}});
        const mh=max(18,h+R*2.6),spot=q=>[mx+(q[0]-mx)*0.9,mz+(q[1]-mz)*0.9];const s1=spot(_ring[fi]);spire(J,s1[0],s1[1],base,mh,1.5,WHITE,LEAD);
        if(A>900){const s2=[2*mx-s1[0],2*mz-s1[1]];spire(J,s2[0],s2[1],base,mh,1.5,WHITE,LEAD);}}}}
+ // send a finished cell to the GPU straight away, inside the build budget: otherwise the upload lands on whichever frame first
+ // sees the cell, and a camera switch or a fast turn that reveals dozens of cells stalls that frame (and any key press with it).
+ // It renders just these objects (layer 1) into a 4 px target set up like the nose-camera target, so no new shader is needed.
+ function upload(list){if(!warmUp.done)return;
+   if(!OSMB.upRT){OSMB.upRT=new THREE.WebGLRenderTarget(4,4);OSMB.upRT.texture.colorSpace=THREE.SRGBColorSpace;OSMB.upCam=new THREE.PerspectiveCamera(50,1,1,100);OSMB.upCam.layers.set(1);scene.traverse(o=>{if(o.isLight)o.layers.enable(1);});}
+   const prev=renderer.getRenderTarget(),au=renderer.shadowMap.autoUpdate;renderer.shadowMap.autoUpdate=false;list.forEach(o=>{o.layers.enable(1);o.frustumCulled=false;});
+   try{renderer.setRenderTarget(OSMB.upRT);renderer.render(scene,OSMB.upCam);}catch(e){}
+   renderer.setRenderTarget(prev);renderer.shadowMap.autoUpdate=au;list.forEach(o=>{o.layers.disable(1);o.frustumCulled=true;});}
  function finishJob(J){const c=J.c;const g=new THREE.BufferGeometry();
    g.setAttribute('position',new THREE.Int16BufferAttribute(J.P,3));g.setAttribute('uv',new THREE.Int16BufferAttribute(J.U,2));g.setAttribute('color',new THREE.Uint8BufferAttribute(J.C,3,true));
    g.setIndex(J.P.length/3>65535?new THREE.Uint32BufferAttribute(J.I,1):new THREE.Uint16BufferAttribute(J.I,1));g.computeBoundingSphere();
@@ -1543,16 +1565,16 @@ let plantCity=null,drawRoute=null,osmCity=null;const cityChunks=[];
      for(let t=0;t<c.nTrees;t++){const x=dv.getInt16(o,true)/10,z=dv.getInt16(o+2,true)/10,s=dv.getUint8(o+4)/255;o+=5;const wx=c.cx+x,wz=c.cz+z;if(skipAt(wx,wz))continue;
        const sc=0.65+s*0.8;m4.makeScale(sc,sc*(0.85+((s*7)%1)*0.4),sc);m4.setPosition(wx,gnd(wx,wz)-0.5,wz);im.setMatrixAt(k,m4);col.setRGB(0.10+s*0.08,0.20+((s*13)%1)*0.10,0.07+s*0.04);im.setColorAt(k,col);k++;}
      im.count=k;im.computeBoundingSphere();im.castShadow=false;c.trees=im;scene.add(im);}
-   c.have=J.lod;c.q=0;OSMB.tris+=J.I.length/3;}
- function tick(now){if(!OSMB.on)return;if(now-OSMB.t>500){OSMB.t=now;watch();}
-   const t0=performance.now(),budget=frame.warm?0:3;
+   upload(c.trees?[m,c.trees]:[m]);c.have=J.lod;c.q=0;OSMB.tris+=J.I.length/3;}
+ function tick(now){if(!OSMB.on)return;if(now-OSMB.t>(LOAD.on?0:500)){OSMB.t=now;watch();}
+   const t0=performance.now(),budget=frame.warm?0:LOAD.on?14:3;
    while(performance.now()-t0<budget){
      if(!OSMB.job){const c=OSMB.queue.shift();if(!c)break;if(!c.q||c.have>=c.q){c.q=0;continue;}OSMB.job=startJob(c,c.q);}
      const J=OSMB.job;for(let s=0;s<40&&J.k<J.n;s++,J.k++){if(J.k===J.c.nFar)J.farIdx=J.I.length;building(J);}
      if(J.k>=J.n){const f0=performance.now();finishJob(J);OSMB.maxFin=max(OSMB.maxFin||0,performance.now()-f0);OSMB.job=null;}}
    OSMB.maxTick=max(OSMB.maxTick||0,performance.now()-t0);}
  OSMB.reset=()=>{OSMB.cells.forEach(c=>{dropCell(c);c.q=0;});OSMB.queue.length=0;OSMB.job=null;OSMB.t=0;};
- osmCity={tick,OSMB};
+ osmCity={tick,watch,OSMB};
   if(PHOTO.ground>=SAT.N*SAT.N)plantCity();}
 }
 {const pts=glowPoints(papiEnds.map(q=>({p:[q.pos.x,q.pos.y,q.pos.z],c:0xffffff,s:2.8,d:[-q.end.d.x,0,-q.end.d.z,0.05]})));papiAttr=pts.geometry.getAttribute('aCol');scene.add(pts);}
@@ -2328,11 +2350,13 @@ function updateCamera(dt){
   camera.near=1;
   const k=camMode==='nose'||camMode==='flyby'?1:1-exp(-dt/(a.agl<300?0.3:0.18));camPos.lerp(want,k);camLook.lerp(look,camMode==='nose'?1:camMode==='flyby'?1-exp(-dt/0.06):1-exp(-dt/0.12));
   camera.position.copy(camPos);
-  if(camMode==='chase'){const off=camPos.clone().sub(a.pos),rt=new THREE.Vector3().crossVectors(off,camUp).normalize();
+  if(camMode==='chase'){const off=camPos.clone().sub(a.pos),rt=new THREE.Vector3().crossVectors(off,camUp);if(rt.lengthSq()<1e-6)rt.set(1,0,0);rt.normalize();
     off.applyAxisAngle(rt,ORB.pitch).applyAxisAngle(camUp,ORB.yaw).multiplyScalar(ORB.zoom);camera.position.copy(a.pos).add(off);
     camera.position.y=max(camera.position.y,gnd(camera.position.x,camera.position.z)+1.5);
     const ow=clamp(max(abs(ORB.yaw),abs(ORB.pitch))/0.35,0,1);if(ow>0)camLook.lerp(a.pos,ow);}
   if(shake>0){const tt=performance.now()/1000;camera.position.x+=(sin(tt*23.1)+sin(tt*37.7))*0.25*shake;camera.position.y+=(sin(tt*29.3)+sin(tt*41.9))*0.3*shake;}
+  // never let a bad value (a zero-length vector, a jump in time) leave the camera stranded: put it back behind the aircraft
+  if(!isFinite(camera.position.x+camera.position.y+camera.position.z+camLook.x+camLook.y+camLook.z)){camPos.copy(a.pos).add(new THREE.Vector3(0,8,30));camLook.copy(a.pos);camera.position.copy(camPos);}
   camera.up.set(0,1,0);if(camMode==='chase')camera.up.copy(camUp);
   if(camMode==='nose'){if(B)camera.up.copy(B.u);else camera.up.set(sin(a.phi)*cos(a.psiB),cos(a.phi),sin(a.phi)*sin(a.psiB));camera.fov=60;}else camera.fov=camMode==='tower'?clamp(30000/max(50,a.pos.distanceTo(want))/ORB.zoom,1.5,70):camMode==='flyby'?clamp(3400/max(20,a.pos.distanceTo(want))/ORB.zoom,2,75):55;
   camera.updateProjectionMatrix();camera.lookAt(camLook);
@@ -2512,7 +2536,8 @@ $('mApClose').addEventListener('click',()=>{$('mApDrawer').hidden=true;});
 function showScr(n){['home','play','help'].forEach(k=>{$('scr'+k[0].toUpperCase()+k.slice(1)).hidden=k!==n;});const l=document.querySelector('#title .land');if(l)l.scrollTop=0;}
 document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showScr(b.dataset.go)));
 $('btnMenu').addEventListener('click',()=>{$('result').hidden=true;$('title').hidden=false;$('app').classList.add('menu');frame.menu=true;ac.phase='standby';showScr('play');});
-function startGame(){setTimeK(1);Object.assign(LIGHTS,{nav:true,bcn:true,strb:true,ldg:true,taxi:mission==='takeoff'});syncLights();applyTOD();$('title').hidden=true;$('result').hidden=true;$('app').classList.remove('menu');frame.menu=false;applyMob();resetFlight();camPos.copy(ac.pos).add(new THREE.Vector3(0,8,30));camLook.copy(ac.pos);}
+function startGame(){setTimeK(1);Object.assign(LIGHTS,{nav:true,bcn:true,strb:true,ldg:true,taxi:mission==='takeoff'});syncLights();applyTOD();$('title').hidden=true;$('result').hidden=true;$('app').classList.remove('menu');frame.menu=false;applyMob();resetFlight();camPos.copy(ac.pos).add(new THREE.Vector3(0,8,30));camLook.copy(ac.pos);
+  LOAD.on=true;LOAD.t0=performance.now();LOAD.shown=false;camera.position.copy(camPos);if(osmCity){osmCity.OSMB.t=performance.now();osmCity.watch();}}
 
 /* ================= Destination & moving map ================= */
 function setTarget(end){target=end;document.querySelectorAll('#dest button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.end===end.id)));const hd=$('hDEST');if(hd)hd.textContent=end.id+' · '+end.ap.name;}
@@ -2673,17 +2698,35 @@ function updatePanel(dt){gaN1.draw(sim.n1);gaN2.draw(sim.n2);gaEGT.draw(sim.egt)
 let W=1,Hh=1;
 // adaptive resolution: render at the screen's full pixel density while frames are quick; if the last two seconds averaged
 // slower than about 42 fps, step the density down (to a floor of 1), and step it back up when there is headroom
-const PR={max:min(window.devicePixelRatio||1,MOB?1.5:2),cur:0,acc:0,n:0,t:0};PR.cur=PR.max;
-function adaptRes(dt){if(frame.warm)return;PR.acc+=dt;PR.n++;PR.t+=dt;if(PR.t<2)return;const avg=PR.acc/PR.n;PR.t=PR.acc=PR.n=0;
-  let next=PR.cur;if(avg>0.024)next=max(1,PR.cur-0.25);else if(avg<0.0135)next=min(PR.max,PR.cur+0.25);if(next!==PR.cur){PR.cur=next;resize();}}
-function resize(){const r=view.getBoundingClientRect();W=max(1,Math.round(r.width));Hh=max(1,Math.round(r.height));renderer.setPixelRatio(PR.cur);renderer.setSize(W,Hh,false);camera.aspect=W/Hh;camera.updateProjectionMatrix();}
+// a large high-DPI screen is also capped at about 5 megapixels: beyond that the extra sharpness costs far more GPU time than it shows
+const PR={max:min(window.devicePixelRatio||1,MOB?1.5:2),lim:1,cur:0,acc:0,n:0,t:0};PR.cur=PR.max;
+function adaptRes(dt){if(frame.warm||LOAD.on){PR.acc=PR.n=PR.t=0;return;}PR.acc+=dt;PR.n++;PR.t+=dt;if(PR.t<2)return;const avg=PR.acc/PR.n;PR.t=PR.acc=PR.n=0;
+  let next=PR.cur;if(avg>0.024)next=max(1,PR.cur-0.25);else if(avg<0.0135)next=min(PR.lim,PR.cur+0.25);if(next!==PR.cur){PR.cur=next;resize();}}
+function resize(){const r=view.getBoundingClientRect();W=max(1,Math.round(r.width));Hh=max(1,Math.round(r.height));PR.lim=max(1,min(PR.max,Math.sqrt(5.2e6/(W*Hh))));PR.cur=min(PR.cur,PR.lim);renderer.setPixelRatio(PR.cur);renderer.setSize(W,Hh,false);camera.aspect=W/Hh;camera.updateProjectionMatrix();}
 new ResizeObserver(resize).observe(view);resize();
 let last=performance.now(),dtFrame=0.016;
 setInterval(()=>{if(!frame.warm&&!document.hidden&&frame.beat&&performance.now()-frame.beat>1500){frame.beat=performance.now();requestAnimationFrame(frame);}},700);
+// loading screen: after Start the flight waits, physics paused, until the scenery around the aircraft is ready (shaders, ground
+// imagery, the airport patches, Istanbul's satellite tiles and the city cells). Meanwhile the city builder gets a larger share of
+// each frame. It appears only if loading takes longer than a moment, and gives up waiting after 30 s.
+const LOAD={on:false,t0:0,shown:false};
+function loadStatus(){const it=[['Shaders',warmUp.done?1:0,1,1]];
+  if(!MOB&&FINE.on){const need=FINE.tiles.filter(t=>Math.hypot(ac.pos.x-t.cx,ac.pos.z-t.cz)-FINE.S*0.7<40000);if(need.length)it.push(['Ground imagery',need.filter(t=>t.st>=2).length,need.length,1]);}
+  const aps=AIRPORTS.filter(a=>a.patch&&(a===target.ap||(origin&&a===origin.ap)));if(aps.length)it.push(['Airport detail',aps.filter(a=>a.pl===2).length,aps.length,1]);
+  if(abs(ac.pos.x)<SAT.half&&abs(ac.pos.z)<SAT.half)it.push(['Satellite imagery',SAT.ready?1:0,1,1]);
+  // the city waits only for the full-detail cells within 3.5 km; the distant ones keep streaming in after take-off
+  const O=osmCity&&osmCity.OSMB;if(O&&O.on&&O.inArea){const tot=O.needN+O.nearPend+(O.dirty?1:0);if(tot)it.push(['Buildings',O.needDone,tot,3]);}
+  return it;}
+function loadTick(now){let w=0,s=0,step=null;for(const[n,d,t,k]of loadStatus()){w+=k;s+=k*min(1,d/t);if(!step&&d<t)step=[n,d,t];}
+  const el=performance.now()-LOAD.t0;
+  if(!step||el>30000){LOAD.on=false;$('loading').hidden=true;return;}
+  if(!LOAD.shown&&el>150){LOAD.shown=true;$('loading').hidden=false;let near=null,nd=60000;for(const a of AIRPORTS){const d=Math.hypot(ac.pos.x-a.x,ac.pos.z-a.z);if(d<nd){nd=d;near=a;}}$('lWhere').textContent=near?near.name:'';}
+  if(LOAD.shown){const pc=Math.floor(100*s/w);$('lPct').textContent=pc+'%';$('lBar').style.width=pc+'%';$('lCard').setAttribute('aria-valuenow',pc);
+    $('lStep').textContent=step[0]+(step[2]>1?' · '+step[1]+' of '+step[2]:'');}}
 function frame(now){
-  if(!frame.warm)requestAnimationFrame(frame);frame.beat=now;if(window.__testHold)window.__testHold();let dt=min(0.05,(now-last)/1000);last=now;if(document.hidden)return;dtFrame=dt;adaptRes(dt);
+  if(!frame.warm)requestAnimationFrame(frame);frame.beat=now;if(window.__testHold)window.__testHold();let dt=max(0,min(0.05,(now-last)/1000));last=now;if(document.hidden)return;dtFrame=dt;adaptRes(dt);if(LOAD.on)loadTick(now);
   if(timeK>1&&(ac.phase!=='fly'||ac.onGround||ac.agl<1200||ac.stalled||abs(ac.phi)>60*DEG||Math.hypot(ac.pos.x-target.thr.x,ac.pos.z-target.thr.z)<28000))setTimeK(1);
-  if(ac.phase==='fly'){for(let j=0;j<timeK;j++)step(dt);const n=max(2,Math.ceil(dt*timeK/0.006));for(let i=0;i<n&&ac.phase==='fly';i++)flyStep(dt*timeK/n);}
+  if(ac.phase==='fly'&&!LOAD.on){for(let j=0;j<timeK;j++)step(dt);const n=max(2,Math.ceil(dt*timeK/0.006));for(let i=0;i<n&&ac.phase==='fly';i++)flyStep(dt*timeK/n);}
   ac.yEase=(ac.yEase||0)*exp(-dt/0.25);
   updateAudio(dt);updateGameAudio(dt);
   // drone pose
@@ -2786,7 +2829,7 @@ setInterval(()=>{if(!warmUp.done||camMode==='cockpit'||document.hidden)return;(w
   const cv=cockpit.visible;cockpit.visible=true;renderer.compile(cockpit,camera,scene);cockpit.visible=cv;}catch(e){}});},3000);
 // run once the scenery has loaded (or after 6 s at the latest), while the start menu is up
 {let n=0;const t=setInterval(()=>{n++;if((PHOTO.ground>=SAT.N*SAT.N&&PHOTO.base>=8)||n>12){clearInterval(t);(window.requestIdleCallback||setTimeout)(()=>warmUp());}},500);}
-window.__hawk={PHOTO,get OSMB(){return osmCity&&osmCity.OSMB;},ORB,PR,LIGHTS,setTod:(t)=>{tod=t;applyTOD();},GLU,renderer,CLD,camera,FINE,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
+window.__hawk={PHOTO,LOAD,get OSMB(){return osmCity&&osmCity.OSMB;},ORB,PR,LIGHTS,setTod:(t)=>{tod=t;applyTOD();},GLU,renderer,CLD,camera,FINE,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
 requestAnimationFrame(frame);
 })();
 </script>

@@ -1059,7 +1059,14 @@ const camera=new THREE.PerspectiveCamera(55,1,1,450000);
 /* photo assets: sky photo, Sentinel-2 satellite ground and surface photos load from assets/; everything procedural below stays as the fallback */
 const ASSET='assets/';const PHOTO={sky:false,ground:0};const procScenery=[];
 const texLoader=new THREE.TextureLoader();
-function loadTex(name,ok){texLoader.load(ASSET+name,t=>{t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=MOB?4:16;ok(t);},undefined,()=>{});}
+// images are decoded off the main thread before use; otherwise the browser decodes a big JPEG in the middle of the frame that
+// first uploads it, and a click or key press that lands then waits for it. img.decode() can stall in a page that isn't painting,
+// so it gets a time limit; tiles use createImageBitmap, which decodes in the background (pixel values untouched, for heights)
+const decoded=im=>im&&im.decode?Promise.race([im.decode().catch(()=>{}),new Promise(r=>setTimeout(r,1500))]):Promise.resolve();
+const loadImg=src=>window.createImageBitmap?fetch(src).then(r=>{if(!r.ok)throw 0;return r.blob();}).then(b=>createImageBitmap(b,{colorSpaceConversion:'none',premultiplyAlpha:'none'}))
+  :new Promise((ok,no)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=no;im.src=src;});
+const idle=()=>new Promise(r=>window.requestIdleCallback?requestIdleCallback(()=>r(),{timeout:250}):setTimeout(r,0));
+function loadTex(name,ok){texLoader.load(ASSET+name,t=>{t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=MOB?4:16;decoded(t.image).then(()=>ok(t));},undefined,()=>{});}
 // close-up surface detail: a tiling photo multiplied over the base colour in world metres, fading out with distance
 const DET={};
 function detSlot(name,file){const d=DET[name]={map:{value:null},on:{value:0},gain:{value:1}};loadTex(file,t=>{t.wrapS=t.wrapT=THREE.RepeatWrapping;
@@ -2792,15 +2799,17 @@ function drawRoadsOn(canvas,data,S){const g=canvas.getContext('2d');const px=(v)
   ways(data.t,2.2,'#f0d78a','#6f5b2b');        // trunk roads
   ways(data.m,3.0,'#ffe9a8','#5e4a1f');        // motorways, with dark casing
 }
-function loadFine(t){if(t.st)return;t.st=1;FINE.loadN++;
-  const tex=new Image();tex.onload=()=>{const cv=document.createElement('canvas');cv.width=cv.height=2048;const g=cv.getContext('2d');g.drawImage(tex,0,0,2048,2048);
-    const hi=new Image();hi.onload=()=>{const n=hi.width,hc=document.createElement('canvas');hc.width=hc.height=n;const hg=hc.getContext('2d',{willReadFrequently:true});hg.drawImage(hi,0,0);const d=hg.getImageData(0,0,n,n).data,h=new Float32Array(n*n);for(let k=0;k<n*n;k++)h[k]=(d[k*4]*256+d[k*4+1])/10;t.h=h;
-      fetch(ASSET+'r'+t.i+t.j+'.json').then(r=>r.ok?r.json():null).catch(()=>null).then(data=>{drawRoadsOn(cv,data,FINE.S);
-        const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace;tx.anisotropy=MOB?4:16;
-        const m=new THREE.Mesh(new THREE.PlaneGeometry(FINE.S,FINE.S,96,96),addDetail(new THREE.MeshStandardMaterial({map:tx,roughness:1,metalness:0,envMapIntensity:0.9}),'grass',{sat:1,base:1,gain:2.7,gamma:0.95,s1:5,s2:31,tint:0.2,k:0.6,f0:250,f1:2200,n0:25,n1:220,aer:210,ka:0.45}));
-        m.rotation.x=-PI/2;m.position.set(t.cx,0,t.cz);fineRelief(m,t);scene.add(m);t.mesh=m;t.st=2;warmMesh(m);FINE.loadN--;});};
-    hi.onerror=()=>{t.st=3;FINE.loadN--;};hi.src=ASSET+'hf'+t.i+t.j+'.png';};
-  tex.onerror=()=>{t.st=3;FINE.loadN--;};tex.src=ASSET+'f'+t.i+t.j+'.jpg';}
+// each step runs as its own small task (decode off-thread, then draw, heights, roads, mesh) so loading a tile never blocks input
+async function loadFine(t){if(t.st)return;t.st=1;FINE.loadN++;
+  try{const[tex,hi]=await Promise.all([loadImg(ASSET+'f'+t.i+t.j+'.jpg'),loadImg(ASSET+'hf'+t.i+t.j+'.png')]);
+    await idle();const cv=document.createElement('canvas');cv.width=cv.height=2048;cv.getContext('2d').drawImage(tex,0,0,2048,2048);
+    await idle();{const n=hi.width,hc=document.createElement('canvas');hc.width=hc.height=n;const hg=hc.getContext('2d',{willReadFrequently:true});hg.drawImage(hi,0,0);const d=hg.getImageData(0,0,n,n).data,h=new Float32Array(n*n);for(let k=0;k<n*n;k++)h[k]=(d[k*4]*256+d[k*4+1])/10;t.h=h;}
+    const data=await fetch(ASSET+'r'+t.i+t.j+'.json').then(r=>r.ok?r.json():null).catch(()=>null);
+    await idle();drawRoadsOn(cv,data,FINE.S);
+    await idle();const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace;tx.anisotropy=MOB?4:16;
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(FINE.S,FINE.S,96,96),addDetail(new THREE.MeshStandardMaterial({map:tx,roughness:1,metalness:0,envMapIntensity:0.9}),'grass',{sat:1,base:1,gain:2.7,gamma:0.95,s1:5,s2:31,tint:0.2,k:0.6,f0:250,f1:2200,n0:25,n1:220,aer:210,ka:0.45}));
+    m.rotation.x=-PI/2;m.position.set(t.cx,0,t.cz);fineRelief(m,t);scene.add(m);t.mesh=m;t.st=2;warmMesh(m);}
+  catch(e){t.st=3;}FINE.loadN--;}
 function fineWatch(){if(MOB||!FINE.on)return;const c=camera.position;for(const t of FINE.tiles){const d=Math.hypot(c.x-t.cx,c.z-t.cz)-FINE.S*0.7;
     if(t.mesh&&d>FINE.FREE){scene.remove(t.mesh);t.mesh.geometry.dispose();t.mesh.material.map.dispose();t.mesh.material.dispose();t.mesh=null;t.st=0;t.h=null;}}
   if(FINE.loadN>0)return;let best=null,bd=FINE.LOAD;for(const t of FINE.tiles){if(t.st)continue;const d=Math.hypot(c.x-t.cx,c.z-t.cz)-FINE.S*0.7;if(d<bd){bd=d;best=t;}}if(best)loadFine(best);}

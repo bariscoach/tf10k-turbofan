@@ -141,6 +141,7 @@ main{display:grid;grid-template-columns:1fr 372px;min-height:0}
 /* overlays */
 .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,14,20,.78);backdrop-filter:blur(4px);z-index:5;padding:16px;overflow:auto}
 #app.menu main{grid-template-columns:1fr;grid-template-rows:1fr} #app.menu #panel,#app.menu #hud,#app.menu .viewbar,#app.menu #map,#app.menu #mapRange,#app.menu #stick,#app.menu #ckTip{display:none!important}
+#perf{position:absolute;left:50%;top:max(6px,env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:4;padding:3px 10px;border-radius:5px;background:rgba(5,8,11,.78);border:1px solid var(--line-2);font-family:var(--font-mono);font-size:11px;color:var(--hud);white-space:nowrap;pointer-events:none}
 #loading .lcard{width:min(440px,100%);padding:22px 24px;border-radius:10px;background:var(--panel);border:1px solid var(--line-2);display:grid;gap:12px}
 #loading h3{margin:0;color:var(--fg);font-family:var(--font-display);font-size:22px;letter-spacing:.08em;text-transform:uppercase}
 #loading .lrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-family:var(--font-mono);font-size:12px;color:var(--fg-dim)}
@@ -437,6 +438,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
             <dt>PgUp PgDn / + −</dt><dd>Thrust (or drag anywhere on the throttle, or tap Idle, CLB, TO/GA)</dd>
             <dt>F · G · B · Space</dt><dd>Flaps · Gear · Brakes · Speed brake</dd>
             <dt>C · V · R</dt><dd>Cockpit view · cycle cameras (chase, cockpit, nose, tower, fly-by) · restart. The fly-by camera stands still ahead of you and watches the aircraft pass, then jumps ahead again. Hold X in the cockpit to glance down at the displays. Every cockpit control is clickable: autopilot on the glareshield, gear lever, flap lever, switches, and drag the throttle. Drag elsewhere to look around, scroll to zoom, double-click to look ahead. In the chase view drag to circle the aircraft and scroll (or pinch) to zoom in and out; in the tower and fly-by views scroll zooms the lens. Double-click resets the view</dd>
+            <dt>P</dt><dd>Performance readout: frames per second, frame and render time, resolution, city detail level, triangles and draw calls. The game lowers sharpness, then city detail, by itself if frames get slow</dd>
             <dt>Touch</dt><dd>Stick at bottom-left for pitch and bank, buttons in the panel</dd>
           </dl>
             <div class="row"><button class="btn go" type="button" data-go="play">Fly now</button></div>
@@ -444,6 +446,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
         </div>
       </div>
 
+      <div id="perf" hidden></div>
       <div class="overlay" id="loading" hidden><div class="lcard" id="lCard" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Loading scenery">
         <div class="lrow"><h3>Loading scenery</h3><span id="lPct">0%</span></div><div class="lbar"><i id="lBar"></i></div>
         <div class="lrow"><span id="lStep">Shaders</span><span id="lWhere"></span></div></div></div>
@@ -1587,7 +1590,9 @@ let plantCity=null,drawRoute=null,osmCity=null;const cityChunks=[];
      if(J.k>=J.n){const f0=performance.now();finishJob(J);OSMB.maxFin=max(OSMB.maxFin||0,performance.now()-f0);OSMB.job=null;}}
    OSMB.maxTick=max(OSMB.maxTick||0,performance.now()-t0);}
  OSMB.reset=()=>{OSMB.cells.forEach(c=>{dropCell(c);c.q=0;});OSMB.queue.length=0;OSMB.job=null;OSMB.t=0;};
- osmCity={tick,watch,OSMB};
+ // detail levels for slow graphics cards: 0 full (all buildings to 3.5 km, large ones to 22 km), 1 (2.8 / 13 km), 2 (2.2 / 8 km)
+ const setLevel=l=>{OSMB.NEAR=[3500,2800,2200][l];OSMB.FAR=[22000,13000,8000][l];OSMB.t=0;};
+ osmCity={tick,watch,setLevel,OSMB};
   if(PHOTO.ground>=SAT.N*SAT.N)plantCity();}
 }
 {const pts=glowPoints(papiEnds.map(q=>({p:[q.pos.x,q.pos.y,q.pos.z],c:0xffffff,s:2.8,d:[-q.end.d.x,0,-q.end.d.z,0.05]})));papiAttr=pts.geometry.getAttribute('aCol');scene.add(pts);}
@@ -2471,7 +2476,7 @@ window.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.ta
   else if(k==='PageUp'||k==='+'||k==='='||k==='PageDown'||k==='-'||k==='_'){if(ap.athr){ap.athr=false;ap.msg='A/THR OFF · manual thrust';ap.msgT=3;onApChange();}setThrottle(+thr.value+(k==='PageUp'||k==='+'||k==='='?4:-4));}
   else if(k==='f'||k==='F')cycleFlaps();else if(k==='g'||k==='G')toggleGear();else if(k==='b'||k==='B')toggleBrk();else if(k===' ')toggleSplr();
   else if(k==='l'||k==='L')toggleLight('ldg');else if(k==='k'||k==='K')toggleLight('taxi');
-  else if(k==='y'||k==='Y')cycleTime();
+  else if(k==='y'||k==='Y')cycleTime();else if(k==='p'||k==='P'){PERF.on=!PERF.on;PERF.el=$('perf');PERF.el.hidden=!PERF.on;}
   else if(k==='m'||k==='M')$('mapRange').click();else if(k==='v'||k==='V'){camMode=camMode==='chase'?'cockpit':camMode==='cockpit'?'nose':camMode==='nose'?'tower':camMode==='tower'?'flyby':'chase';fb.set=false;}else if(k==='c'||k==='C')camMode=camMode==='cockpit'?'chase':'cockpit';else if(k==='r'||k==='R')startGame();else return;
   e.preventDefault();});
 window.addEventListener('keyup',e=>{const k=e.key;if(k==='x'||k==='X')ck.glance=false;if(k==='q'||k==='Q'||k===',')inp.kRudL=false;if(k==='e'||k==='E'||k==='.')inp.kRudR=false;if(k===']'||k==='Home')inp.trimUp=false;if(k==='['||k==='End')inp.trimDn=false;if(k==='ArrowUp'||k==='w'||k==='W')inp.kUp=false;else if(k==='ArrowDown'||k==='s'||k==='S')inp.kDn=false;else if(k==='ArrowLeft'||k==='a'||k==='A')inp.kL=false;else if(k==='ArrowRight'||k==='d'||k==='D')inp.kR=false;});
@@ -2717,9 +2722,14 @@ let W=1,Hh=1;
 // adaptive resolution: render at the screen's full pixel density while frames are quick; if the last two seconds averaged
 // slower than about 42 fps, step the density down (to a floor of 1), and step it back up when there is headroom
 // a large high-DPI screen is also capped at about 5 megapixels: beyond that the extra sharpness costs far more GPU time than it shows
-const PR={max:min(window.devicePixelRatio||1,MOB?1.5:2),lim:1,cur:0,acc:0,n:0,t:0};PR.cur=PR.max;
+const PR={max:min(window.devicePixelRatio||1,MOB?1.5:2),lim:1,cur:0,acc:0,n:0,t:0,city:0};PR.cur=PR.max;
+// when slow, sharpness goes first (bigger steps when very slow), then city detail (level 1 and 2 draw buildings less far);
+// with headroom again the city comes back first, then sharpness
 function adaptRes(dt){if(frame.warm||LOAD.on){PR.acc=PR.n=PR.t=0;return;}PR.acc+=dt;PR.n++;PR.t+=dt;if(PR.t<2)return;const avg=PR.acc/PR.n;PR.t=PR.acc=PR.n=0;
-  let next=PR.cur;if(avg>0.024)next=max(1,PR.cur-0.25);else if(avg<0.0135)next=min(PR.lim,PR.cur+0.25);if(next!==PR.cur){PR.cur=next;resize();}}
+  const city=osmCity&&osmCity.OSMB.on;let next=PR.cur;
+  if(avg>0.024){if(PR.cur>1)next=max(1,PR.cur-(avg>0.04?0.5:0.25));else if(city&&PR.city<2)osmCity.setLevel(++PR.city);}
+  else if(avg<0.0135){if(city&&PR.city>0)osmCity.setLevel(--PR.city);else next=min(PR.lim,PR.cur+0.25);}
+  if(next!==PR.cur){PR.cur=next;resize();}}
 function resize(){const r=view.getBoundingClientRect();W=max(1,Math.round(r.width));Hh=max(1,Math.round(r.height));PR.lim=max(1,min(PR.max,Math.sqrt(5.2e6/(W*Hh))));PR.cur=min(PR.cur,PR.lim);renderer.setPixelRatio(PR.cur);renderer.setSize(W,Hh,false);camera.aspect=W/Hh;camera.updateProjectionMatrix();}
 new ResizeObserver(resize).observe(view);resize();
 let last=performance.now(),dtFrame=0.016;
@@ -2741,12 +2751,26 @@ function loadTick(now){let w=0,s=0,step=null;for(const[n,d,t,k]of loadStatus()){
   if(!LOAD.shown&&el>150){LOAD.shown=true;$('loading').hidden=false;let near=null,nd=60000;for(const a of AIRPORTS){const d=Math.hypot(ac.pos.x-a.x,ac.pos.z-a.z);if(d<nd){nd=d;near=a;}}$('lWhere').textContent=near?near.name:'';}
   if(LOAD.shown){const pc=Math.floor(100*s/w);$('lPct').textContent=pc+'%';$('lBar').style.width=pc+'%';$('lCard').setAttribute('aria-valuenow',pc);
     $('lStep').textContent=step[0]+(step[2]>1?' · '+step[1]+' of '+step[2]:'');}}
+// frame timing: the main thread time of each part of the frame, the slowest recent frames (with the input that came just before
+// them) and an on-screen readout toggled with P (frames per second, frame time, render time, resolution, triangles, draw calls)
+const PERF={on:false,t:0,sec:{},slow:[],last:{},fps:60,iv:16.7,inp:0,el:null,
+  m(k){const n=performance.now();this.last[k]=n-this.t;this.t=n;},
+  end(t0,now){const tot=performance.now()-t0;this.iv+=(dtFrame*1000-this.iv)*0.05;
+    if(tot>30){this.slow.push({at:now|0,ms:+tot.toFixed(1),afterInput:now-this.inp<300,...Object.fromEntries(Object.entries(this.last).filter(e=>e[1]>2).map(([k,v])=>[k,+v.toFixed(1)]))});if(this.slow.length>30)this.slow.shift();}
+    if(this.on&&now-(this.shown||0)>250){this.shown=now;const ri=renderer.info.render;this.el.textContent=`${Math.round(1000/max(1,this.iv))} fps · frame ${tot.toFixed(1)} ms · render ${(this.last.render||0).toFixed(1)} ms · ${(renderer.domElement.width/1e3).toFixed(2)}k×${(renderer.domElement.height/1e3).toFixed(2)}k @${PR.cur} · city ${PR.city} · ${(ri.triangles/1e6).toFixed(2)} M tris · ${ri.calls} calls`;}}};
+['keydown','pointerdown'].forEach(t=>window.addEventListener(t,()=>{PERF.inp=performance.now();},{capture:true,passive:true}));
+// if the browser drops the graphics context (an overloaded or reset graphics card), say so rather than freeze on the last frame
+canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();const r=$('result');if(!r)return;
+  r.innerHTML='<div class="card" style="max-width:420px;text-align:center;display:grid;gap:12px"><h2 style="margin:0">Graphics were reset</h2><p style="margin:0">The browser stopped the game\'s 3D graphics, usually because the graphics card was overloaded. Reload to carry on.</p><button type="button" class="btn" id="glReload">Reload</button></div>';
+  r.hidden=false;$('glReload').addEventListener('click',()=>location.reload());});
 function frame(now){
   if(!frame.warm)requestAnimationFrame(frame);frame.beat=now;if(window.__testHold)window.__testHold();let dt=max(0,min(0.05,(now-last)/1000));last=now;if(document.hidden)return;dtFrame=dt;adaptRes(dt);if(LOAD.on)loadTick(now);
+  const pf0=performance.now();PERF.t=pf0;
   if(timeK>1&&(ac.phase!=='fly'||ac.onGround||ac.agl<1200||ac.stalled||abs(ac.phi)>60*DEG||Math.hypot(ac.pos.x-target.thr.x,ac.pos.z-target.thr.z)<28000))setTimeK(1);
   if(ac.phase==='fly'&&!LOAD.on){for(let j=0;j<timeK;j++)step(dt);const n=max(2,Math.ceil(dt*timeK/0.006));for(let i=0;i<n&&ac.phase==='fly';i++)flyStep(dt*timeK/n);}
+  PERF.m('sim');
   ac.yEase=(ac.yEase||0)*exp(-dt/0.25);
-  updateAudio(dt);updateGameAudio(dt);
+  updateAudio(dt);updateGameAudio(dt);PERF.m('audio');
   // drone pose
   // the runway, taxiway and grass meshes sit a few centimetres above the ground the physics uses (12 cm for runway asphalt), so the
   // drawn aircraft rides up by the thickness of the surface under it; below 100 ft it looks ahead at the surface it will land on
@@ -2788,15 +2812,39 @@ function frame(now){
   ac.jolt=(ac.jolt||0)*exp(-dtFrame*6);
   {const gl=$('bGear');gl.classList.toggle('down',ac.gearT>0.97);gl.classList.toggle('transit',ac.gearT>0.03&&ac.gearT<0.97);}
   shake=(ac.stalled&&!ac.onGround?0.5:0)+(ac.onGround&&ac.V>3?(ac.surf==='grass'?0.18:0.025)*clamp(ac.V/60,0,1):0)+ac.jolt*0.35;
-  updateCockpit(dt);updateCamera(dt);
-  if(camMode==='cockpit'&&ndMode==='cam'){ck.eoT=(ck.eoT||0)+1;if(ck.eoT%(MOB?4:3)===1){renderEO();drawEOOverlay(now);}}
+  PERF.m('pose');updateCockpit(dt);PERF.m('cockpit');updateCamera(dt);PERF.m('camera');
+  if(camMode==='cockpit'&&ndMode==='cam'){ck.eoT=(ck.eoT||0)+1;if(ck.eoT%(MOB?4:3)===1){renderEO();drawEOOverlay(now);}}PERF.m('eo');
   if(SAT.far){SAT.far.position.x=camera.position.x;SAT.far.position.z=camera.position.z;}if((now/500|0)!==FINE.tick){FINE.tick=now/500|0;fineWatch();}if((now/1000|0)!==patchWatch.t){patchWatch.t=now/1000|0;patchWatch();}
-  {const R=MOB?11000:22000;for(const c of cityChunks)c.m.visible=camera.position.distanceTo(c.c)<R+c.r;}if(osmCity)osmCity.tick(now);
-  skyMesh.position.copy(camera.position);updateClouds(now,dtFrame);clouds.forEach(c=>{c.position.x+=SCEN[scen].wind[0]*0.3*dt;});renderer.render(scene,camera);
+  {const R=MOB?11000:22000;for(const c of cityChunks)c.m.visible=camera.position.distanceTo(c.c)<R+c.r;}PERF.m('stream');if(osmCity)osmCity.tick(now);PERF.m('city');
+  skyMesh.position.copy(camera.position);updateClouds(now,dtFrame);clouds.forEach(c=>{c.position.x+=SCEN[scen].wind[0]*0.3*dt;});PERF.m('clouds');renderer.render(scene,camera);PERF.m('render');
   {const m=!$('title').hidden;if(m!==frame.menu){frame.menu=m;$('app').classList.toggle('menu',m);}}
-  updateHUD(dt);updateRunwaySymbol();if((now/100|0)%2===0)drawMap();updatePanel(dt);renderLever();
+  updateHUD(dt);updateRunwaySymbol();PERF.m('hud');if((now/100|0)%2===0)drawMap();PERF.m('map');updatePanel(dt);renderLever();PERF.m('panel');PERF.end(pf0,now);
 }
 syncSys();updateThrOut();resetFlight();ac.phase='standby';applyMob();
+// only the aircraft's large parts cast a shadow: the ~200 small ones (fasteners, lamps, antennas, gear links) don't change the
+// shadow's shape, and each would cost another draw call in the shadow pass every frame
+// static scenery (bridges, mosques, towers, palaces, airport buildings) is built from hundreds of boxes, cylinders and spheres;
+// inside each landmark group the pieces that share a material are merged into one mesh, which cuts several hundred draw calls a
+// frame. The group keeps its own transform (the terrain still sets its height). Groups with lights, glow points or sprites, and the
+// aircraft and cockpit, are left as they are.
+function mergeStatic(root){let saved=0;const inv=new THREE.Matrix4(),mw=new THREE.Matrix4(),nm=new THREE.Matrix3(),v=new THREE.Vector3();
+  for(const g of [...root.children]){if(!g.isGroup||g===drone||g===cockpit)continue;let ok=true;g.traverse(o=>{if(o.isLight||o.isPoints||o.isSprite||o.isInstancedMesh||o.isSkinnedMesh||o.isCamera)ok=false;});if(!ok)continue;
+    g.updateMatrixWorld(true);inv.copy(g.matrixWorld).invert();const buckets=new Map();
+    g.traverse(m=>{if(!m.isMesh||Array.isArray(m.material)||!m.geometry||!m.visible)return;const a=m.geometry.attributes;
+      if(!a.position||!a.normal||!a.uv||Object.keys(a).length!==3||m.geometry.morphAttributes.position)return;
+      const key=m.material.uuid+(m.castShadow?'s':'')+(m.receiveShadow?'r':'')+m.renderOrder;(buckets.get(key)||buckets.set(key,[]).get(key)).push(m);});
+    for(const list of buckets.values()){if(list.length<2)continue;let nv=0,ni=0;for(const m of list){nv+=m.geometry.attributes.position.count;ni+=m.geometry.index?m.geometry.index.count:m.geometry.attributes.position.count;}
+      const P=new Float32Array(nv*3),N=new Float32Array(nv*3),U=new Float32Array(nv*2),I=nv>65535?new Uint32Array(ni):new Uint16Array(ni);let ov=0,oi=0;
+      for(const m of list){const ge=m.geometry,pa=ge.attributes.position,na=ge.attributes.normal,ua=ge.attributes.uv;mw.multiplyMatrices(inv,m.matrixWorld);nm.getNormalMatrix(mw);
+        for(let k=0;k<pa.count;k++){v.fromBufferAttribute(pa,k).applyMatrix4(mw);P.set([v.x,v.y,v.z],(ov+k)*3);v.fromBufferAttribute(na,k).applyMatrix3(nm).normalize();N.set([v.x,v.y,v.z],(ov+k)*3);U[(ov+k)*2]=ua.getX(k);U[(ov+k)*2+1]=ua.getY(k);}
+        if(ge.index)for(let k=0;k<ge.index.count;k++)I[oi++]=ge.index.getX(k)+ov;else for(let k=0;k<pa.count;k++)I[oi++]=k+ov;ov+=pa.count;}
+      const mg=new THREE.BufferGeometry();mg.setAttribute('position',new THREE.BufferAttribute(P,3));mg.setAttribute('normal',new THREE.BufferAttribute(N,3));mg.setAttribute('uv',new THREE.BufferAttribute(U,2));mg.setIndex(new THREE.BufferAttribute(I,1));mg.computeBoundingSphere();
+      const mm=new THREE.Mesh(mg,list[0].material);mm.castShadow=list[0].castShadow;mm.receiveShadow=list[0].receiveShadow;mm.renderOrder=list[0].renderOrder;g.add(mm);
+      for(const m of list){m.parent.remove(m);m.geometry.dispose();}saved+=list.length-1;}}
+  return saved;}
+PHOTO.merged=mergeStatic(scene);
+drone.updateMatrixWorld(true);{const sc=new THREE.Vector3();drone.traverse(m=>{if(!m.isMesh||!m.castShadow||!m.geometry)return;const g=m.geometry;if(!g.boundingSphere)g.computeBoundingSphere();
+  m.getWorldScale(sc);if(g.boundingSphere.radius*max(sc.x,sc.y,sc.z)<0.45)m.castShadow=false;});}
 // warm-up: compile every shader and upload every texture while the menu is showing, so the first Start, camera switch
 // or afterburner doesn't stall the frame after a click (that stall was reported as a slow interaction)
 // Fine ground layer: 8 x 4 tiles, 220 km square, 2048 px (about 107 m per pixel) with 257 x 257 terrain heights.
@@ -2855,7 +2903,7 @@ setInterval(()=>{if(!warmUp.done||camMode==='cockpit'||document.hidden)return;(w
   const cv=cockpit.visible;cockpit.visible=true;renderer.compile(cockpit,camera,scene);cockpit.visible=cv;}catch(e){}});},3000);
 // run once the scenery has loaded (or after 6 s at the latest), while the start menu is up
 {let n=0;const t=setInterval(()=>{n++;if((PHOTO.ground>=SAT.N*SAT.N&&PHOTO.base>=8)||n>12){clearInterval(t);(window.requestIdleCallback||setTimeout)(()=>warmUp());}},500);}
-window.__hawk={PHOTO,drone,gearUnits,LOAD,get OSMB(){return osmCity&&osmCity.OSMB;},ORB,PR,LIGHTS,setTod:(t)=>{tod=t;applyTOD();},GLU,renderer,CLD,camera,FINE,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
+window.__hawk={PHOTO,PERF,drone,gearUnits,LOAD,get OSMB(){return osmCity&&osmCity.OSMB;},ORB,PR,LIGHTS,setTod:(t)=>{tod=t;applyTOD();},GLU,renderer,CLD,camera,FINE,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
 requestAnimationFrame(frame);
 })();
 </script>

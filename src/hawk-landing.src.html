@@ -135,6 +135,21 @@ main{display:grid;grid-template-columns:1fr 372px;min-height:0}
 #app.menu main{grid-template-columns:1fr;grid-template-rows:1fr} #app.menu #panel,#app.menu #hud,#app.menu .viewbar,#app.menu #map,#app.menu #mapRange,#app.menu #stick,#app.menu #ckTip{display:none!important}
 #perf{position:absolute;left:50%;top:max(6px,env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:4;padding:3px 10px;border-radius:5px;background:rgba(5,8,11,.78);border:1px solid var(--line-2);font-family:var(--font-mono);font-size:11px;color:var(--hud);white-space:nowrap;pointer-events:none}
 #loading{z-index:6}
+/* camera buttons in a narrow column in the corner, the top HUD row kept clear of them */
+#app:not(.mob) .viewbar{flex-direction:column;align-items:stretch} #app:not(.mob) #hTop{max-width:calc(100% - 250px);flex-wrap:wrap;justify-content:center}
+/* controls fade after 3 s without the mouse moving; H hides the whole interface */
+.viewbar,#map,#mapRange{transition:opacity .35s} #view.idle .viewbar,#view.idle #map,#view.idle #mapRange{opacity:.14}
+#view.clean #hud,#view.clean .viewbar,#view.clean #map,#view.clean #mapRange,#view.clean #perf{display:none!important}
+/* pause menu and settings */
+#pause{z-index:7} #pause .pcard{width:min(520px,100%);display:grid;gap:10px;max-height:100%;overflow:auto}
+#pause .prow{display:flex;justify-content:space-between;align-items:baseline;gap:12px} #pause h2{margin:0;font-family:var(--font-display);letter-spacing:.08em;text-transform:uppercase}
+#pause h3{margin:8px 0 0;font-family:var(--font-display);font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-dim)}
+#pause .phint,#pause .pnote{color:var(--fg-mute);font-size:12px;margin:0} #pause .pbtns{display:flex;flex-wrap:wrap;gap:8px} #pause .pbtns .btn{flex:1 1 120px;font-size:15px;padding:9px 8px}
+#pause .qseg{display:flex;gap:6px;flex-wrap:wrap} #pause .qseg button{flex:1 1 70px;font-family:var(--font-display);font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:8px 6px;border-radius:5px;border:1px solid var(--line-2);background:var(--panel-2);color:var(--fg-dim);cursor:pointer}
+#pause .qseg button[aria-pressed="true"]{color:var(--bg);background:var(--hud);border-color:var(--hud)}
+#pause .pslider{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);align-items:center;gap:12px;font-size:13px;color:var(--fg)} #pause .pslider input{width:100%}
+#pause .pcheck{display:flex;gap:8px;align-items:center;font-size:13px} #pause .pkeys{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--fg-dim)}
+#pause kbd{font-family:var(--font-mono);font-size:11px;padding:1px 6px;border:1px solid var(--line-2);border-radius:4px;color:var(--fg)}
 #loading .lcard{width:min(440px,100%);padding:22px 24px;border-radius:10px;background:var(--panel);border:1px solid var(--line-2);display:grid;gap:12px}
 #loading h3{margin:0;color:var(--fg);font-family:var(--font-display);font-size:22px;letter-spacing:.08em;text-transform:uppercase}
 #loading .lrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-family:var(--font-mono);font-size:12px;color:var(--fg-dim)}
@@ -438,6 +453,23 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
       </div>
 
       <div id="perf" hidden></div>
+      <div class="overlay" id="pause" hidden><div class="card pcard" role="dialog" aria-modal="true" aria-labelledby="pTitle">
+        <div class="prow"><h2 id="pTitle">Paused</h2><span class="phint">Esc to resume</span></div>
+        <div class="pbtns"><button type="button" class="btn go" id="pResume">Resume</button><button type="button" class="btn" id="pRestart">Restart</button><button type="button" class="btn" id="pMenu">Main menu</button></div>
+        <h3>Graphics</h3>
+        <div class="qseg" id="pQual"><button type="button" data-q="auto">Auto</button><button type="button" data-q="low">Low</button><button type="button" data-q="medium">Medium</button><button type="button" data-q="high">High</button></div>
+        <p class="pnote" id="pQualNote"></p>
+        <h3>Sound</h3>
+        <label class="pslider">Volume<input type="range" id="pVol" min="0" max="100"></label>
+        <label class="pslider">Engine and wind<input type="range" id="pEng" min="0" max="150"></label>
+        <label class="pslider">Cockpit clicks<input type="range" id="pUi" min="0" max="150"></label>
+        <h3>Controls</h3>
+        <label class="pslider">Mouse look speed<input type="range" id="pSens" min="40" max="200"></label>
+        <label class="pcheck"><input type="checkbox" id="pInv"> Invert pitch (Up arrow raises the nose)</label>
+        <h3>Screen</h3>
+        <div class="pkeys"><span><kbd>H</kbd> hide the interface</span><span><kbd>P</kbd> performance readout</span><span><kbd>V</kbd> cycle cameras</span><span><kbd>R</kbd> restart</span></div>
+        <p class="pnote">Settings and your last route are kept in this browser.</p>
+      </div></div>
       <div class="overlay" id="loading" hidden><div class="lcard" id="lCard" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Loading scenery">
         <div class="lrow"><h3>Loading scenery</h3><span id="lPct">0%</span></div><div class="lbar"><i id="lBar"></i></div>
         <div class="lrow"><span id="lStep">Shaders</span><span id="lWhere"></span></div></div></div>
@@ -932,6 +964,11 @@ const scene=new THREE.Scene();scene.fog=new THREE.Fog(0xaebfd0,9000,42000);
 #endif`;}
 const camera=new THREE.PerspectiveCamera(55,1,1,450000);
 /* photo assets: sky photo, Sentinel-2 satellite ground and surface photos load from assets/; everything procedural below stays as the fallback */
+// settings: graphics quality, sound levels, mouse look speed and pitch inversion, plus the last route; kept in this browser
+const SETTINGS={q:'auto',vol:null,eng:100,ui:100,sens:100,inv:false,route:null};
+try{Object.assign(SETTINGS,JSON.parse(localStorage.getItem('redapple.settings')||'{}'));}catch(e){}
+function saveSettings(){try{localStorage.setItem('redapple.settings',JSON.stringify(SETTINGS));}catch(e){}}
+const PAUSE={on:false};
 const ASSET='assets/';const PHOTO={sky:false,ground:0};const procScenery=[];
 const texLoader=new THREE.TextureLoader();
 // images are decoded off the main thread before use; otherwise the browser decodes a big JPEG in the middle of the frame that
@@ -2181,7 +2218,7 @@ canvas.addEventListener('pointerdown',e=>{if(camMode!=='cockpit')return;const p=
   if(p){if(p.h.drag==='thr'){manualThrust();ck.drag={x:e.clientX,y:e.clientY,thr:true};canvas.setPointerCapture(e.pointerId);}else p.h.click(p.uv,e);return;}
   ck.drag={x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);canvas.style.cursor='grabbing';});
 canvas.addEventListener('pointermove',e=>{if(camMode!=='cockpit'){ckTip.hidden=true;return;}
-  if(ck.drag){if(ck.drag.thr)setThrottle(+thr.value-(e.clientY-ck.drag.y)*0.5);else{ck.headY=clamp(ck.headY-(e.clientX-ck.drag.x)*0.005,-2.4,2.4);ck.headP=clamp(ck.headP-(e.clientY-ck.drag.y)*0.005,-1.1,1.0);}ck.drag.x=e.clientX;ck.drag.y=e.clientY;return;}
+  if(ck.drag){if(ck.drag.thr)setThrottle(+thr.value-(e.clientY-ck.drag.y)*0.5);else{ck.headY=clamp(ck.headY-(e.clientX-ck.drag.x)*0.005*SETTINGS.sens/100,-2.4,2.4);ck.headP=clamp(ck.headP-(e.clientY-ck.drag.y)*0.005,-1.1,1.0);}ck.drag.x=e.clientX;ck.drag.y=e.clientY;return;}
   const p=ckPick(e);if(p){const t=p.h.tip(p.uv);canvas.style.cursor='pointer';if(t){ckTip.textContent=t;ckTip.hidden=false;const r=view.getBoundingClientRect();ckTip.style.left=min(e.clientX-r.left+14,r.width-270)+'px';ckTip.style.top=(e.clientY-r.top+16)+'px';}else ckTip.hidden=true;}
   else{canvas.style.cursor='grab';ckTip.hidden=true;}});
 canvas.addEventListener('pointerup',()=>{ck.drag=null;apHold.stop();canvas.style.cursor='grab';});canvas.addEventListener('pointercancel',()=>{ck.drag=null;apHold.stop();});
@@ -2393,7 +2430,7 @@ document.querySelectorAll('.viewbar button').forEach(b=>b.addEventListener('clic
  canvas.addEventListener('pointermove',e=>{if(!outside())return;const p=ORB.pts.get(e.pointerId);if(!p){canvas.style.cursor=camMode==='chase'?'grab':'zoom-in';return;}
    const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
    if(ORB.pts.size>1){const d=pinchD();if(ORB.pinch>0&&d>0)ORB.zoom=clamp(ORB.zoom*ORB.pinch/d,0.3,8);ORB.pinch=d;return;}
-   if(camMode!=='chase')return;ORB.yaw-=dx*0.006;ORB.pitch=clamp(ORB.pitch+dy*0.005,-1.2,1.35);});
+   if(camMode!=='chase')return;ORB.yaw-=dx*0.006*SETTINGS.sens/100;ORB.pitch=clamp(ORB.pitch+dy*0.005*SETTINGS.sens/100,-1.2,1.35);});
  const up=e=>{ORB.pts.delete(e.pointerId);ORB.pinch=pinchD();if(!ORB.pts.size)canvas.style.cursor='';};
  canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);
  canvas.addEventListener('wheel',e=>{if(!outside())return;e.preventDefault();ORB.zoom=clamp(ORB.zoom*Math.exp(e.deltaY*0.0012),0.3,8);},{passive:false});
@@ -2459,18 +2496,20 @@ const gaFF=new Gauge('gFF',{min:0,max:4000,tick:500,every:2,amber:4000,red:4000,
 
 /* ================= Input ================= */
 window.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='BUTTON'&&e.key===' ')return;const k=e.key;
+  if(k==='Escape'){if($('title').hidden){setPause(!PAUSE.on);e.preventDefault();}return;}if(PAUSE.on)return;
+  if(k==='h'||k==='H'){view.classList.toggle('clean');onEvent(view.classList.contains('clean')?'Interface hidden · press H to show it':'Interface shown','');e.preventDefault();return;}
   if(k==='q'||k==='Q'||k===','){inp.kRudL=true;e.preventDefault();return;}if(k==='e'||k==='E'||k==='.'){inp.kRudR=true;e.preventDefault();return;}
   if(k==='z'||k==='Z'){apMode('AP');e.preventDefault();return;}
   if((k==='x'||k==='X')&&camMode==='cockpit'){ck.glance=true;e.preventDefault();return;}
   if(k===']'||k==='Home'){inp.trimUp=true;e.preventDefault();return;}if(k==='['||k==='End'){inp.trimDn=true;e.preventDefault();return;}if(k==='t'||k==='T'){toggleAutoTrim();e.preventDefault();return;}
-  if(k==='ArrowUp'||k==='w'||k==='W')inp.kUp=true;else if(k==='ArrowDown'||k==='s'||k==='S')inp.kDn=true;else if(k==='ArrowLeft'||k==='a'||k==='A')inp.kL=true;else if(k==='ArrowRight'||k==='d'||k==='D')inp.kR=true;
+  if(k==='ArrowUp'||k==='w'||k==='W')inp[SETTINGS.inv?'kDn':'kUp']=true;else if(k==='ArrowDown'||k==='s'||k==='S')inp[SETTINGS.inv?'kUp':'kDn']=true;else if(k==='ArrowLeft'||k==='a'||k==='A')inp.kL=true;else if(k==='ArrowRight'||k==='d'||k==='D')inp.kR=true;
   else if(k==='PageUp'||k==='+'||k==='='||k==='PageDown'||k==='-'||k==='_'){if(ap.athr){ap.athr=false;ap.msg='A/THR OFF · manual thrust';ap.msgT=3;onApChange();}setThrottle(+thr.value+(k==='PageUp'||k==='+'||k==='='?4:-4));}
   else if(k==='f'||k==='F')cycleFlaps();else if(k==='g'||k==='G')toggleGear();else if(k==='b'||k==='B')toggleBrk();else if(k===' ')toggleSplr();
   else if(k==='l'||k==='L')toggleLight('ldg');else if(k==='k'||k==='K')toggleLight('taxi');
   else if(k==='y'||k==='Y')cycleTime();else if(k==='p'||k==='P'){PERF.on=!PERF.on;PERF.el=$('perf');PERF.el.hidden=!PERF.on;}
   else if(k==='m'||k==='M')$('mapRange').click();else if(k==='v'||k==='V'){camMode=camMode==='chase'?'cockpit':camMode==='cockpit'?'nose':camMode==='nose'?'tower':camMode==='tower'?'flyby':'chase';fb.set=false;}else if(k==='c'||k==='C')camMode=camMode==='cockpit'?'chase':'cockpit';else if(k==='r'||k==='R')requestStart();else return;
   e.preventDefault();});
-window.addEventListener('keyup',e=>{const k=e.key;if(k==='x'||k==='X')ck.glance=false;if(k==='q'||k==='Q'||k===',')inp.kRudL=false;if(k==='e'||k==='E'||k==='.')inp.kRudR=false;if(k===']'||k==='Home')inp.trimUp=false;if(k==='['||k==='End')inp.trimDn=false;if(k==='ArrowUp'||k==='w'||k==='W')inp.kUp=false;else if(k==='ArrowDown'||k==='s'||k==='S')inp.kDn=false;else if(k==='ArrowLeft'||k==='a'||k==='A')inp.kL=false;else if(k==='ArrowRight'||k==='d'||k==='D')inp.kR=false;});
+window.addEventListener('keyup',e=>{const k=e.key;if(k==='x'||k==='X')ck.glance=false;if(k==='q'||k==='Q'||k===',')inp.kRudL=false;if(k==='e'||k==='E'||k==='.')inp.kRudR=false;if(k===']'||k==='Home')inp.trimUp=false;if(k==='['||k==='End')inp.trimDn=false;if(k==='ArrowUp'||k==='w'||k==='W')inp[SETTINGS.inv?'kDn':'kUp']=false;else if(k==='ArrowDown'||k==='s'||k==='S')inp[SETTINGS.inv?'kUp':'kDn']=false;else if(k==='ArrowLeft'||k==='a'||k==='A')inp.kL=false;else if(k==='ArrowRight'||k==='d'||k==='D')inp.kR=false;});
 {const st=$('stick'),kn=st.querySelector('.knob');let id=null,cx=0,cy=0;
  let rad=60;st.addEventListener('pointerdown',e=>{id=e.pointerId;try{st.setPointerCapture(id);}catch(_){}const r=st.getBoundingClientRect();cx=r.left+r.width/2;cy=r.top+r.height/2;rad=r.width/2;});
  st.addEventListener('pointermove',e=>{if(e.pointerId!==id)return;const dx=clamp((e.clientX-cx)/(rad*0.8),-1,1),dy=clamp((e.clientY-cy)/(rad*0.8),-1,1);inp.roll=dx;inp.pitch=dy;kn.style.transform=`translate(calc(-50% + ${dx*rad*0.6}px),calc(-50% + ${dy*rad*0.6}px))`;});
@@ -2558,8 +2597,18 @@ $('mApClose').addEventListener('click',()=>{$('mApDrawer').hidden=true;});
  document.querySelectorAll('.mtBtns button').forEach(b=>b.addEventListener('click',()=>{manualThrust();setThrottle(+b.dataset.t);}));}
 function showScr(n){['home','play','help'].forEach(k=>{$('scr'+k[0].toUpperCase()+k.slice(1)).hidden=k!==n;});const l=document.querySelector('#title .land');if(l)l.scrollTop=0;}
 document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showScr(b.dataset.go)));
+// pause menu and settings wiring
+$('pResume').addEventListener('click',()=>setPause(false));$('pRestart').addEventListener('click',()=>{setPause(false);requestStart();});$('pMenu').addEventListener('click',()=>{setPause(false);goHome();});
+document.querySelectorAll('#pQual button').forEach(b=>b.addEventListener('click',()=>{applyQuality(b.dataset.q);saveSettings();}));
+$('pVol').addEventListener('input',e=>{audio.vol=+e.target.value/100;SETTINGS.vol=audio.vol;applyVolume();if($('vol'))$('vol').value=e.target.value;saveSettings();});
+[['pEng','eng'],['pUi','ui'],['pSens','sens']].forEach(([id,k])=>$(id).addEventListener('input',e=>{SETTINGS[k]=+e.target.value;saveSettings();}));
+$('pInv').addEventListener('change',e=>{SETTINGS.inv=e.target.checked;saveSettings();});
+if(SETTINGS.vol!=null){audio.vol=SETTINGS.vol;if($('vol'))$('vol').value=Math.round(SETTINGS.vol*100);}
+// controls fade after 3 s without the mouse moving over the page, and come back on any movement (phones keep them)
+{let t=0;const wake=()=>{if(view.classList.contains('idle'))view.classList.remove('idle');clearTimeout(t);t=setTimeout(()=>{if(!MOB&&$('title').hidden)view.classList.add('idle');},3000);};
+ ['pointermove','pointerdown','wheel'].forEach(ev=>window.addEventListener(ev,wake,{passive:true}));wake();}
 $('btnMenu').addEventListener('click',()=>{$('result').hidden=true;$('title').hidden=false;$('app').classList.add('menu');frame.menu=true;ac.phase='standby';showScr('play');});
-function startGame(){setTimeK(1);ck.boot=mission==='takeoff'?0:null;camMode='chase';warmUp.cam='chase';fb.set=false;ORB.yaw=ORB.pitch=0;ORB.zoom=1;Object.assign(LIGHTS,{nav:true,bcn:true,strb:true,ldg:true,taxi:mission==='takeoff'});syncLights();applyTOD();$('title').hidden=true;$('result').hidden=true;$('app').classList.remove('menu');frame.menu=false;applyMob();resetFlight();camPos.copy(ac.pos).add(new THREE.Vector3(0,8,30));camLook.copy(ac.pos);
+function startGame(){setTimeK(1);if(depAp&&arrAp){SETTINGS.route=[depAp.id,arrAp.id];saveSettings();}ck.boot=mission==='takeoff'?0:null;camMode='chase';warmUp.cam='chase';fb.set=false;ORB.yaw=ORB.pitch=0;ORB.zoom=1;Object.assign(LIGHTS,{nav:true,bcn:true,strb:true,ldg:true,taxi:mission==='takeoff'});syncLights();applyTOD();$('title').hidden=true;$('result').hidden=true;$('app').classList.remove('menu');frame.menu=false;applyMob();resetFlight();camPos.copy(ac.pos).add(new THREE.Vector3(0,8,30));camLook.copy(ac.pos);
   LOAD.on=true;LOAD.t0=performance.now();LOAD.shown=!$('loading').hidden;camera.position.copy(camPos);if(osmCity){osmCity.OSMB.t=performance.now();osmCity.watch();}}
 
 /* ================= Destination & moving map ================= */
@@ -2740,7 +2789,7 @@ let W=1,Hh=1;
 const PR={max:min(window.devicePixelRatio||1,MOB?1.5:2),lim:1,cur:0,acc:0,n:0,t:0,city:0};PR.cur=PR.max;
 // when slow, sharpness goes first (bigger steps when very slow), then city detail (level 1 and 2 draw buildings less far);
 // with headroom again the city comes back first, then sharpness
-function adaptRes(dt){if(frame.warm||LOAD.on){PR.acc=PR.n=PR.t=0;return;}PR.acc+=dt;PR.n++;PR.t+=dt;if(PR.t<2)return;const avg=PR.acc/PR.n;PR.t=PR.acc=PR.n=0;
+function adaptRes(dt){if(frame.warm||LOAD.on||PR.fixed||PAUSE.on){PR.acc=PR.n=PR.t=0;return;}PR.acc+=dt;PR.n++;PR.t+=dt;if(PR.t<2)return;const avg=PR.acc/PR.n;PR.t=PR.acc=PR.n=0;
   const city=osmCity&&osmCity.OSMB.on;let next=PR.cur;
   if(avg>0.024){if(PR.cur>1)next=max(1,PR.cur-(avg>0.04?0.5:0.25));else if(city&&PR.city<2)osmCity.setLevel(++PR.city);}
   else if(avg<0.0135){if(city&&PR.city>0)osmCity.setLevel(--PR.city);else next=min(PR.lim,PR.cur+0.25);}
@@ -2749,6 +2798,14 @@ function resize(){const r=view.getBoundingClientRect();W=max(1,Math.round(r.widt
 new ResizeObserver(resize).observe(view);resize();
 let last=performance.now(),dtFrame=0.016;
 setInterval(()=>{if(!frame.warm&&!document.hidden&&frame.beat&&performance.now()-frame.beat>1500){frame.beat=performance.now();requestAnimationFrame(frame);}},700);
+// graphics: Auto adapts sharpness and city detail to the frame rate; Low, Medium and High fix them
+function applyQuality(q){SETTINGS.q=q;PR.fixed=q!=='auto';const lv={low:2,medium:1,high:0}[q];
+  if(PR.fixed){PR.cur=min({low:1,medium:1.5,high:2}[q],PR.max);if(osmCity&&osmCity.OSMB.on){PR.city=lv;osmCity.setLevel(lv);}}else{PR.cur=PR.lim||PR.max;if(osmCity&&osmCity.OSMB.on){PR.city=0;osmCity.setLevel(0);}}
+  resize();document.querySelectorAll('#pQual button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.q===q)));
+  $('pQualNote').textContent={auto:'Lowers sharpness, then city detail, by itself when frames get slow.',low:'Standard sharpness, buildings drawn to 8 km.',medium:'1.5× sharpness, buildings drawn to 13 km.',high:'Full sharpness (up to about 5 megapixels), buildings drawn to 22 km.'}[q];}
+// pause: physics stops and the sound goes quiet; the camera can still be moved
+function setPause(on){if(on&&!$('title').hidden)return;PAUSE.on=on;$('pause').hidden=!on;if(audio.ctx){try{on?audio.ctx.suspend():audio.ctx.resume();}catch(e){}}
+  if(on){$('pVol').value=Math.round((audio.vol??0.8)*100);$('pEng').value=SETTINGS.eng;$('pUi').value=SETTINGS.ui;$('pSens').value=SETTINGS.sens;$('pInv').checked=!!SETTINGS.inv;applyQuality(SETTINGS.q);$('pResume').focus();}}
 // loading screen: after Start the flight waits, physics paused, until the scenery around the aircraft is ready (shaders, ground
 // imagery, the airport patches, Istanbul's satellite tiles and the city cells). Meanwhile the city builder gets a larger share of
 // each frame. It appears only if loading takes longer than a moment, and gives up waiting after 30 s.
@@ -2768,6 +2825,7 @@ function loadTick(now){let w=0,s=0,step=null;for(const[n,d,t,k]of loadStatus()){
     $('lStep').textContent=step[0]+(step[2]>1?' · '+step[1]+' of '+step[2]:'');}}
 // frame timing: the main thread time of each part of the frame, the slowest recent frames (with the input that came just before
 // them) and an on-screen readout toggled with P (frames per second, frame time, render time, resolution, triangles, draw calls)
+const PHYS={h:1/120,acc:0,prev:new THREE.Vector3(),prevQ:new THREE.Quaternion(),real:new THREE.Vector3(),realQ:new THREE.Quaternion()};
 const _mv=new THREE.Vector3(),_ma=new THREE.Vector3(),_cv=new THREE.Vector3(),_cr=new THREE.Vector3();
 const PERF={on:false,t:0,sec:{},slow:[],last:{},fps:60,iv:16.7,inp:0,el:null,
   m(k){const n=performance.now();this.last[k]=n-this.t;this.t=n;},
@@ -2783,15 +2841,24 @@ function frame(now){
   if(!frame.warm)requestAnimationFrame(frame);frame.beat=now;if(window.__testHold)window.__testHold();let dt=max(0,min(0.05,(now-last)/1000));last=now;if(document.hidden)return;dtFrame=dt;adaptRes(dt);if(LOAD.on)loadTick(now);
   const pf0=performance.now();PERF.t=pf0;
   if(timeK>1&&(ac.phase!=='fly'||ac.onGround||ac.agl<1200||ac.stalled||abs(ac.phi)>60*DEG||Math.hypot(ac.pos.x-target.thr.x,ac.pos.z-target.thr.z)<28000))setTimeK(1);
-  if(ac.phase==='fly'&&!LOAD.on){for(let j=0;j<timeK;j++)step(dt);const n=max(2,Math.ceil(dt*timeK/0.006));for(let i=0;i<n&&ac.phase==='fly';i++)flyStep(dt*timeK/n);}
+  // fixed-rate physics: 120 steps per simulated second (each in two 4 ms flight substeps) whatever the screen's refresh rate; the
+  // drawn aircraft is placed between the last two steps (below), so motion stays even at 60, 120 or 144 Hz and the flight model
+  // behaves the same on every machine. Time compression simply runs more steps
+  let simH=0;
+  if(ac.phase==='fly'&&!LOAD.on&&!PAUSE.on){PHYS.acc+=dt*timeK;let k=0;
+    while(PHYS.acc>=PHYS.h&&k<96){PHYS.prev.copy(ac.pos);if(ac.Q)PHYS.prevQ.copy(ac.Q);step(PHYS.h);for(let i=0;i<2&&ac.phase==='fly';i++)flyStep(PHYS.h/2);PHYS.acc-=PHYS.h;simH+=PHYS.h;k++;}
+    if(k>=96)PHYS.acc=0;}else PHYS.acc=0;
   // felt acceleration (the change in velocity plus gravity) along the aircraft's own axes, in g: nz is 1 in level flight, 9 in the
   // hardest pull; drives the head in the cockpit, the chase camera's dip and the vapour
-  {const M=ac.mot||(ac.mot={p:ac.pos.clone(),v:new THREE.Vector3(),nz:1,ny:0,nx:0,ok:false});const h=dt*timeK;
-   if(h>0&&ac.Q&&!LOAD.on){const v=_mv.copy(ac.pos).sub(M.p).divideScalar(h);M.p.copy(ac.pos);const sane=v.lengthSq()<9e4;
+  {const M=ac.mot||(ac.mot={p:ac.pos.clone(),v:new THREE.Vector3(),nz:1,ny:0,nx:0,ok:false});const h=simH;
+   if(h===0&&ac.Q&&!LOAD.on){}else if(h>0&&ac.Q&&!LOAD.on){const v=_mv.copy(ac.pos).sub(M.p).divideScalar(h);M.p.copy(ac.pos);const sane=v.lengthSq()<9e4;
      if(sane&&M.ok){const acc=_ma.copy(v).sub(M.v).divideScalar(h);acc.y+=9.81;const B=bodyAxes(ac),k=1-exp(-dt/0.1);
        M.nz+=(clamp(acc.dot(B.u)/9.81,-4,10)-M.nz)*k;M.ny+=(clamp(acc.dot(B.rt)/9.81,-3,3)-M.ny)*k;M.nx+=(clamp(acc.dot(B.f)/9.81,-3,3)-M.nx)*k;}
      M.v.copy(v);M.ok=sane;}else{M.p.copy(ac.pos);M.ok=false;}}
   PERF.m('sim');
+  // draw the aircraft between the last two physics steps (not across a restart or a teleport); restored at the end of the frame
+  const ipol=ac.phase==='fly'&&!LOAD.on&&!!ac.Q&&PHYS.prev.distanceToSquared(ac.pos)<2500;
+  if(ipol){const al=clamp(PHYS.acc/PHYS.h,0,1);PHYS.real.copy(ac.pos);PHYS.realQ.copy(ac.Q);ac.pos.lerpVectors(PHYS.prev,PHYS.real,al);ac.Q.slerpQuaternions(PHYS.prevQ,PHYS.realQ,al);}
   ac.yEase=(ac.yEase||0)*exp(-dt/0.25);
   updateAudio(dt);updateGameAudio(dt);PERF.m('audio');
   // drone pose
@@ -2843,7 +2910,7 @@ function frame(now){
   if(audio.ctx&&ac.mot){const cv=_cv.copy(camera.position).sub(audio.camP||camera.position).divideScalar(max(1e-3,dt));if(cv.lengthSq()>16e4)cv.set(0,0,0);audio.camP=(audio.camP||new THREE.Vector3()).copy(camera.position);
     const rel=_cr.copy(camera.position).sub(ac.pos),d=max(1,rel.length());rel.divideScalar(d);const out=camMode==='tower'||camMode==='flyby';
     const vr=out?ac.mot.v.dot(rel)-cv.dot(rel):0,dop=clamp(343/max(120,343-vr),0.6,1.8);audio.dop=(audio.dop||1)+(dop-(audio.dop||1))*(1-exp(-dt/0.08));
-    audio.master.gain.setTargetAtTime(out?clamp(80/d,0.05,1):1,audio.ctx.currentTime,0.1);
+    audio.master.gain.setTargetAtTime((out?clamp(80/d,0.05,1):1)*SETTINGS.eng/100,audio.ctx.currentTime,0.1);if(audio.ui)audio.ui.gain.value=SETTINGS.ui/100;
     // inside the cockpit the canopy muffles the engine to a low rumble and the cabin's own sounds take over; outside, the fan's
     // whine carries forward of the aircraft and the jet's roar behind it
     const inC=camMode==='cockpit',t=audio.ctx.currentTime;
@@ -2856,7 +2923,7 @@ function frame(now){
   {const R=MOB?11000:22000;for(const c of cityChunks)c.m.visible=camera.position.distanceTo(c.c)<R+c.r;}PERF.m('stream');if(osmCity)osmCity.tick(now);PERF.m('city');
   skyMesh.position.copy(camera.position);updateClouds(now,dtFrame);clouds.forEach(c=>{c.position.x+=SCEN[scen].wind[0]*0.3*dt;});PERF.m('clouds');renderer.render(scene,camera);renderFlare(dt);PERF.m('render');
   {const m=!$('title').hidden;if(m!==frame.menu){frame.menu=m;$('app').classList.toggle('menu',m);}}
-  updateHUD(dt);updateRunwaySymbol();PERF.m('hud');if((now/100|0)%2===0)drawMap();PERF.m('map');updatePanel(dt);renderLever();PERF.m('panel');PERF.end(pf0,now);
+  updateHUD(dt);updateRunwaySymbol();PERF.m('hud');if(ipol){ac.pos.copy(PHYS.real);ac.Q.copy(PHYS.realQ);}if((now/100|0)%2===0)drawMap();PERF.m('map');updatePanel(dt);renderLever();PERF.m('panel');PERF.end(pf0,now);
 }
 syncSys();updateThrOut();resetFlight();ac.phase='standby';applyMob();
 // only the aircraft's large parts cast a shadow: the ~200 small ones (fasteners, lamps, antennas, gear links) don't change the
@@ -2942,7 +3009,9 @@ setInterval(()=>{if(!warmUp.done||camMode==='cockpit'||document.hidden)return;(w
   const cv=cockpit.visible;cockpit.visible=true;renderer.compile(cockpit,camera,scene);cockpit.visible=cv;}catch(e){}});},3000);
 // run once the scenery has loaded (or after 6 s at the latest), while the start menu is up
 {let n=0;const t=setInterval(()=>{n++;if((PHOTO.ground>=SAT.N*SAT.N&&PHOTO.base>=8)||n>12){clearInterval(t);(window.requestIdleCallback||setTimeout)(()=>warmUp());}},500);}
-window.__hawk={PHOTO,TOPO,BASE,FLARE,audio,gameAudio,PERF,drone,gearUnits,LOAD,get OSMB(){return osmCity&&osmCity.OSMB;},ORB,PR,LIGHTS,setTod:(t)=>{tod=t;applyTOD();},GLU,renderer,CLD,camera,FINE,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
+applyQuality(SETTINGS.q);
+if(SETTINGS.route){const[d_,a_]=SETTINGS.route;if(AIRPORTS.some(x=>x.id===d_)&&AIRPORTS.some(x=>x.id===a_))queueMicrotask(()=>{try{window.__hawk.setRoute(d_,a_);}catch(e){}});}
+window.__hawk={PHOTO,SETTINGS,PAUSE,PHYS,TOPO,BASE,FLARE,audio,gameAudio,PERF,drone,gearUnits,LOAD,get OSMB(){return osmCity&&osmCity.OSMB;},ORB,PR,LIGHTS,setTod:(t)=>{tod=t;applyTOD();},GLU,renderer,CLD,camera,FINE,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
 requestAnimationFrame(frame);
 })();
 </script>

@@ -2047,6 +2047,15 @@ const ckGrain=(()=>{const c=document.createElement('canvas');c.width=c.height=25
   mMirror=std({color:0xc9d3db,roughness:0.04,metalness:1}),mBtn=std({color:0x4a525b,roughness:0.55,metalness:0.4}),
   mGlass=new THREE.MeshStandardMaterial({color:0xaed3e6,transparent:true,opacity:0.07,roughness:0.05,metalness:0.1,depthWrite:false,side:THREE.DoubleSide});
  [mShell,mCowl,mCoam,mBezel,mThr,mGrip,mFrame].forEach(m=>{m.bumpMap=ckGrain;m.bumpScale=0.35;});
+ // worn finish, as in a cockpit that has flown for years: grime pooled in patches and streaks, rubbed-bright scratches;
+ // multiplied over the paint of the shell (mid grey) and the frames (dark metal)
+ const ckWear=(()=>{const c=document.createElement('canvas');c.width=c.height=512;const g=c.getContext('2d');g.fillStyle='#cfcfcf';g.fillRect(0,0,512,512);
+   for(let i=0;i<260;i++){const x=Math.random()*512,y=Math.random()*512,r=8+Math.random()*60,gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba(40,38,34,'+(0.05+Math.random()*0.12)+')');gr.addColorStop(1,'rgba(40,38,34,0)');g.fillStyle=gr;g.fillRect(x-r,y-r,2*r,2*r);}
+   for(let i=0;i<70;i++){g.strokeStyle='rgba(30,28,25,'+(0.05+Math.random()*0.1)+')';g.lineWidth=1+Math.random()*3;const x=Math.random()*512;g.beginPath();g.moveTo(x,Math.random()*512);g.lineTo(x+(Math.random()-0.5)*20,Math.random()*512);g.stroke();}
+   for(let i=0;i<220;i++){g.strokeStyle='rgba(255,255,255,'+(0.06+Math.random()*0.18)+')';g.lineWidth=0.6+Math.random();const x=Math.random()*512,y=Math.random()*512,a=Math.random()*PI,l=4+Math.random()*26;g.beginPath();g.moveTo(x,y);g.lineTo(x+cos(a)*l,y+sin(a)*l);g.stroke();}
+   const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(2,2);t.anisotropy=8;return t;})();
+ mShell.color.setHex(0x8c9197);mShell.map=ckWear;mFrame.color.setHex(0x55595e);mFrame.map=ckWear;mFrame.metalness=0.55;mFrame.roughness=0.5;
+ const mStick=std({map:ckWear,color:0x7a8086,roughness:0.5,metalness:0.6,bumpMap:ckGrain,bumpScale:0.4});
  const add=(m,x,y,z,parent)=>{m.position.set(x,y,z);(parent||cockpit).add(m);return m;};
  const box=(w,h,d,mat,x,y,z,parent)=>add(new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat),x,y,z,parent);
  const cyl=(r0,r1,h,mat,x,y,z,parent,seg)=>add(new THREE.Mesh(new THREE.CylinderGeometry(r0,r1,h,seg||14),mat),x,y,z,parent);
@@ -2083,8 +2092,11 @@ const ckGrain=(()=>{const c=document.createElement('canvas');c.width=c.height=25
 
  // ---------- canopy: windscreen arch, bubble, canopy bow, sills, mirrors ----------
  const dome=new THREE.Mesh(new THREE.SphereGeometry(1,48,24,0,2*PI,0,PI/2),mGlass);dome.scale.set(0.64,0.5,1.7);add(dome,0,-0.28,-0.05);
- {const arch=new THREE.Mesh(new THREE.TorusGeometry(0.62,0.03,10,48,PI),mFrame);arch.scale.set(1,0.78,1.6);add(arch,0,-0.27,-0.97);arch.rotation.x=0.15;
-  const bow=new THREE.Mesh(new THREE.TorusGeometry(0.62,0.034,10,48,PI),mFrame);bow.scale.y=0.78;add(bow,0,-0.27,0.62);
+ {const arch=new THREE.Mesh(new THREE.TorusGeometry(0.62,0.046,12,64,PI),mFrame);arch.scale.set(1,0.78,1.6);add(arch,0,-0.27,-0.97);arch.rotation.x=0.15;
+  const bow=new THREE.Mesh(new THREE.TorusGeometry(0.62,0.05,12,64,PI),mFrame);bow.scale.y=0.78;add(bow,0,-0.27,0.62);
+  // rivets along the inner face of the windscreen arch (one instanced mesh)
+  {arch.updateMatrix();const pts=[];for(let i=1;i<44;i++){const t=i/44*PI;pts.push(new THREE.Vector3(0.62*cos(t),0.62*sin(t),0.05).applyMatrix4(arch.matrix));}
+   const rg=new THREE.CylinderGeometry(0.0042,0.0048,0.004,8);rg.rotateX(PI/2);const im=new THREE.InstancedMesh(rg,mMetal,pts.length),m4=new THREE.Matrix4();pts.forEach((p,i)=>{m4.makeTranslation(p.x,p.y,p.z);im.setMatrixAt(i,m4);});cockpit.add(im);}
   const bow2=new THREE.Mesh(new THREE.TorusGeometry(0.6,0.012,8,48,PI),mBlack);bow2.scale.y=0.76;add(bow2,0,-0.27,0.58);
   // rear-view mirrors on the windscreen arch
   for(const[x,yaw]of[[-0.27,0.25],[0,0],[0.27,-0.25]]){const mg=new THREE.Group();mg.position.set(x,(x?0.115:0.17),x?-0.86:-0.9);mg.rotation.set(-0.35,yaw,0);cockpit.add(mg);
@@ -2103,12 +2115,13 @@ const ckGrain=(()=>{const c=document.createElement('canvas');c.width=c.height=25
   // stitched seam on the lip
   box(0.98,0.002,0.002,std({color:0x2c3036,roughness:1}),0,-0.196,-0.685);}
  // HUD: projector housing under the coaming, combiner frame and glass
- box(0.22,0.05,0.12,mBezel,0,-0.21,-0.8);
+ box(0.27,0.056,0.15,mBezel,0,-0.212,-0.8);box(0.2,0.01,0.1,mBlack,0,-0.181,-0.79);
  const hc=document.createElement('canvas');hc.width=hc.height=512*DS;const ht=new THREE.CanvasTexture(hc);ckTex.hud={c:hc,g:hc.getContext('2d'),t:ht,W:512*DS,H:512*DS};
  const hud=add(new THREE.Mesh(new THREE.PlaneGeometry(0.27,0.27),new THREE.MeshBasicMaterial({map:ht,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false})),0,-0.05,-0.76);hud.rotation.x=-0.05;ck.hudT=ht;
- const hglass=add(new THREE.Mesh(new THREE.PlaneGeometry(0.29,0.29),new THREE.MeshBasicMaterial({color:0x9fd8c0,transparent:true,opacity:0.07,depthWrite:false})),0,-0.05,-0.765);hglass.rotation.x=-0.05;
- for(const sd of[-1,1]){box(0.012,0.31,0.014,mFrame,0.152*sd,-0.05,-0.77);box(0.02,0.04,0.03,mBezel,0.152*sd,-0.19,-0.78);}
- box(0.316,0.012,0.016,mFrame,0,0.104,-0.77);
+ const oct=(w,h,c)=>{const q=new THREE.Shape();q.moveTo(-w/2+c,-h/2);q.lineTo(w/2-c,-h/2);q.lineTo(w/2,-h/2+c);q.lineTo(w/2,h/2-c*1.6);q.lineTo(w/2-c*1.6,h/2);q.lineTo(-w/2+c*1.6,h/2);q.lineTo(-w/2,h/2-c*1.6);q.lineTo(-w/2,-h/2+c);q.closePath();return q;};
+ const hglass=add(new THREE.Mesh(new THREE.ShapeGeometry(oct(0.3,0.31,0.03)),new THREE.MeshBasicMaterial({color:0x9fd8c0,transparent:true,opacity:0.07,depthWrite:false,side:THREE.DoubleSide})),0,-0.045,-0.765);hglass.rotation.x=-0.05;
+ {const fr=oct(0.334,0.344,0.036);fr.holes.push(oct(0.3,0.31,0.03));const f=add(new THREE.Mesh(new THREE.ExtrudeGeometry(fr,{depth:0.012,bevelEnabled:true,bevelThickness:0.003,bevelSize:0.003,bevelSegments:1}),mFrame),0,-0.045,-0.774);f.rotation.x=-0.05;}
+ for(const sd of[-1,1])box(0.018,0.05,0.022,mFrame,0.12*sd,-0.198,-0.776);
  ck.lamps={};
  const lamp=(name,x,y,z,w,h,text,col)=>{const c=document.createElement('canvas');c.width=128*DS;c.height=Math.round(128*DS*h/w);const g=c.getContext('2d');const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;
    const m=add(new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:t,toneMapped:false})),x,y,z);m.rotation.x=-0.3;box(w+0.01,h+0.01,0.012,mBezel,x,y-0.001,z-0.007);
@@ -2126,9 +2139,9 @@ const ckGrain=(()=>{const c=document.createElement('canvas');c.width=c.height=25
   box(0.86,0.3,0.01,mBlack,0,0,0.002,lad);box(0.9,0.38,0.05,mCowl,0,-0.005,-0.06,lad);}
  const mkScreen=(name,x,w,h)=>{const c=document.createElement('canvas');c.width=512*DS;c.height=Math.round(512*DS*h/w);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;
    const scr=add(new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:t,toneMapped:false})),x,0,0.0125,lad);ckTex[name]={c,g:c.getContext('2d'),t,W:512*DS,H:c.height};return scr;};
- mkScreen('eng',-0.272,0.266,0.266);mkScreen('pfd',0,0.266,0.266);ck.ndScr=mkScreen('nd',0.272,0.266,0.266);
+ mkScreen('eng',0.272,0.266,0.266);mkScreen('pfd',0,0.266,0.266);ck.ndScr=mkScreen('nd',-0.272,0.266,0.266);
  {const oc=document.createElement('canvas');oc.width=oc.height=512*DS;const ot=new THREE.CanvasTexture(oc);ckTex.eo={c:oc,g:oc.getContext('2d'),t:ot,W:512*DS,H:512*DS};
-  ck.eoOv=add(new THREE.Mesh(new THREE.PlaneGeometry(0.266,0.266),new THREE.MeshBasicMaterial({map:ot,transparent:true,depthWrite:false,toneMapped:false})),0.272,0,0.0145,lad);ck.eoOv.renderOrder=4;}
+  ck.eoOv=add(new THREE.Mesh(new THREE.PlaneGeometry(0.266,0.266),new THREE.MeshBasicMaterial({map:ot,transparent:true,depthWrite:false,toneMapped:false})),-0.272,0,0.0145,lad);ck.eoOv.renderOrder=4;}
  // single cover glass with a faint reflection of the sky
  {const gl=add(new THREE.Mesh(new THREE.PlaneGeometry(0.83,0.284),new THREE.MeshStandardMaterial({color:0x0b1118,transparent:true,opacity:0.16,roughness:0.03,metalness:0.2,envMapIntensity:1.6,depthWrite:false})),0,0,0.018,lad);gl.userData.keepOrder=5;}
  // sun glare: a bright sweep across the glass when the sun shines onto the display (from behind the pilot's shoulder)
@@ -2137,14 +2150,18 @@ const ckGrain=(()=>{const c=document.createElement('canvas');c.width=c.height=25
   ck.glare=add(new THREE.Mesh(new THREE.PlaneGeometry(0.83,0.284),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false})),0,0,0.019,lad);ck.glare.userData.keepOrder=6;}
  // caution lights along the lower rim
  {const m=new THREE.Mesh(new THREE.PlaneGeometry(0.6,0.026),plate(0.6,0.026,P=>{['FUEL LOW','HYD','GEN','OXY','FLCS','ENG','APU','CANOPY'].forEach((t,i)=>P.ann(0.07+i*0.122,0.5,0.11,0.66,t));}));add(m,0,-0.173,0.0375,lad);}
- // standby unit on the centre pedestal: small attitude display with a 4 x 4 keypad, knobs below
+ // centre pedestal: a portrait autopilot touchscreen (mode keys and the four selectors, all touchable) with the standby
+ // attitude display above it, in one moulded bezel; a selector knob and two keys below the glass
  {box(0.24,0.3,0.2,mShell,0,-1.0,-0.74);const pg=new THREE.Group();pg.position.set(0,-0.8,-0.585);pg.rotation.x=-0.75;pg.scale.setScalar(1.3);cockpit.add(pg);
-  box(0.27,0.2,0.07,mCowl,0,0,-0.036,pg);
+  box(0.15,0.25,0.05,mCowl,0,0,-0.028,pg);box(0.138,0.236,0.006,mBlack,0,0,-0.001,pg);
   const c=document.createElement('canvas');c.width=c.height=256*DS;const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;ckTex.stby={c,g:c.getContext('2d'),t,W:256*DS,H:256*DS};
-  box(0.1,0.1,0.008,mBezel,0.06,0.025,0,pg);add(new THREE.Mesh(new THREE.PlaneGeometry(0.088,0.088),new THREE.MeshBasicMaterial({map:t,toneMapped:false})),0.06,0.025,0.0045,pg);
-  box(0.1,0.1,0.006,mBezel,-0.066,0.025,-0.001,pg);const mKey=std({color:0xd9dcd6,roughness:0.6,emissive:0x34352f});
-  for(let r=0;r<4;r++)for(let k=0;k<4;k++)box(0.018,0.018,0.008,mKey,-0.1+k*0.0227,0.059-r*0.0227,0.004,pg);
-  for(const x of[-0.1,-0.045,0.02,0.1]){const k=cyl(0.012,0.013,0.016,mGrip,x,-0.066,0.008,pg,14);k.rotation.x=PI/2;cyl(0.003,0.003,0.0165,mMetal,x,-0.066,0.009,pg,6).rotation.x=PI/2;}}
+  add(new THREE.Mesh(new THREE.PlaneGeometry(0.074,0.074),new THREE.MeshBasicMaterial({map:t,toneMapped:false})),0,0.075,0.003,pg);
+  const tc=document.createElement('canvas');tc.width=256*DS;tc.height=272*DS;const tt=new THREE.CanvasTexture(tc);tt.colorSpace=THREE.SRGBColorSpace;ckTex.ctp={c:tc,g:tc.getContext('2d'),t:tt,W:256*DS,H:272*DS,key:''};
+  ck.ctp=add(new THREE.Mesh(new THREE.PlaneGeometry(0.128,0.136),new THREE.MeshBasicMaterial({map:tt,toneMapped:false})),0,-0.032,0.003,pg);
+  for(const x of[-0.05,0.05])box(0.024,0.012,0.008,mBtn,x,-0.112,0.002,pg);const kn=cyl(0.011,0.012,0.014,mGrip,0,-0.112,0.007,pg,16);kn.rotation.x=PI/2;}
+ // canopy jettison handle beside the display, in yellow and black
+ {const c=document.createElement('canvas');c.width=64;c.height=256;const g=c.getContext('2d');for(let i=-4;i<20;i++){g.fillStyle=i%2?'#111':'#e1b012';g.beginPath();g.moveTo(0,i*20);g.lineTo(64,i*20-20);g.lineTo(64,i*20);g.lineTo(0,i*20+20);g.fill();}
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;const h=box(0.026,0.11,0.022,std({map:t,roughness:0.55}),-0.505,-0.27,-0.735);h.rotation.set(-0.28,0,0.3);box(0.042,0.028,0.032,mBlack,-0.508,-0.33,-0.745);}
  // auxiliary round gauges right of the display: RPM, FTIT, fuel
  {const c=document.createElement('canvas');c.width=128*DS;c.height=384*DS;const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;ckTex.aux={c,g:c.getContext('2d'),t,W:128*DS,H:384*DS};
   const ag=new THREE.Group();ag.position.set(0.505,-0.455,-0.73);ag.rotation.x=-0.28;cockpit.add(ag);
@@ -2181,19 +2198,19 @@ const ckGrain=(()=>{const c=document.createElement('canvas');c.width=c.height=25
  for(let i=0;i<4;i++)cyl(0.026-i*0.003,0.03-i*0.003,0.012,mGrip,0,0.04+i*0.011,0,ck.stick,14); // rubber boot
  cyl(0.011,0.013,0.08,mFrame,0,0.1,0,ck.stick,10);
  {const pts=[];for(let i=0;i<=12;i++){const t=i/12;pts.push(new THREE.Vector2(0.021+0.01*sin(t*PI)-0.006*t,t*0.12));}
-  const grip=new THREE.Mesh(new THREE.LatheGeometry(pts,18),mGrip);grip.scale.set(0.9,1,1.15);grip.position.set(0,0.13,0.004);grip.rotation.x=0.22;ck.stick.add(grip);
-  const top=new THREE.Mesh(new THREE.SphereGeometry(0.019,14,10,0,2*PI,0,PI/2),mGrip);top.position.set(0,0.248,-0.022);top.rotation.x=0.22;ck.stick.add(top);
+  const grip=new THREE.Mesh(new THREE.LatheGeometry(pts,18),mStick);grip.scale.set(0.9,1,1.15);grip.position.set(0,0.13,0.004);grip.rotation.x=0.22;ck.stick.add(grip);
+  const top=new THREE.Mesh(new THREE.SphereGeometry(0.019,14,10,0,2*PI,0,PI/2),mStick);top.position.set(0,0.248,-0.022);top.rotation.x=0.22;ck.stick.add(top);
   box(0.014,0.006,0.014,mBtn,0,0.255,-0.03,ck.stick).rotation.x=0.22;box(0.006,0.008,0.006,mBlack,0,0.262,-0.03,ck.stick);       // trim hat
-  box(0.01,0.01,0.01,mRed,0.012,0.245,-0.008,ck.stick);                                                                             // red button
+  cyl(0.008,0.008,0.01,mRed,0.012,0.246,-0.008,ck.stick,14);                                                                             // red button
   const trig=box(0.01,0.03,0.008,mMetal,0,0.19,-0.04,ck.stick);trig.rotation.x=0.4;                                                 // trigger
   box(0.03,0.008,0.012,mMetal,0,0.16,0.03,ck.stick);                                                                                // pinky lever
   box(0.008,0.035,0.06,mGrip,-0.026,0.2,0.0,ck.stick);}                                                                             // palm rest
  // ---------- throttle (left): stem, chunky grip with switches ----------
  ck.thr=new THREE.Group();ck.thr.position.set(-0.4,-0.5,-0.2);cockpit.add(ck.thr);
  box(0.016,0.1,0.016,mFrame,0,0.05,0,ck.thr);
- const tgrip=add(new THREE.Mesh(new THREE.CapsuleGeometry(0.027,0.055,6,16).rotateX(PI/2),mThr),0,0.118,0,ck.thr);tgrip.scale.set(1,0.82,1);
- box(0.045,0.03,0.014,mThr,-0.006,0.115,0.052,ck.thr);box(0.012,0.012,0.012,mBtn,0.02,0.142,-0.01,ck.thr);box(0.01,0.01,0.01,mRed,0.02,0.142,0.02,ck.thr);
- cyl(0.008,0.008,0.006,mMetal,-0.02,0.139,-0.02,ck.thr,10);box(0.006,0.02,0.03,mBtn,0.027,0.115,0.0,ck.thr);
+ const tgrip=add(new THREE.Mesh(new THREE.CapsuleGeometry(0.032,0.07,6,18).rotateX(PI/2),mGrip),0,0.122,0,ck.thr);tgrip.scale.set(1,0.85,1);
+ box(0.05,0.032,0.016,mThr,-0.006,0.118,0.06,ck.thr);cyl(0.0095,0.0095,0.01,mRed,0.024,0.15,0.018,ck.thr,16);box(0.012,0.012,0.012,mBtn,0.024,0.149,-0.012,ck.thr);
+ cyl(0.009,0.01,0.012,mMetal,-0.024,0.148,-0.024,ck.thr,12);cyl(0.007,0.008,0.012,mMetal,-0.024,0.148,0.012,ck.thr,12);box(0.006,0.024,0.034,mBtn,0.034,0.12,0.0,ck.thr);
  box(0.02,0.012,0.36,mBlack,-0.4,-0.505,-0.2); // slot
  // ---------- ejection seat: headbox, back cushion, harness, firing handle ----------
  {const sg=new THREE.Group();sg.position.set(0,0,0.32);cockpit.add(sg);
@@ -2203,6 +2220,8 @@ const ckGrain=(()=>{const c=document.createElement('canvas');c.width=c.height=25
    const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;add(new THREE.Mesh(new THREE.PlaneGeometry(0.13,0.05),std({map:t,roughness:0.6})),0,0.17,-0.001,sg);}
   for(const sd of[-1,1]){box(0.05,0.55,0.01,std({color:0x3d4a3a,roughness:0.95}),0.09*sd,-0.42,-0.03,sg);box(0.03,0.62,0.05,mFrame,0.2*sd,-0.4,0.06,sg);}
   box(0.34,0.06,0.42,mShell,0,-0.86,-0.22,sg);box(0.3,0.04,0.38,mCush,0,-0.82,-0.22,sg);
+  {const mWeb=std({color:0x60656c,roughness:0.95,map:ckWear});for(const sd of[-1,1]){const s_=box(0.15,0.01,0.048,mWeb,0.095*sd,-0.792,-0.13,sg);s_.rotation.y=0.3*sd;}
+   const bk=cyl(0.03,0.03,0.012,mMetal,0,-0.788,-0.12,sg,22);cyl(0.012,0.012,0.014,mBlack,0,-0.787,-0.12,sg,12);}
   {const c=document.createElement('canvas');c.width=128;c.height=8;const g=c.getContext('2d');for(let i=0;i<16;i++){g.fillStyle=i%2?'#111':'#e9bb10';g.fillRect(i*8,0,8,8);}const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;
    const hd=new THREE.Mesh(new THREE.TorusGeometry(0.055,0.011,10,32),std({map:t,roughness:0.6}));hd.position.set(0,-0.745,-0.45);hd.rotation.x=-0.45;sg.add(hd);box(0.05,0.03,0.04,mBlack,0,-0.8,-0.43,sg);}}
  cockpit.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;o.renderOrder=o.userData.keepOrder||2;}});}
@@ -2321,6 +2340,7 @@ canvas.addEventListener('dblclick',()=>{ck.headY=0;ck.headP=MOB?-0.26:CKP;ck.fov
 // cockpit display canvases are re-uploaded many times a second: skip building mipmaps on every upload (the main cost)
 Object.values(ckTex).forEach(d=>{if(d&&d.t){d.t.generateMipmaps=false;d.t.minFilter=THREE.LinearFilter;}});
 const ckHits=[];const ckLights={};
+const CTPB=[['AP','AP'],['ATHR','A/THR'],['HDG','HDG'],['ALT','ALT HOLD'],['VS','V/S'],['APP','APP']],CTPS=[['ias','SPD'],['hdg','HDG'],['alt','ALT'],['vs','V/S']];
 {const mPlate=std({color:0x1b1f24,roughness:0.8,metalness:0.2}),mMetal=std({color:0x7d8690,roughness:0.4,metalness:0.7}),mBlack=std({color:0x0d0f12,roughness:0.9});
  const add=(m,x,y,z,parent)=>{m.position.set(x,y,z);(parent||cockpit).add(m);return m;};
  const label=(text,w,h,x,y,z,rx,parent,size)=>{const c=document.createElement('canvas');c.width=256;c.height=Math.round(256*h/w);const g=c.getContext('2d');g.fillStyle='#e3eaf2';g.font='700 '+(size||Math.round(c.height*0.62))+'px Rajdhani, Arial Narrow, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(text,128,c.height/2);
@@ -2338,6 +2358,13 @@ const ckHits=[];const ckLights={};
    click(uv,e){const r=this.region(uv);if(!r)return;if(r.t==='win')apHold(r.k,r.dir,e.shiftKey);else{ensureGameAudio();apMode(r.m);}audio.click&&audio.click();},
    wheel(uv,dy,e){const r=this.region(uv);if(r&&r.t==='win'){apSel(r.k,dy<0?1:-1,e.shiftKey);return true;}return false;},
    tip(uv){const r=this.region(uv);if(!r)return'';return r.t==='win'?r.l+': click left to decrease, right to increase, or scroll (Shift for big steps)':r.l+': '+({AP:'autopilot on/off',ATHR:'auto-thrust holds the SPD window',HDG:'fly the HDG window',ALT:'hold altitude',VS:'climb or descend at the V/S window',APP:'arm ILS approach and autoland'}[r.m]);}});
+ // centre autopilot touchscreen (touch a mode key, or the left / right half of a selector row; scroll over a row to dial)
+ ckHits.push({mesh:ck.ctp,
+   region(uv){const x=uv.x*256,y=(1-uv.y)*272;for(let i=0;i<6;i++){const bx=10+(i%2)*122,by=30+(i/2|0)*40;if(x>=bx&&x<bx+114&&y>=by&&y<by+34)return{t:'btn',m:CTPB[i][0],l:CTPB[i][1]};}
+     for(let i=0;i<4;i++){const sy=158+i*28;if(y>=sy&&y<sy+24&&x>=52&&x<204)return{t:'win',k:CTPS[i][0],l:CTPS[i][1],dir:x<128?-1:1};}return null;},
+   click(uv,e){const r=this.region(uv);if(!r)return;if(r.t==='win')apHold(r.k,r.dir,e.shiftKey);else{ensureGameAudio();apMode(r.m);}audio.click&&audio.click();},
+   wheel(uv,dy,e){const r=this.region(uv);if(r&&r.t==='win'){apSel(r.k,dy<0?1:-1,e.shiftKey);return true;}return false;},
+   tip(uv){const r=this.region(uv);if(!r)return 'Autopilot touchscreen';return r.t==='win'?r.l+': touch the left half to decrease, the right half to increase, hold to dial faster':r.l+': touch to switch';}});
  // gear lever with wheel knob + three lights (left of the main panel)
  const gearG=new THREE.Group();gearG.position.set(-0.505,-0.455,-0.73);gearG.rotation.x=-0.28;cockpit.add(gearG);
  add(new THREE.Mesh(new THREE.BoxGeometry(0.062,0.24,0.02),mPlate),0,0,-0.01,gearG);
@@ -2394,7 +2421,20 @@ function drawMCP(){const d=ckTex.mcp,g=d.g;const key=JSON.stringify([ap.sel,ap.o
   [['AP','AP'],['ATHR','A/THR'],['HDG','HDG'],['ALT','ALT'],['VS','V/S'],['APP','APP']].forEach(([m,l],i)=>{const x=620+i*68;const gr=g.createLinearGradient(0,30,0,104);gr.addColorStop(0,'#2a3440');gr.addColorStop(1,'#161d26');g.fillStyle=gr;g.fillRect(x,30,60,74);g.strokeStyle='#3a4859';g.strokeRect(x,30,60,74);
     g.fillStyle=lit[m]?'#55db8e':arm[m]?'#e3eaf2':'#26313d';g.fillRect(x+16,38,28,7);g.fillStyle='#e3eaf2';g.font='700 '+(l.length>3?19:24)+'px Rajdhani, sans-serif';g.textAlign='center';g.fillText(l,x+30,76);});
   d.t.needsUpdate=true;}
-function updateCockpitControls(){drawMCP();
+// centre autopilot touchscreen: mode keys light green when active (outlined white when armed); the selector rows step like the
+// glareshield windows. Redrawn only when the autopilot state changes
+function drawCTP(){const d=ckTex.ctp;if(!d)return;const g=d.g;const key=JSON.stringify([ap.sel,ap.on,ap.athr,ap.lat,ap.vert,ap.app,ap.loc,ap.gs]);if(key===d.key)return;d.key=key;g.setTransform(DS,0,0,DS,0,0);
+  g.fillStyle='#061014';g.fillRect(0,0,256,272);g.strokeStyle='#1d5a3e';g.lineWidth=2;g.strokeRect(3,3,250,266);
+  g.textAlign='center';g.textBaseline='middle';g.fillStyle='#7df5a0';g.font='700 18px Rajdhani, sans-serif';g.fillText('AUTOPILOT',128,16);
+  const lit={AP:ap.on,ATHR:ap.athr,HDG:ap.on&&ap.lat==='HDG',ALT:ap.on&&ap.vert==='ALT',VS:ap.on&&ap.vert==='VS',APP:ap.app&&(ap.loc||ap.gs)},arm={APP:ap.app&&!ap.loc};
+  CTPB.forEach(([m,l],i)=>{const x=10+(i%2)*122,y=30+(i/2|0)*40,on=lit[m];g.fillStyle=on?'#103a24':'#0c1a20';g.fillRect(x,y,114,34);g.strokeStyle=on?'#55db8e':arm[m]?'#e3eaf2':'#2c4a52';g.lineWidth=2;g.strokeRect(x,y,114,34);
+    g.fillStyle=on?'#9dffbf':'#a9c0c8';g.font='700 17px Rajdhani, sans-serif';g.fillText(l,x+57,y+18);});
+  const val={ias:String(ap.sel.ias),hdg:String(ap.sel.hdg).padStart(3,'0'),alt:String(ap.sel.alt),vs:(ap.sel.vs>0?'+':'')+ap.sel.vs};
+  CTPS.forEach(([k,l],i)=>{const y=158+i*28;g.fillStyle='#8b9aab';g.font='700 14px Rajdhani, sans-serif';g.textAlign='left';g.fillText(l,12,y+12);
+    g.fillStyle='#0c1a20';g.fillRect(52,y,152,24);g.strokeStyle='#2c4a52';g.lineWidth=1.5;g.strokeRect(52,y,152,24);g.textAlign='center';
+    g.fillStyle='#ffb432';g.font='600 17px IBM Plex Mono, monospace';g.fillText(val[k],128,y+13);g.fillStyle='#cfd8e2';g.font='700 18px IBM Plex Mono, monospace';g.fillText('−',66,y+12);g.fillText('+',190,y+12);});
+  d.t.needsUpdate=true;}
+function updateCockpitControls(){drawMCP();drawCTP();
   const L=ck.lamps,fl=((performance.now()/350)|0)%2===0,vr=vrefCalc();
   // master warning / caution: a new fault makes the lamp flash until it is pressed (acknowledged); a further fault flashes it again
   const faults={warn:{'STALL':a_stallW(),'PULL UP':!ac.onGround&&ac.phase==='fly'&&ac.agl<400&&ac.vs<-2500&&!ac.gear,'ENG FIRE':sim.egt>1000},

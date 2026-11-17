@@ -1072,6 +1072,25 @@ const view=$('view'),canvas=$('gl');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance',logarithmicDepthBuffer:true});
 renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;renderer.localClippingEnabled=true;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const scene=new THREE.Scene();scene.fog=new THREE.Fog(0xaebfd0,9000,42000);
+// atmosphere: the haze is thinner higher up (density falls with the mean height of the line of sight, 7 km scale height, never
+// below 45 % so the map's far edge stays hidden) and glows warm toward the sun where sunlight scatters forward through it.
+// Replaces three.js's fog chunks, so every built-in material gets it; colours still follow the time of day through fogColor.
+{const az_=(0.593-0.5)*2*Math.PI,el_=42*Math.PI/180,SD='vec3('+[Math.cos(az_)*Math.cos(el_),Math.sin(el_),Math.sin(az_)*Math.cos(el_)].map(v=>v.toFixed(5)).join(',')+')';  // the sky photo's sun (see SUN.set below)
+ THREE.ShaderChunk.fog_pars_vertex='#ifdef USE_FOG\n varying float vFogDepth;\n varying vec3 vFogView;\n#endif';
+ THREE.ShaderChunk.fog_vertex='#ifdef USE_FOG\n vFogDepth = - mvPosition.z;\n vFogView = mvPosition.xyz;\n#endif';
+ THREE.ShaderChunk.fog_pars_fragment='#ifdef USE_FOG\n uniform vec3 fogColor;\n varying float vFogDepth;\n varying vec3 vFogView;\n #ifdef FOG_EXP2\n  uniform float fogDensity;\n #else\n  uniform float fogNear;\n  uniform float fogFar;\n #endif\n#endif';
+ THREE.ShaderChunk.fog_fragment=`#ifdef USE_FOG
+ #ifdef FOG_EXP2
+  float fogFactor = 1.0 - exp( - fogDensity * fogDensity * vFogDepth * vFogDepth );
+ #else
+  float fogFactor = smoothstep( fogNear, fogFar, vFogDepth );
+ #endif
+ vec3 fogW = transpose( mat3( viewMatrix ) ) * vFogView;
+ fogFactor *= max( 0.45, exp( - max( 0.0, cameraPosition.y + 0.5 * fogW.y ) / 7000.0 ) );
+ float fogSun = max( dot( normalize( vFogView ), normalize( ( viewMatrix * vec4( ${SD}, 0.0 ) ).xyz ) ), 0.0 );
+ vec3 fogC = mix( fogColor, fogColor * vec3( 1.5, 1.28, 0.95 ), clamp( pow( fogSun, 5.0 ) * 0.75 + pow( fogSun, 40.0 ) * 0.5, 0.0, 1.0 ) );
+ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogC, fogFactor );
+#endif`;}
 const camera=new THREE.PerspectiveCamera(55,1,1,450000);
 /* photo assets: sky photo, Sentinel-2 satellite ground and surface photos load from assets/; everything procedural below stays as the fallback */
 const ASSET='assets/';const PHOTO={sky:false,ground:0};const procScenery=[];
@@ -1119,6 +1138,23 @@ const skyMesh=new THREE.Mesh(new THREE.SphereGeometry(40000,32,16),new THREE.Sha
   vertexShader:'varying vec3 vP;void main(){vP=position;vec4 p=projectionMatrix*modelViewMatrix*vec4(position,1.0);gl_Position=p.xyww;}',
   fragmentShader:'uniform vec3 top;uniform vec3 hor;uniform vec3 sun;varying vec3 vP;void main(){vec3 d=normalize(vP);float h=d.y;float t=pow(clamp(h,0.0,1.0),0.5);vec3 c=mix(hor,top,t);if(h<0.0)c=mix(hor,vec3(0.55,0.6,0.62),clamp(-h*4.0,0.0,1.0));float s=max(dot(d,sun),0.0);c+=vec3(1.0,0.92,0.75)*(pow(s,800.0)*4.0+pow(s,24.0)*0.25);gl_FragColor=vec4(c,1.0);}'}));
 skyMesh.frustumCulled=false;skyMesh.renderOrder=-1;scene.add(skyMesh);
+// sun flare: a soft bloom on the sun and faint ghosts mirrored across the view when looking toward it, drawn over the finished
+// image; it fades toward the screen edge, inside cloud and at dusk, and is off at night
+const FLARE={scene:new THREE.Scene(),cam:new THREE.OrthographicCamera(-1,1,1,-1,-1,1),els:[],vis:0};
+{const mk=draw=>{const c=document.createElement('canvas');c.width=c.height=128;draw(c.getContext('2d'));return new THREE.CanvasTexture(c);};
+ const rad=stops=>mk(g=>{const r=g.createRadialGradient(64,64,0,64,64,64);stops.forEach(([o,c])=>r.addColorStop(o,c));g.fillStyle=r;g.fillRect(0,0,128,128);});
+ const glow=rad([[0,'rgba(255,250,235,1)'],[0.12,'rgba(255,240,210,0.55)'],[0.4,'rgba(255,230,200,0.12)'],[1,'rgba(255,230,200,0)']]);
+ const ring=rad([[0,'rgba(255,255,255,0)'],[0.62,'rgba(255,255,255,0)'],[0.8,'rgba(255,255,255,0.45)'],[1,'rgba(255,255,255,0)']]);
+ const disc=rad([[0,'rgba(255,255,255,0.45)'],[0.75,'rgba(255,255,255,0.3)'],[1,'rgba(255,255,255,0)']]);
+ // texture, place on the line from the sun through the screen centre (0 sun, 1 centre, 2 mirrored), size (screen heights), colour, strength
+ [[glow,0,0.55,0xfff2dc,0.85],[ring,0,0.3,0xd8ecff,0.22],[disc,0.5,0.07,0xbfe0ff,0.16],[disc,0.85,0.035,0xffd9a8,0.22],[ring,1.25,0.17,0xc8f0d8,0.1],[disc,1.55,0.1,0xd0c8ff,0.12],[disc,1.85,0.05,0xffe0c0,0.18]].forEach(([t,p,sz,col,k])=>{
+   const m=new THREE.Sprite(new THREE.SpriteMaterial({map:t,color:col,transparent:true,depthTest:false,depthWrite:false,blending:THREE.AdditiveBlending,opacity:0,toneMapped:false,fog:false}));m.userData={p,sz,k};FLARE.scene.add(m);FLARE.els.push(m);});}
+function renderFlare(dt){const asp=camera.aspect,f=_cr.set(0,0,-1).applyQuaternion(camera.quaternion);let want=0;const s=_cv.copy(SUN).multiplyScalar(20000).add(camera.position).project(camera);
+  if(f.dot(SUN)>0.05){const r=Math.hypot(s.x,s.y);want=clamp(1-(r-0.15)/1.25,0,1)*pow(1-GLU.uNight.value,1.6)*(1-(CLD.white||0))*(camMode==='cockpit'?0.8:1);}
+  FLARE.vis+=(want-FLARE.vis)*(1-exp(-dt/0.12));if(FLARE.vis<0.004)return;
+  FLARE.cam.left=-asp;FLARE.cam.right=asp;FLARE.cam.updateProjectionMatrix();
+  for(const m of FLARE.els){const u=m.userData;m.position.set(s.x*asp*(1-u.p),s.y*(1-u.p),0);m.scale.setScalar(u.sz*2);m.material.opacity=u.k*FLARE.vis;}
+  const ac_=renderer.autoClear;renderer.autoClear=false;renderer.render(FLARE.scene,FLARE.cam);renderer.autoClear=ac_;}
 /* time of day: day, dusk and night tint the sky photo, haze, clouds and reflections, dim the sun and sky light, show stars,
    light the city windows and backlight the cockpit legends; runway and aircraft lights grow brighter with darkness */
 let tod=0;const TODK=[0,0.55,1],TODU={tint:{value:new THREE.Color(1,1,1)},night:{value:0}},ENVS={},CKPLATES=[];let CITYM=null,CITYM2=null;
@@ -2927,7 +2963,7 @@ function frame(now){
   if(camMode==='cockpit'&&ndMode==='cam'){ck.eoT=(ck.eoT||0)+1;if(ck.eoT%(MOB?4:3)===1){renderEO();drawEOOverlay(now);}}PERF.m('eo');
   if(SAT.far){SAT.far.position.x=camera.position.x;SAT.far.position.z=camera.position.z;}if((now/500|0)!==FINE.tick){FINE.tick=now/500|0;fineWatch();}if((now/1000|0)!==patchWatch.t){patchWatch.t=now/1000|0;patchWatch();}
   {const R=MOB?11000:22000;for(const c of cityChunks)c.m.visible=camera.position.distanceTo(c.c)<R+c.r;}PERF.m('stream');if(osmCity)osmCity.tick(now);PERF.m('city');
-  skyMesh.position.copy(camera.position);updateClouds(now,dtFrame);clouds.forEach(c=>{c.position.x+=SCEN[scen].wind[0]*0.3*dt;});PERF.m('clouds');renderer.render(scene,camera);PERF.m('render');
+  skyMesh.position.copy(camera.position);updateClouds(now,dtFrame);clouds.forEach(c=>{c.position.x+=SCEN[scen].wind[0]*0.3*dt;});PERF.m('clouds');renderer.render(scene,camera);renderFlare(dt);PERF.m('render');
   {const m=!$('title').hidden;if(m!==frame.menu){frame.menu=m;$('app').classList.toggle('menu',m);}}
   updateHUD(dt);updateRunwaySymbol();PERF.m('hud');if((now/100|0)%2===0)drawMap();PERF.m('map');updatePanel(dt);renderLever();PERF.m('panel');PERF.end(pf0,now);
 }
@@ -2994,6 +3030,7 @@ async function warmUp(){if(warmUp.done||/nowarm/.test(location.search))return;wa
   // the cockpit view clips the fuselage (a different shader variant) and draws its screens: do both now
   try{setTubClip(true);updateTubClip();drawCockpitDisplays(ac);drawHUD(ac);drawMCP();drawEOOverlay(performance.now());}catch(e){}
   // shaders differ between the screen and the nose-camera image, so compile for both targets
+  try{renderer.compile(FLARE.scene,FLARE.cam);}catch(e){}
   for(const tg of[null,eoRT]){try{renderer.setRenderTarget(tg);renderer.compile(scene,tg?eoCam:camera);}catch(e){}await new Promise(r=>setTimeout(r,0));}renderer.setRenderTarget(null);
   const tex=new Set();scene.traverse(o=>{const ms=o.material?(Array.isArray(o.material)?o.material:[o.material]):[];ms.forEach(m=>{for(const k in m){const v=m[k];if(v&&v.isTexture)tex.add(v);}if(m.uniforms)for(const k in m.uniforms){const v=m.uniforms[k].value;if(v&&v.isTexture)tex.add(v);}});});
   const list=[...tex];for(let i=0;i<list.length;i++){try{renderer.initTexture(list[i]);}catch(e){}if(i%6===5)await new Promise(r=>setTimeout(r,0));}
@@ -3014,7 +3051,7 @@ setInterval(()=>{if(!warmUp.done||camMode==='cockpit'||document.hidden)return;(w
   const cv=cockpit.visible;cockpit.visible=true;renderer.compile(cockpit,camera,scene);cockpit.visible=cv;}catch(e){}});},3000);
 // run once the scenery has loaded (or after 6 s at the latest), while the start menu is up
 {let n=0;const t=setInterval(()=>{n++;if((PHOTO.ground>=SAT.N*SAT.N&&PHOTO.base>=8)||n>12){clearInterval(t);(window.requestIdleCallback||setTimeout)(()=>warmUp());}},500);}
-window.__hawk={PHOTO,audio,gameAudio,PERF,drone,gearUnits,LOAD,get OSMB(){return osmCity&&osmCity.OSMB;},ORB,PR,LIGHTS,setTod:(t)=>{tod=t;applyTOD();},GLU,renderer,CLD,camera,FINE,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
+window.__hawk={PHOTO,FLARE,audio,gameAudio,PERF,drone,gearUnits,LOAD,get OSMB(){return osmCity&&osmCity.OSMB;},ORB,PR,LIGHTS,setTod:(t)=>{tod=t;applyTOD();},GLU,renderer,CLD,camera,FINE,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
 requestAnimationFrame(frame);
 })();
 </script>

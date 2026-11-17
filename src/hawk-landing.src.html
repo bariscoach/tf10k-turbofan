@@ -887,6 +887,9 @@ function ensureGameAudio(){
   const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=500;bp.Q.value=0.4;gameAudio.windG=g(0);noise.connect(bp).connect(gameAudio.windG).connect(audio.master);gameAudio.windBP=bp;
   const horn=ctx.createOscillator();horn.type='square';horn.frequency.value=420;const hg=g(0);gameAudio.hornG=hg;const hf=ctx.createBiquadFilter();hf.type='lowpass';hf.frequency.value=1800;horn.connect(hf).connect(hg).connect(audio.master);horn.start();
   gameAudio.hornOn=false;
+  // cockpit-only sounds: air-conditioning hiss while the engine runs, and the rush of air over the canopy rising with airspeed
+  {const out=audio.ui||audio.master,ecs=ctx.createBufferSource();ecs.buffer=audio.white;ecs.loop=true;ecs.start();const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=2200;gameAudio.ecsG=g(0);ecs.connect(hp).connect(gameAudio.ecsG).connect(out);
+   const cw=ctx.createBufferSource();cw.buffer=audio.white;cw.loop=true;cw.start(0,0.37);const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=900;bp.Q.value=0.5;gameAudio.cabWindG=g(0);gameAudio.cabWindBP=bp;cw.connect(bp).connect(gameAudio.cabWindG).connect(out);}
   audio.thud=(v)=>{const t=ctx.currentTime;const s=ctx.createBufferSource();s.buffer=audio.brown;const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=300;const e=g(0.0001);e.gain.setValueAtTime(1.2*v,t);e.gain.exponentialRampToValueAtTime(0.0005,t+0.35);s.connect(lp).connect(e).connect(audio.master);s.start(t);s.stop(t+0.4);
     const sc=ctx.createBufferSource();sc.buffer=audio.white;const bp2=ctx.createBiquadFilter();bp2.type='bandpass';bp2.frequency.value=2200;bp2.Q.value=2;const e2=g(0.0001);e2.gain.setValueAtTime(0.35*v,t);e2.gain.exponentialRampToValueAtTime(0.0005,t+0.5);sc.connect(bp2).connect(e2).connect(audio.master);sc.start(t);sc.stop(t+0.6);};
   audio.crashSound=()=>{const t=ctx.currentTime;const s=ctx.createBufferSource();s.buffer=audio.brown;const e=g(0.0001);e.gain.setValueAtTime(2.5,t);e.gain.exponentialRampToValueAtTime(0.0005,t+1.6);s.connect(e).connect(audio.master);s.start(t);s.stop(t+1.7);
@@ -2736,7 +2739,13 @@ function frame(now){
   if(audio.ctx&&ac.mot){const cv=_cv.copy(camera.position).sub(audio.camP||camera.position).divideScalar(max(1e-3,dt));if(cv.lengthSq()>16e4)cv.set(0,0,0);audio.camP=(audio.camP||new THREE.Vector3()).copy(camera.position);
     const rel=_cr.copy(camera.position).sub(ac.pos),d=max(1,rel.length());rel.divideScalar(d);const out=camMode==='tower'||camMode==='flyby';
     const vr=out?ac.mot.v.dot(rel)-cv.dot(rel):0,dop=clamp(343/max(120,343-vr),0.6,1.8);audio.dop=(audio.dop||1)+(dop-(audio.dop||1))*(1-exp(-dt/0.08));
-    audio.master.gain.setTargetAtTime(out?clamp(80/d,0.05,1):1,audio.ctx.currentTime,0.1);}
+    audio.master.gain.setTargetAtTime(out?clamp(80/d,0.05,1):1,audio.ctx.currentTime,0.1);
+    // inside the cockpit the canopy muffles the engine to a low rumble and the cabin's own sounds take over; outside, the fan's
+    // whine carries forward of the aircraft and the jet's roar behind it
+    const inC=camMode==='cockpit',t=audio.ctx.currentTime;
+    if(audio.cab){audio.cab.frequency.setTargetAtTime(inC?900:20000,t,0.06);audio.cabSh.gain.setTargetAtTime(inC?6:0,t,0.06);}
+    if(gameAudio.ecsG){const v=clamp(ac.ias/320,0,1.3);gameAudio.ecsG.gain.setTargetAtTime(inC&&sim.n2>40?0.012:0,t,0.3);gameAudio.cabWindG.gain.setTargetAtTime(inC?0.008+0.16*v*v:0,t,0.15);gameAudio.cabWindBP.frequency.setTargetAtTime(600+900*v,t,0.15);}
+    const fd=ac.Q?rel.dot(bodyAxes(ac).f):0;audio.dirF=inC?1:0.55+0.45*(0.5+0.5*fd);audio.dirR=inC?1:0.6+0.4*(0.5-0.5*fd);}
   PERF.m('camera');
   if(camMode==='cockpit'&&ndMode==='cam'){ck.eoT=(ck.eoT||0)+1;if(ck.eoT%(MOB?4:3)===1){renderEO();drawEOOverlay(now);}}PERF.m('eo');
   if(SAT.far){SAT.far.position.x=camera.position.x;SAT.far.position.z=camera.position.z;}if((now/500|0)!==FINE.tick){FINE.tick=now/500|0;fineWatch();}if((now/1000|0)!==patchWatch.t){patchWatch.t=now/1000|0;patchWatch();}
@@ -2828,7 +2837,7 @@ setInterval(()=>{if(!warmUp.done||camMode==='cockpit'||document.hidden)return;(w
   const cv=cockpit.visible;cockpit.visible=true;renderer.compile(cockpit,camera,scene);cockpit.visible=cv;}catch(e){}});},3000);
 // run once the scenery has loaded (or after 6 s at the latest), while the start menu is up
 {let n=0;const t=setInterval(()=>{n++;if((PHOTO.ground>=SAT.N*SAT.N&&PHOTO.base>=8)||n>12){clearInterval(t);(window.requestIdleCallback||setTimeout)(()=>warmUp());}},500);}
-window.__hawk={PHOTO,PERF,drone,gearUnits,LOAD,get OSMB(){return osmCity&&osmCity.OSMB;},ORB,PR,LIGHTS,setTod:(t)=>{tod=t;applyTOD();},GLU,renderer,CLD,camera,FINE,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
+window.__hawk={PHOTO,audio,gameAudio,PERF,drone,gearUnits,LOAD,get OSMB(){return osmCity&&osmCity.OSMB;},ORB,PR,LIGHTS,setTod:(t)=>{tod=t;applyTOD();},GLU,renderer,CLD,camera,FINE,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
 requestAnimationFrame(frame);
 })();
 </script>

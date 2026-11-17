@@ -1,2 +1,4 @@
 .vercel
 .DS_Store
+preview.html
+src/out/

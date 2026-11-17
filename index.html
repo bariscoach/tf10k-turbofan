@@ -2255,29 +2255,41 @@ function drawCockpitDisplays(a){
    if(a.stallW){g.fillStyle='#ff5347';g.font='700 28px Rajdhani, sans-serif';g.fillText('STALL',256,140);}d.t.needsUpdate=true;}
   if(!ck.slow){
   // engine and systems display: N1/EGT dials, N2/FF/oil/hydraulic bars, fuel, gear/flap/speed-brake synoptic
-  {const d=ckTex.eng,g=ckBg(d);
-   const arc=(cx,cy,r,v,max_,lbl,txt,red)=>{g.lineWidth=10;g.strokeStyle='#1d252e';g.beginPath();g.arc(cx,cy,r,0.75*PI,2.25*PI);g.stroke();const f=clamp(v/max_,0,1);g.strokeStyle=v>=red?'#ff5347':'#3fd3e6';g.beginPath();g.arc(cx,cy,r,0.75*PI,0.75*PI+1.5*PI*f);g.stroke();
-     g.strokeStyle='#ff5347';g.lineWidth=3;const rr=0.75*PI+1.5*PI*clamp(red/max_,0,1);g.beginPath();g.moveTo(cx+cos(rr)*(r-9),cy+sin(rr)*(r-9));g.lineTo(cx+cos(rr)*(r+9),cy+sin(rr)*(r+9));g.stroke();
-     g.strokeStyle='#e3eaf2';g.lineWidth=3;const an=0.75*PI+1.5*PI*f;g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+cos(an)*(r-14),cy+sin(an)*(r-14));g.stroke();
-     g.fillStyle='#05080b';g.fillRect(cx-6,cy+8,r+2,34);g.strokeStyle='#596470';g.lineWidth=1.5;g.strokeRect(cx-6,cy+8,r+2,34);
-     g.fillStyle='#e3eaf2';g.font='700 26px IBM Plex Mono, monospace';g.textAlign='right';g.textBaseline='middle';g.fillText(txt,cx+r-8,cy+26);g.fillStyle='#8b9aab';g.font='700 18px Rajdhani, sans-serif';g.textAlign='center';g.fillText(lbl,cx,cy-r*0.45);};
-   arc(130,135,80,sim.n1,110,'N1 %',sim.n1.toFixed(1),104);arc(382,135,80,sim.egt,1100,'EGT °C',String(Math.round(sim.egt)),950);
-   const bar=(y,lbl,v,max_,txt,col)=>{g.fillStyle='#8b9aab';g.font='700 17px Rajdhani, sans-serif';g.textAlign='left';g.textBaseline='middle';g.fillText(lbl,24,y);g.fillStyle='#1d252e';g.fillRect(96,y-8,250,16);g.fillStyle=col||'#3fd3e6';g.fillRect(96,y-8,250*clamp(v/max_,0,1),16);
-     g.fillStyle='#e3eaf2';g.font='600 18px IBM Plex Mono, monospace';g.textAlign='right';g.fillText(txt,488,y);};
-   const run=sim.lit;bar(262,'N2 %',sim.n2,110,sim.n2.toFixed(1));bar(290,'FF PPH',sim.ff,4000,fmt(Math.round(sim.ff/10)*10));bar(318,'OIL PSI',run?42+sim.n2*0.3:sim.n2*0.6,100,String(Math.round(run?42+sim.n2*0.3:sim.n2*0.6)));
-   bar(346,'HYD PSI',min(3000,sim.n2*40),3200,fmt(Math.round(min(3000,sim.n2*40)/10)*10),'#55db8e');
-   g.strokeStyle='#2c343e';g.lineWidth=1.5;g.beginPath();g.moveTo(16,368);g.lineTo(496,368);g.stroke();
-   // fuel
-   g.fillStyle='#8b9aab';g.font='700 17px Rajdhani, sans-serif';g.textAlign='left';g.fillText('FUEL',24,392);g.fillStyle='#1d252e';g.fillRect(24,404,26,70);const ff=clamp(ac.fuel/3000,0,1);g.fillStyle=ac.fuel<300?'#ff5347':'#ffb432';g.fillRect(24,404+70*(1-ff),26,70*ff);
-   g.fillStyle='#e3eaf2';g.font='600 18px IBM Plex Mono, monospace';g.fillText(fmt(ac.fuel),60,425);g.fillStyle='#8b9aab';g.font='600 13px IBM Plex Mono, monospace';g.fillText('LB',60,446);g.fillText('THR '+Math.round(sim.throttle*100)+'%',60,466);
-   // gear synoptic
-   const gc=a.gearT>0.97?'#37e36e':a.gearT<0.03?'#5f6d7d':'#ff3b30',gt=a.gearT>0.97?'DN':a.gearT<0.03?'UP':'TR';
-   [[300,392],[262,446],[338,446]].forEach(([x,y])=>{g.fillStyle='#05080b';g.fillRect(x-20,y-14,40,28);g.strokeStyle=gc;g.lineWidth=2;g.strokeRect(x-20,y-14,40,28);g.fillStyle=gc;g.font='700 17px IBM Plex Mono, monospace';g.textAlign='center';g.fillText(gt,x,y+1);});
-   g.fillStyle='#8b9aab';g.font='700 15px Rajdhani, sans-serif';g.fillText('GEAR',300,478);
-   // flaps and speed brake
-   g.textAlign='left';g.fillText('FLAPS',384,392);g.fillStyle='#e3eaf2';g.font='700 22px IBM Plex Mono, monospace';g.fillText(['0','15','30'][a.flaps],448,392);
-   g.strokeStyle='#e3eaf2';g.lineWidth=4;g.beginPath();g.moveTo(386,420);g.lineTo(436,420);g.lineTo(436+cos(a.flaps*0.5)*36,420+sin(a.flaps*0.5)*36);g.stroke();
-   g.fillStyle=a.splr?'#ffb432':'#5f6d7d';g.font='700 15px Rajdhani, sans-serif';g.fillText(a.splr?'SPD BRK OUT':'SPD BRK IN',384,470);
+  {const d=ckTex.eng,g=ckBg(d,'#04090d');
+   // boxed panels with header bars, after 5th-generation portal displays
+   const panel=(x,y,w,h,t)=>{g.fillStyle='#07131b';g.fillRect(x,y,w,h);g.strokeStyle='#1f3c4a';g.lineWidth=1.5;g.strokeRect(x+0.5,y+0.5,w-1,h-1);g.fillStyle='#0f2734';g.fillRect(x+1,y+1,w-2,20);
+     g.fillStyle='#cfe9f0';g.font='700 15px Rajdhani, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(t,x+w/2,y+11);};
+   const gauge=(cx,cy,r,v,max_,red,lbl,txt)=>{g.lineWidth=8;g.strokeStyle='#18303c';g.beginPath();g.arc(cx,cy,r,0.75*PI,2.25*PI);g.stroke();const f=clamp(v/max_,0,1);g.strokeStyle=v>=red?'#ff5347':'#55db8e';g.beginPath();g.arc(cx,cy,r,0.75*PI,0.75*PI+1.5*PI*f);g.stroke();
+     const rr=0.75*PI+1.5*PI*clamp(red/max_,0,1);g.strokeStyle='#ff5347';g.lineWidth=3;g.beginPath();g.moveTo(cx+cos(rr)*(r-7),cy+sin(rr)*(r-7));g.lineTo(cx+cos(rr)*(r+7),cy+sin(rr)*(r+7));g.stroke();
+     const an=0.75*PI+1.5*PI*f;g.strokeStyle='#e3eaf2';g.lineWidth=2.5;g.beginPath();g.moveTo(cx+cos(an)*(r-16),cy+sin(an)*(r-16));g.lineTo(cx+cos(an)*(r+3),cy+sin(an)*(r+3));g.stroke();
+     g.fillStyle='#e3eaf2';g.font='700 21px IBM Plex Mono, monospace';g.textAlign='center';g.fillText(txt,cx,cy+4);g.fillStyle='#8b9aab';g.font='700 14px Rajdhani, sans-serif';g.fillText(lbl,cx,cy+r*0.62+6);};
+   panel(6,30,246,262,'HEALTH');gauge(68,98,44,sim.n1,110,104,'N1 %',sim.n1.toFixed(1));gauge(190,98,44,sim.egt,1100,950,'EGT °C',String(Math.round(sim.egt)));
+   // aircraft silhouette: gear legs coloured by state, flaps drawn out when set, the speed brake open on the spine
+   {const gc=a.gearT>0.97?'#37e36e':a.gearT<0.03?'#3b4752':'#ff3b30';g.save();g.translate(129,206);g.strokeStyle='#9fb6c2';g.lineWidth=2;g.fillStyle='#0f2430';
+     g.beginPath();[[0,-62],[9,-30],[10,-6],[62,24],[62,34],[10,26],[8,44],[26,58],[26,64],[0,58],[-26,64],[-26,58],[-8,44],[-10,26],[-62,34],[-62,24],[-10,-6],[-9,-30]].forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.closePath();g.fill();g.stroke();
+     [[0,-34],[-14,14],[14,14]].forEach(([x,y])=>{g.fillStyle=gc;g.fillRect(x-4,y-6,8,12);});
+     if(a.flaps){g.fillStyle='#ffb432';g.fillRect(14,29,32,3+a.flaps*2);g.fillRect(-46,29,32,3+a.flaps*2);}
+     if(a.splr){g.fillStyle='#ffb432';g.fillRect(-6,2,12,12);}g.restore();
+     g.font='700 14px Rajdhani, sans-serif';g.textBaseline='middle';g.textAlign='left';g.fillStyle=gc==='#3b4752'?'#8b9aab':gc;g.fillText('GEAR '+(a.gearT>0.97?'DOWN':a.gearT<0.03?'UP':'TRANSIT'),14,280);
+     g.fillStyle='#e3eaf2';g.textAlign='right';g.fillText('FLAPS '+['0','15','30'][a.flaps]+(a.splr?' · SPD BRK':''),244,280);}
+   panel(260,30,246,180,'SYSTEMS');
+   const bar=(y,lbl,v,max_,txt,col)=>{g.fillStyle='#8b9aab';g.font='700 14px Rajdhani, sans-serif';g.textAlign='left';g.textBaseline='middle';g.fillText(lbl,268,y);g.fillStyle='#14303c';g.fillRect(332,y-6,104,12);g.fillStyle=col||'#55db8e';g.fillRect(332,y-6,104*clamp(v/max_,0,1),12);
+     g.fillStyle='#e3eaf2';g.font='600 14px IBM Plex Mono, monospace';g.textAlign='right';g.fillText(txt,500,y);};
+   const run=sim.lit,oil=run?42+sim.n2*0.3:sim.n2*0.6,hyd=min(3000,sim.n2*40);
+   bar(64,'N2 %',sim.n2,110,sim.n2.toFixed(1));bar(88,'FF PPH',sim.ff,4000,fmt(Math.round(sim.ff/10)*10),'#3fd3e6');bar(112,'OIL PSI',oil,100,String(Math.round(oil)));bar(136,'HYD PSI',hyd,3200,fmt(Math.round(hyd/10)*10));
+   bar(160,'FUEL LB',ac.fuel,6000,fmt(ac.fuel),ac.fuel<300?'#ff5347':'#ffb432');bar(184,'THR %',sim.throttle*100,100,String(Math.round(sim.throttle*100)),'#cfd8e2');
+   const row=(x0,x1,t,v,y,col)=>{g.fillStyle='#8b9aab';g.font='700 14px Rajdhani, sans-serif';g.textAlign='left';g.textBaseline='middle';g.fillText(t,x0,y);g.fillStyle=col||'#e3eaf2';g.font='600 14px IBM Plex Mono, monospace';g.textAlign='right';g.fillText(v,x1,y);};
+   panel(260,216,246,140,'AUTOPILOT');{const on=ap.on,G='#7df5a0',D='#5f6d7d';
+     row(270,498,'AP',on?'ENGAGED':'OFF',250,on?G:D);row(270,498,'A/THR',ap.athr?'SPD '+ap.sel.ias:'OFF',274,ap.athr?G:D);
+     row(270,498,'LATERAL',on?(ap.lat==='LOC'?'LOC':'HDG '+String(ap.sel.hdg).padStart(3,'0')):'—',298,on?G:D);
+     row(270,498,'VERTICAL',on?(ap.vert==='GS'?'G/S':ap.vert==='FLARE'?'FLARE':ap.vert==='ALT'?'ALT '+ap.sel.alt:'V/S '+ap.sel.vs):'—',322,on?G:D);
+     row(270,498,'APPROACH',ap.app?(ap.loc?'LOC'+(ap.gs?' + G/S':''):'ARMED'):'—',346,ap.app?G:D);}
+   panel(6,298,246,190,'COMMUNICATIONS');{const G='#7df5a0',D='#5f6d7d';
+     row(16,244,'COM 1 · '+target.ap.id+' TWR','118.100',334,G);row(16,244,'COM 2 · GUARD','243.000',360);row(16,244,'IFF','MODE 3 · 1200',386);
+     row(16,244,'DATALINK','ON',412,G);row(16,244,'SATCOM','STBY',438,D);row(16,244,'TRANSPONDER','ALT',464);}
+   panel(260,362,246,126,'NAVIGATION');{const dx=target.thr.x-ac.pos.x,dz=target.thr.z-ac.pos.z,nm=Math.hypot(dx,dz)/1852,brg=((atan2(dx,-dz)/DEG)+360)%360,eta=nm*1852/max(30,ac.V);
+     row(270,498,'DEST',target.id,398,'#3fd3e6');row(270,498,'DIST',nm.toFixed(1)+' NM',422);row(270,498,'BRG',String(Math.round(brg)%360).padStart(3,'0')+'°',446);
+     row(270,498,'ETA',ac.V>20?Math.floor(eta/60)+':'+String(Math.round(eta%60)).padStart(2,'0'):'—',470);}
    osb(g,['ENG','FUEL','HYD','ELEC','FCS'],['','','MENU','',''],'ENG');d.t.needsUpdate=true;}
   // standby attitude display
   {const d=ckTex.stby,g=ckBg(d,'#05080b');g.save();g.translate(28,20);adiCore(g,200,a);g.restore();g.fillStyle='#e3eaf2';g.font='600 20px IBM Plex Mono, monospace';g.textBaseline='middle';
@@ -2290,7 +2302,8 @@ function drawCockpitDisplays(a){
       g.font='700 12px Rajdhani, sans-serif';g.fillText(lbl,cx,cy+24);const an=A0+SW*clamp(v/max_,0,1);g.strokeStyle='#ffffff';g.lineWidth=3;g.beginPath();g.moveTo(cx-cos(an)*8,cy-sin(an)*8);g.lineTo(cx+cos(an)*(r-8),cy+sin(an)*(r-8));g.stroke();g.fillStyle='#bfbfbf';g.beginPath();g.arc(cx,cy,5,0,2*PI);g.fill();};
    dial(64,sim.n2,110,'RPM %',['0','','50','','100'],0.93);dial(192,sim.egt,1100,'FTIT °C',['0','','5','','10'],0.86);dial(320,ac.fuel,6000,'FUEL LB',['0','2','4','6'],null);d.t.needsUpdate=true;}
   // nav display
-  if(ndMode!=='cam'){const d=ckTex.nd,g=ckBg(d,'#04070a');mapCore(g,512,MAPR[mapRi],14);d.t.needsUpdate=true;}
+  if(ndMode!=='cam'){if(!TOPO.state&&TERR.c&&BASE.n>=8)buildTopo();const d=ckTex.nd,g=ckBg(d,'#04070a');mapCore(g,512,MAPR[mapRi],14,TOPO.c);
+    g.font='700 16px Rajdhani, sans-serif';g.textBaseline='middle';g.fillStyle='rgba(6,14,20,.72)';g.fillRect(6,6,124,24);g.fillRect(430,6,76,24);g.fillStyle='#cfe9f0';g.textAlign='left';g.fillText('TSD · '+MAPR[mapRi]+' NM',12,18);g.textAlign='center';g.fillText(TOPO.c?'TOPO':'SAT',468,18);d.t.needsUpdate=true;}
   }
 
   if(ck.boot!=null&&ck.boot<2.6)[['pfd',0],['eng',0.3],['nd',0.55],['stby',0.15],['aux',0.4]].forEach(([n,dl])=>{if(ckTex[n])bootScreen(ckTex[n],ck.boot-0.5-dl);});}
@@ -2771,9 +2784,24 @@ function drawHdgTape(hd){const g=hdgG,W=720,H=104,cx=W/2,ppd=W/72,y0=56;g.clearR
   g.fillStyle='#7df5a0';g.beginPath();g.moveTo(cx,y0-20);g.lineTo(cx-9,y0-34);g.lineTo(cx+9,y0-34);g.closePath();g.fill();
   g.fillStyle='rgba(8,12,18,0.9)';g.strokeStyle='#7df5a0';g.lineWidth=2.5;g.beginPath();g.rect(cx-44,2,88,32);g.fill();g.stroke();g.fillStyle='#7df5a0';g.font='700 26px IBM Plex Mono, monospace';g.textAlign='center';g.textBaseline='middle';g.fillText(String(Math.round(hd)%360).padStart(3,'0')+'°',cx+2,19);
   g.font='600 17px IBM Plex Mono, monospace';g.textAlign='left';g.fillStyle='#3fd3e6';g.fillText('SEL '+String(ap.sel.hdg).padStart(3,'0'),cx+54,19);}
-function mapCore(g,S,RNG,fs){const sc=(S/2)/(RNG*1852);const k=fs/10;
-  if(BASE.n){const [mx,my]=mapXY(GEO.bx0,GEO.bz0,S,sc);g.save();g.globalAlpha=0.8;g.drawImage(TRTHUMB,mx,my,(GEO.bx1-GEO.bx0)*sc,(GEO.bz1-GEO.bz0)*sc);g.restore();}
-  if(SAT.ready){const [mx,my]=mapXY(-SAT.half,-SAT.half,S,sc);g.save();g.globalAlpha=0.8;g.drawImage(SAT.thumb,mx,my,2*SAT.half*sc,2*SAT.half*sc);g.restore();
+// coloured terrain map for the cockpit's map display (after military topographic displays): elevation tint from green lowland
+// through yellow and brown to pale high ground, hill shading lit from the north-west, water where the satellite picture shows
+// water. Built once from the country elevation grid, a few rows at a time when the browser is idle
+const TOPO={c:null,state:0};
+function buildTopo(){if(TOPO.state)return;TOPO.state=1;const W=1024,H=468,C=TERR.c,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d'),img=g.createImageData(W,H);
+  let sat=null;try{sat=TRTHUMB.getContext('2d').getImageData(0,0,W,H).data;}catch(e){}
+  const stops=[[0,[78,140,96]],[150,[112,160,92]],[500,[176,182,104]],[1000,[204,168,98]],[1600,[176,128,84]],[2400,[140,104,78]],[3400,[226,222,214]]];
+  const tint=h=>{for(let i=1;i<stops.length;i++)if(h<=stops[i][0]){const a=stops[i-1],b=stops[i],t=(h-a[0])/(b[0]-a[0]);return a[1].map((v,j)=>v+(b[1][j]-v)*t);}return stops[stops.length-1][1];};
+  const hAt=(x,y)=>bil(C.h,C.nx,C.ny,x/(W-1)*(C.nx-1),y/(H-1)*(C.ny-1)),dx=(GEO.bx1-GEO.bx0)/W,dz=(GEO.bz1-GEO.bz0)/H;let y=0;
+  const step=()=>{const t0=performance.now();for(;y<H&&performance.now()-t0<6;y++)for(let x=0;x<W;x++){const h=hAt(x,y),i=(y*W+x)*4;let col;
+      const water=h<2||(sat&&sat[i+2]>sat[i+1]*1.05&&sat[i+2]>sat[i]*1.15&&sat[i]+sat[i+1]+sat[i+2]<330);
+      if(water)col=[34,86,142];else{const sx=(hAt(min(W-1,x+1),y)-hAt(max(0,x-1),y))/(2*dx),sz=(hAt(x,min(H-1,y+1))-hAt(x,max(0,y-1)))/(2*dz);const sh=clamp(1+(sx+sz)*4.2,0.55,1.35);col=tint(h).map(v=>v*sh);}
+      img.data[i]=col[0];img.data[i+1]=col[1];img.data[i+2]=col[2];img.data[i+3]=255;}
+    if(y<H)(window.requestIdleCallback||setTimeout)(step,{timeout:200});else{g.putImageData(img,0,0);TOPO.c=c;TOPO.state=2;}};
+  step();}
+function mapCore(g,S,RNG,fs,topo){const sc=(S/2)/(RNG*1852);const k=fs/10;
+  if(BASE.n){const [mx,my]=mapXY(GEO.bx0,GEO.bz0,S,sc);g.save();g.globalAlpha=topo?0.92:0.8;g.drawImage(topo||TRTHUMB,mx,my,(GEO.bx1-GEO.bx0)*sc,(GEO.bz1-GEO.bz0)*sc);g.restore();}
+  if(SAT.ready){if(!topo){const [mx,my]=mapXY(-SAT.half,-SAT.half,S,sc);g.save();g.globalAlpha=0.8;g.drawImage(SAT.thumb,mx,my,2*SAT.half*sc,2*SAT.half*sc);g.restore();}
     g.strokeStyle='#ffb432';g.lineWidth=2*k;for(const b of BRIDGES){const [ax,ay]=mapXY(b.cx-b.dx*b.len/2,b.cz-b.dz*b.len/2,S,sc),[bx,by]=mapXY(b.cx+b.dx*b.len/2,b.cz+b.dz*b.len/2,S,sc);g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke();}}
   g.strokeStyle='rgba(63,211,230,.25)';g.lineWidth=1*k;for(let r=RNG/4;r<=RNG;r+=RNG/4){g.beginPath();g.arc(S/2,S/2,r*1852*sc,0,2*PI);g.stroke();}
   // planned route
@@ -3091,7 +3119,7 @@ setInterval(()=>{if(!warmUp.done||camMode==='cockpit'||document.hidden)return;(w
   const cv=cockpit.visible;cockpit.visible=true;renderer.compile(cockpit,camera,scene);cockpit.visible=cv;}catch(e){}});},3000);
 // run once the scenery has loaded (or after 6 s at the latest), while the start menu is up
 {let n=0;const t=setInterval(()=>{n++;if((PHOTO.ground>=SAT.N*SAT.N&&PHOTO.base>=8)||n>12){clearInterval(t);(window.requestIdleCallback||setTimeout)(()=>warmUp());}},500);}
-window.__hawk={PHOTO,FLARE,audio,gameAudio,PERF,drone,gearUnits,LOAD,get OSMB(){return osmCity&&osmCity.OSMB;},ORB,PR,LIGHTS,setTod:(t)=>{tod=t;applyTOD();},GLU,renderer,CLD,camera,FINE,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
+window.__hawk={PHOTO,TOPO,BASE,FLARE,audio,gameAudio,PERF,drone,gearUnits,LOAD,get OSMB(){return osmCity&&osmCity.OSMB;},ORB,PR,LIGHTS,setTod:(t)=>{tod=t;applyTOD();},GLU,renderer,CLD,camera,FINE,frame:t=>frame(t),get warmed(){return !!warmUp.done;},get origin(){return origin;},pickEnds,setRoute:(d,a)=>{depAp=AIRPORTS.find(x=>x.id===d);arrAp=AIRPORTS.find(x=>x.id===a);$('selDep').value=d;$('selArr').value=a;pickEnds();},setTimeK,get ab(){return [abLvl,abFlame.map(m=>m.visible)];},gnd,TERR,ll,BRIDGES,SAT,setCam:(m)=>{camMode=m;fb.set=false;},ck,ckHits,ac,inp,sim,AC,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget,local,worldAt,setThrottle,toggleGear,cycleFlaps,toggleBrk,toggleSplr,startGame,vref};
 requestAnimationFrame(frame);
 })();
 </script>

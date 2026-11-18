@@ -653,7 +653,7 @@ function gearForces(a){const o={F:[0,0,0],c:[0,0,0],Fz:0,M:0,Lr:0,any:false,main
 function surfaceAt(p){if(findRunway(p))return 'runway';for(const ap of AIRPORTS){const l=local(ap.ends[0],p);const pc=ap.w>=45?60:40,ph=ap.w>=45?210:150;if(l.u>-350&&l.u<ap.len+350&&abs(l.v-pc)<ph)return 'pavement';}return 'grass';}
 let onTouch=()=>{};
 let onEvent=()=>{};let mission='approach';
-function vsCalc(f){f=f==null?ac.flaps:f;return sqrt(2*AC.mass*9.81/(1.225*AC.S*CL(AC.aStall[f],f)))/KT;}
+function vsCalc(f){f=f==null?ac.flaps:f;return sqrt(2*acMass()*9.81/(1.225*AC.S*CL(AC.aStall[f],f)))/KT;}
 function vrCalc(){return Math.round(1.22*vsCalc());}
 function local(end,p){const dx=p.x-end.thr.x,dz=p.z-end.thr.z;return {u:dx*end.d.x+dz*end.d.z,v:dx*end.r.x+dz*end.r.z};}
 function worldAt(end,u,v,y){return new THREE.Vector3(end.thr.x+end.d.x*u+end.r.x*v,(y||0)+end.ap.elev,end.thr.z+end.d.z*u+end.r.z*v);}
@@ -668,7 +668,9 @@ const PM={qref:0.5*1.225*61.7*61.7,a0:6*DEG,ka:6,kd:1.3,kq:3.2,la:1.3,lp:2.4,ld:
   // auto-trim flight-path hold gains
   fk:1.4,fq:0.9,
   // fighter fly-by-wire: g limits, roll-rate command (deg/s at low and high speed), roll-rate loop gain
-  nzMax:9,nzMin:-3,pLo:32,pHi:230,kp:14};
+  nzMax:9,nzMin:-3,pLo:32,pHi:230,kp:14,
+  // angle-of-attack limiter: full aft stick stops this far short of the stall (carefree handling, as in modern fighters)
+  aoaMargin:1.5*DEG};
 const _q1=new THREE.Quaternion(),_e1=new THREE.Euler(0,0,0,'YXZ'),_v1=new THREE.Vector3(),_v2=new THREE.Vector3(),_v3=new THREE.Vector3();
 // attitude is a quaternion (body: -Z nose, +Y canopy, +X right wing) and velocity an air-relative vector, so any attitude is reachable;
 // Euler angles (theta pitch, phi bank, psiB heading) and path angles (gamma, psi) are derived for the HUD, autopilot and ground model
@@ -737,7 +739,7 @@ function apGuidance(a,dt){
   }
   if(ap.athr){
     if(ap.on&&ap.vert==='FLARE'&&a.agl<25&&lt.u>-1500)out.thr=0;
-    else{const vt=(ap.on&&ap.gs?max(ap.sel.ias,0):ap.sel.ias)*KT*sqrt(1.225/(1.225*exp(-a.pos.y/9000)));ap.athI=clamp(ap.athI+(vt-a.V)*0.6*dt,-30,30);out.thr=clamp(38+(vt-a.V)*10+ap.athI,0,100);}
+    else{const vt=(ap.on&&ap.gs?max(ap.sel.ias,0):ap.sel.ias)*KT*sqrt(1.225/isa(a.pos.y).rho);ap.athI=clamp(ap.athI+(vt-a.V)*0.6*dt,-30,30);out.thr=clamp(38+(vt-a.V)*10+ap.athI,0,100);}
   }
   return out;
 }
@@ -748,7 +750,7 @@ function resetFlight(){
   const s=SCEN[scen];ac.wind.set(...s.wind);ac.gustV.set(0,0,0);
   ac.pos.copy(worldAt(target,-9300,120,549));ac.V=82;ac.gamma=-2.5*DEG;ac.psi=target.hdg*DEG;ac.psiB=ac.psi;ac.r=0;ac.beta=0;ac.dr=0;ac.psiDot=0;ac.fpHold=null;ac.drTot=0;ac.gc=[0,0,0];ac.wasC=false;ac.settleT=0;ac.jolt=0;ac.surf='grass';ac.stopSurf='';ac.gy=gnd(ac.pos.x,ac.pos.z);ac.agl=(ac.pos.y-ac.gy-AC.gearH)/FT;ac.alt=(ac.pos.y-AC.gearH)/FT;ac.vs=-ac.V*sin(2.5*DEG);ac.ias=ac.V/KT;ac.rwy=null;ac.de=0;ac.da=0;
   ap.on=false;ap.athr=false;ap.app=false;ap.loc=false;ap.gs=false;ap.lat='HDG';ap.vert='VS';ap.msg='';ap.sel={ias:160,hdg:Math.round(target.hdg)%360,alt:Math.round(ac.alt/100)*100,vs:-700};onApChange();
-  {const rho=1.225*exp(-ac.pos.y/9000);const clNeed=AC.mass*9.81*cos(ac.gamma)/(0.5*rho*ac.V*ac.V*AC.S);const aNeed=clNeed/AC.clA+AC.a0;ac.theta=ac.gamma+aNeed;ac.trim=(aNeed-PM.a0)*PM.ka/PM.kd;}ac.phi=0;ac.q=0;ac.p=0;ac.flaps=0;ac.gear=0;ac.gearT=0;ac.splr=false;ac.brk=false;ac.onGround=false;ac.stalled=false;ac.td=null;ac.maxBank=0;ac.phase='fly';ac.t=0;ac.stopDist=0;ac.fuel=1500;
+  {const rho=isa(ac.pos.y).rho;const clNeed=acMass()*9.81*cos(ac.gamma)/(0.5*rho*ac.V*ac.V*AC.S);const aNeed=clNeed/AC.clA+AC.a0;ac.theta=ac.gamma+aNeed;ac.trim=(aNeed-PM.a0)*PM.ka/PM.kd;}ac.phi=0;ac.q=0;ac.p=0;ac.flaps=0;ac.gear=0;ac.gearT=0;ac.splr=false;ac.brk=false;ac.onGround=false;ac.stalled=false;ac.td=null;ac.maxBank=0;ac.phase='fly';ac.t=0;ac.stopDist=0;ac.fuel=1500;
   Object.assign(sim,{phase:'run',n1:40,n2:72,egt:520,ff:900,thrust:1800,lit:true,fuelOn:true,starter:false,ignition:false,throttle:0.3,fuelUsed:0});
   thr.value=30;updateThrOut();syncSys();
   ac.toPhase=null;ac.toLift=null;ac.toTail=false;ac.flapWarn=false;ac.airHigh=true;
@@ -761,13 +763,20 @@ function resetFlight(){
 const sq16=h=>{const x=16*h*16*h;return x/(1+x);};
 const rollY=a=>GX.ext*cos(a.theta)-GEAR[1].l*sin(a.theta)-GX.stat*(a.wf==null?1:a.wf);
 function CL(a,f){const st=AC.aStall[f];const lin=AC.clA*(a-AC.a0)+AC.clFlap[f];if(a<=st)return max(lin,-0.9)+(ac.splr?AC.clSplr:0);const peak=AC.clA*(st-AC.a0)+AC.clFlap[f];return max(0.3,peak-(a-st)*AC.cls)+(ac.splr?AC.clSplr:0);}
-function vrefCalc(f){f=f==null?ac.flaps:f;return 1.3*sqrt(2*AC.mass*9.81/(1.225*AC.S*CL(AC.aStall[f],f)))/KT;}
+// International Standard Atmosphere: temperature falls 6.5 °C per km to 11 km, then stays at -56.5 °C; pressure, density and the
+// speed of sound follow, so the Mach number, the engine's thrust and the drag rise near Mach 1 come out right at any height
+function isa(h){h=clamp(h,-500,20000);const T=h<11000?288.15-0.0065*h:216.65,p=h<11000?101325*pow(T/288.15,5.2559):22632*exp(-(h-11000)/6341.6);return{T,rho:p/(287.05*T),a:sqrt(401.87*T)};}
+// weight follows the fuel: the reference 5,800 kg is with 3,000 lb aboard (a full 6,000 lb load is about 7,160 kg)
+const LB=0.4536,FUEL_REF=3000,acMass=()=>AC.mass+((ac.fuel??FUEL_REF)-FUEL_REF)*LB;
+// drag rise near Mach 1: shock waves on the wing and body from Mach 0.8, easing a little once supersonic
+const waveCd=M=>M<0.8?0:M<1.05?0.075*pow((M-0.8)/0.25,2.2):0.075-0.02*min(1,(M-1.05)/0.5);
+function vrefCalc(f){f=f==null?ac.flaps:f;return 1.3*sqrt(2*acMass()*9.81/(1.225*AC.S*CL(AC.aStall[f],f)))/KT;}
 function flyStep(dt){
   const a=ac;a.t+=dt;a.gy=gnd(a.pos.x,a.pos.z);a.airT=a.onGround?0:(a.airT||0)+dt;
   // gusts
   if(SCEN[scen].gust){a.gustT-=dt;if(a.gustT<=0){a.gustT=1.2+Math.random()*2;a.gustV.set((Math.random()-0.5)*7,(Math.random()-0.5)*2.5,(Math.random()-0.5)*5);}}
   const wind=a.wind.clone().addScaledVector(a.gustV,1-exp(-a.t));
-  const rho=1.225*exp(-a.pos.y/9000);
+  const atm=isa(a.pos.y),rho=atm.rho;a.mach=a.V/atm.a;
   // controls: keyboard ramps the yoke like a sim; touch stick feeds it directly
   let pIn=clamp(inp.pitch+(inp.kDn?1:0)-(inp.kUp?1:0),-1,1)*(invert?1:-1), rIn=clamp(inp.roll+(inp.kR?1:0)-(inp.kL?1:0),-1,1), yIn=(inp.kRudR?1:0)-(inp.kRudL?1:0);
   const ramp=(cur,tgt,rate)=>cur+clamp(tgt-cur,-rate*dt,rate*dt);
@@ -792,15 +801,15 @@ function flyStep(dt){
   let dEl=clamp(a.de+a.trim,-1.4,1.4)*(a.stalled?0.55:1);
   // fly-by-wire g limiter: elevator can't demand more AoA than the +9/-3 g limits allow at this speed
   // full stick reaches the g limit, or just past the stall AoA when slow, so a stall is still possible
-  if(autoTrim&&!a.onGround&&qbar>50&&!ap.on){const W=AC.mass*9.81,an=n=>AC.a0+(n*W/(qbar*AC.S)-AC.clFlap[f])/AC.clA,el=x=>PM.ka*(x-PM.a0)/PM.kd;
-    const ka=clamp((a.airT||0)/2,0,1),kf=ka*ka*(3-2*ka);dEl=clamp((a.de*(1+0.6*kf)+a.trim)*(a.stalled?0.55:1),el(max(an(PM.nzMin),-12*DEG)),el(min(an(PM.nzMax),st+1*DEG)));}
+  if(autoTrim&&!a.onGround&&qbar>50&&!ap.on){const W=acMass()*9.81,an=n=>AC.a0+(n*W/(qbar*AC.S)-AC.clFlap[f])/AC.clA,el=x=>PM.ka*(x-PM.a0)/PM.kd;
+    const ka=clamp((a.airT||0)/2,0,1),kf=ka*ka*(3-2*ka);dEl=clamp((a.de*(1+0.6*kf)+a.trim)*(a.stalled?0.55:1),el(max(an(PM.nzMin),-12*DEG)),el(min(an(PM.nzMax),st-PM.aoaMargin)));}
   let qd=qn*(-PM.ka*(a.alpha-PM.a0)+PM.kd*dEl)-PM.kq*sq*(a.q-(autoTrim&&!a.onGround?a.qRef||0:0));
   if(a.stalled){const ex=(a.alpha-st)/DEG;qd-=ex*0.05*max(qn,0.3);a.p+=(Math.random()-0.5)*ex*0.9*DEG;}
   // rolling moment: aileron, roll damping, dihedral
   let pd;
   if(autoTrim&&!a.onGround){
     // fly-by-wire roll: stick commands roll rate (45°/s slow, up to 230°/s at fighter speeds); centred, it holds any bank
-    let pMax=lerp(PM.pLo,PM.pHi,pow(clamp((a.ias-100)/220,0,1),1.5))*DEG*(a.stalled?0.35:1)*min(1,qn*3);if(ap.on)pMax=min(pMax,25*DEG);
+    let pMax=lerp(PM.pLo,PM.pHi,pow(clamp((a.ias-100)/220,0,1),1.5))*DEG*(a.stalled?0.35:1)*min(1,qn*3)*clamp(1-(a.alpha/DEG-14)/18,0.4,1);if(ap.on)pMax=min(pMax,25*DEG);
     // stick centred: hold the bank angle it was released at (not near the vertical, where bank is undefined)
     let pc=a.da*pMax;
     if(!ap.on&&abs(rIn)<0.02&&abs(a.theta)<70*DEG){if(a.phiHold==null)a.phiHold=wrapPI(a.phi+a.p/PM.kp);if(a.phiHold!=null)pc=clamp(2*wrapPI(a.phiHold-a.phi),-pMax,pMax);}else a.phiHold=null;
@@ -815,13 +824,14 @@ function flyStep(dt){
   const normalAtt=abs(a.phi)<62*DEG&&abs(a.theta)<60*DEG;
   if(abs(pIn)>0.02||a.onGround||ap.on||!normalAtt)a.fpHold=null;else if(a.fpHold==null&&abs(a.de)<0.03&&abs(a.gamma)<30*DEG)a.fpHold=a.gamma;
   if(autoTrim&&!ap.on&&!a.onGround&&!a.stalled&&a.fpHold!=null)a.trim=clamp(a.trim+(PM.fk*(a.fpHold-a.gamma)-PM.fq*(a.q-(a.onGround?0:a.qRef||0)))*dt,-1,1);
-  else if(autoTrim&&!ap.on&&!a.onGround&&!a.stalled&&abs(pIn)<0.02&&qbar>50){const nz=qbar*AC.S*CL(a.alpha,f)/(AC.mass*9.81);const nzT=abs(a.phi)<90*DEG&&abs(a.theta)<60*DEG?min(2,1/max(cos(a.phi),0.5)):1;a.trim=clamp(a.trim+0.35*(nzT-nz)*dt/max(qn,0.5),-1,1);}
+  else if(autoTrim&&!ap.on&&!a.onGround&&!a.stalled&&abs(pIn)<0.02&&qbar>50){const nz=qbar*AC.S*CL(a.alpha,f)/(acMass()*9.81);const nzT=abs(a.phi)<90*DEG&&abs(a.theta)<60*DEG?min(2,1/max(cos(a.phi),0.5)):1;a.trim=clamp(a.trim+0.35*(nzT-nz)*dt/max(qn,0.5),-1,1);}
   const hb=max(0,a.pos.y-a.gy-AC.gearH+1.1)/AC.span,ge=sq16(hb);
-  const cl=CL(a.alpha,f)*(1+0.09*(1-ge));const cd=AC.cd0+AC.k*cl*cl*ge+AC.cdFlap[f]+AC.cdGear*a.gearT+(a.splr?AC.cdSplr:0)+(a.stalled?0.015*(a.alpha-st)/DEG:0)+0.6*a.beta*a.beta;
+  const cl=CL(a.alpha,f)*(1+0.09*(1-ge));const cd=AC.cd0+AC.k*cl*cl*ge+AC.cdFlap[f]+AC.cdGear*a.gearT+(a.splr?AC.cdSplr:0)+(a.stalled?0.015*(a.alpha-st)/DEG:0)+0.6*a.beta*a.beta+waveCd(a.mach||0);
   const L=qbar*AC.S*cl,D=qbar*AC.S*cd;
-  const m=AC.mass,g=9.81;a.wf=1-clamp(L/(m*g),0,1);
+  const m=acMass(),g=9.81;a.wf=1-clamp(L/(m*g),0,1);
   // engine net thrust with ram-drag loss
-  a.thrN=sim.thrust*LBF*(1-0.35*clamp(a.V/170,0,1));
+  // installed thrust: falls with air density (about sigma^0.75) and with speed, until ram compression recovers it near Mach 1
+  {const M=a.mach||0;a.thrN=sim.thrust*LBF*pow(rho/1.225,0.75)*(1-0.55*M+0.42*M*M);}
   const T=a.thrN;
   let dV=(T*cos(a.alpha)-D)/m-g*sin(a.gamma);
   let dG=(L*cos(a.phi)+T*sin(a.alpha)-m*g*cos(a.gamma))/(m*a.V);
@@ -2112,7 +2122,7 @@ function ckBg(d,col){const g=d.g;g.setTransform(1,0,0,1,0,0);g.fillStyle=col||'#
 function osb(g,top,bot,act){g.font='700 15px Rajdhani, sans-serif';g.textAlign='center';g.textBaseline='middle';
   top.forEach((t,i)=>{if(!t)return;const x=56+i*100;g.fillStyle=t===act?'#05080b':'#9fb0c2';if(t===act){g.fillStyle='#9fb0c2';g.fillRect(x-30,4,60,18);g.fillStyle='#05080b';}g.fillText(t,x,14);});
   bot.forEach((t,i)=>{if(!t)return;g.fillStyle='#9fb0c2';g.fillText(t,56+i*100,500);});}
-const nzOf=a=>{const rho=1.225*exp(-a.pos.y/9000);return 0.5*rho*a.V*a.V*AC.S*CL(a.alpha,a.flaps)/(AC.mass*9.81);};
+const nzOf=a=>{const rho=isa(a.pos.y).rho;return 0.5*rho*a.V*a.V*AC.S*CL(a.alpha,a.flaps)/(acMass()*9.81);};
 // start-up: after a cold start the displays stay dark for a moment, then each runs its self-test and comes up in turn
 function bootScreen(d,t){const g=d.g,k=d.W/512,H=d.H/k;g.setTransform(k,0,0,k,0,0);g.fillStyle='#020406';g.fillRect(0,0,512,H);
   if(t>=0){g.fillStyle='#7df5a0';g.font='600 24px IBM Plex Mono, monospace';g.textAlign='left';g.textBaseline='top';
@@ -2130,7 +2140,7 @@ function drawCockpitDisplays(a){
    g.fillStyle='#cfd8e2';g.font='600 18px IBM Plex Mono, monospace';g.textAlign='center';const hd=((a.psiB/DEG)%360+360)%360;g.fillText('HDG '+String(Math.round(hd)).padStart(3,'0')+'   V/S '+fmt(Math.round(a.vs/FT*60/10)*10),256,430);
    g.fillStyle='#7df5a0';g.font='700 18px Rajdhani, sans-serif';g.fillText((ap.athr?'SPD '+ap.sel.ias:'MAN THR')+'   '+(ap.on?(ap.lat==='LOC'?'LOC':'HDG '+String(ap.sel.hdg).padStart(3,'0')):'—')+'   '+(ap.on?(ap.vert==='GS'?'G/S':ap.vert==='FLARE'?'FLARE':ap.vert==='ALT'?'ALT '+ap.sel.alt:'V/S '+ap.sel.vs):'—')+'   '+(ap.on?'AP1':''),256,40);
    g.fillStyle='#ffb432';g.font='600 16px IBM Plex Mono, monospace';g.fillText('AOA '+(a.alpha/DEG).toFixed(1)+'°',256,470);
-   g.fillStyle='#e3eaf2';g.font='600 16px IBM Plex Mono, monospace';g.textAlign='left';g.fillText('G '+nzOf(a).toFixed(1),12,412);g.textAlign='right';g.fillText('M '+(a.V/340).toFixed(2),500,412);g.textAlign='center';
+   g.fillStyle='#e3eaf2';g.font='600 16px IBM Plex Mono, monospace';g.textAlign='left';g.fillText('G '+nzOf(a).toFixed(1),12,412);g.textAlign='right';g.fillText('M '+(a.mach||a.V/340).toFixed(2),500,412);g.textAlign='center';
    osb(g,['PFD','FPM','HSI','BARO','DCLT'],['SWAP','','MENU','','TEST'],'PFD');
    if(a.stallW){g.fillStyle='#ff5347';g.font='700 28px Rajdhani, sans-serif';g.fillText('STALL',256,140);}d.t.needsUpdate=true;}
   if(!ck.slow){
@@ -2906,7 +2916,7 @@ function frame(now){
   ac.jolt=(ac.jolt||0)*exp(-dtFrame*6);
   {const gl=$('bGear');gl.classList.toggle('down',ac.gearT>0.97);gl.classList.toggle('transit',ac.gearT>0.03&&ac.gearT<0.97);}
   // buffet: the airframe shakes as the wing nears the stall
-  const buf=!ac.onGround&&ac.phase==='fly'?clamp((ac.alpha/AC.aStall[ac.flaps|0]-0.82)/0.18,0,1)*0.3*clamp(ac.V/60,0.3,1):0;
+  const buf=!ac.onGround&&ac.phase==='fly'?clamp((ac.alpha/AC.aStall[ac.flaps|0]-0.82)/0.18,0,1)*0.3*clamp(ac.V/60,0.3,1)+clamp(((ac.mach||0)-0.86)/0.1,0,1)*(1-clamp(((ac.mach||0)-1.02)/0.08,0,1))*0.12:0;
   shake=buf+(ac.stalled&&!ac.onGround?0.5:0)+(ac.onGround&&ac.V>3?(ac.surf==='grass'?0.18:0.025)*clamp(ac.V/60,0,1):0)+ac.jolt*0.35;
   PERF.m('pose');updateCockpit(dt);PERF.m('cockpit');updateCamera(dt);
   // outside views: the engine's pitch rises as the aircraft comes towards the camera and drops as it passes (Doppler), and its

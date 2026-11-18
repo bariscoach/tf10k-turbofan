@@ -2107,6 +2107,8 @@ function updateVapor(dt){
 /* ================= Virtual cockpit (as if a pilot sat in the nose) ================= */
 const EYE=new THREE.Vector3(0,1.27,-3.9);
 const cockpit=new THREE.Group();cockpit.position.copy(EYE);cockpit.visible=false;drone.add(cockpit);
+// default cockpit field of view: a little narrower on short game views (13-14 inch laptops), which makes the HUD and displays bigger
+const ckFov=()=>Hh<700?60:Hh<900?64:74;
 const CKP=-0.17;const ck={headY:0,headP:CKP,fov:74,drag:null,t:1,was:false,autoP:0,eoT:0,eoDist:0,eoLos:0,eoLock:false,glance:false,glP:0};
 if(MOB)ck.headP=-0.26;
 const ckTex={};
@@ -2381,31 +2383,35 @@ function drawCockpitDisplays(a){
   }
 
   if(ck.boot!=null&&ck.boot<2.6)[['pfd',0],['eng',0.3],['nd',0.55],['stby',0.15],['aux',0.4]].forEach(([n,dl])=>{if(ckTex[n])bootScreen(ckTex[n],ck.boot-0.5-dl);});}
-function drawHUD(a){const d=ckTex.hud,g=d.g;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,d.W,d.H);g.setTransform(DS,0,0,DS,0,0);const C='#7dff9f';g.strokeStyle=C;g.fillStyle=C;g.lineWidth=3;const ppd=25,c=256;
+// the HUD is drawn to scale (its pitch ladder sits on the real horizon), so on a small screen it covers little of the view and
+// its text gets tiny: text and line weights grow (positions don't, so it stays true to the horizon) until the main figures
+// show at least about 13 px on screen
+const HUDK={k:1,l:1};const hf=(w,px,fam)=>w+' '+Math.round(px*HUDK.k)+'px '+fam;
+function drawHUD(a){{const P=Hh*0.1763/Math.tan(camera.fov*DEG/2);HUDK.k=clamp(13*512/(22*max(P,1)),1,1.8);HUDK.l=1+(HUDK.k-1)*0.6;}const d=ckTex.hud,g=d.g;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,d.W,d.H);g.setTransform(DS,0,0,DS,0,0);const C='#7dff9f';g.strokeStyle=C;g.fillStyle=C;g.lineWidth=3*HUDK.l;const ppd=25,c=256;
   g.save();g.beginPath();g.rect(40,40,432,432);g.clip();g.translate(c,c);g.rotate(-a.phi);g.translate(0,a.theta/DEG*ppd);
   g.beginPath();g.moveTo(-260,0);g.lineTo(-40,0);g.moveTo(40,0);g.lineTo(260,0);g.stroke();
-  g.font='600 22px IBM Plex Mono, monospace';g.textBaseline='middle';
+  g.font=hf(600,22,'IBM Plex Mono, monospace');g.textBaseline='middle';
   for(let p=-20;p<=20;p+=5){if(!p)continue;const y=-p*ppd;g.setLineDash(p<0?[10,8]:[]);g.beginPath();g.moveTo(-110,y);g.lineTo(-40,y);g.lineTo(-40,y+(p>0?12:-12));g.moveTo(110,y);g.lineTo(40,y);g.lineTo(40,y+(p>0?12:-12));g.stroke();g.setLineDash([]);g.textAlign='right';g.fillText(String(p),-116,y);g.textAlign='left';g.fillText(String(p),116,y);}
   // glideslope reference line (-3°)
   g.setLineDash([4,10]);g.beginPath();g.moveTo(-70,3*ppd);g.lineTo(70,3*ppd);g.stroke();g.setLineDash([]);g.restore();
   // boresight W
   g.beginPath();g.moveTo(c-46,c);g.lineTo(c-22,c);g.lineTo(c-11,c+14);g.lineTo(c,c);g.lineTo(c+11,c+14);g.lineTo(c+22,c);g.lineTo(c+46,c);g.stroke();
-  g.font='700 26px IBM Plex Mono, monospace';g.textAlign='center';g.textBaseline='middle';
-  g.strokeRect(36,236,88,40);g.fillText(String(Math.round(a.ias)),80,256);g.strokeRect(388,236,96,40);g.fillText(String(Math.round(max(0,a.alt))),436,256);if(a.agl<2500){g.font='600 18px IBM Plex Mono, monospace';g.fillText('R '+Math.round(max(0,a.agl)),436,326);g.font='700 26px IBM Plex Mono, monospace';}
-  g.font='600 20px IBM Plex Mono, monospace';g.fillText(String(Math.round(((a.psiB/DEG)%360+360)%360)).padStart(3,'0'),256,60);
-  {const hd=((a.psiB/DEG)%360+360)%360,pp=7;g.save();g.beginPath();g.rect(126,70,260,40);g.clip();g.lineWidth=2;for(let d=Math.floor((hd-20)/5)*5;d<=hd+20;d+=5){const x=256+(d-hd)*pp,dd=((d%360)+360)%360;g.beginPath();g.moveTo(x,74);g.lineTo(x,dd%10===0?86:80);g.stroke();if(dd%10===0){g.font='600 15px IBM Plex Mono, monospace';g.fillText(String(dd/10).padStart(2,'0'),x,98);}}
-    const df=clamp(hdgDiff(ap.sel.hdg,hd),-18,18),x=256+df*pp;g.beginPath();g.moveTo(x-8,72);g.lineTo(x-8,80);g.lineTo(x,74);g.lineTo(x+8,80);g.lineTo(x+8,72);g.stroke();g.restore();g.beginPath();g.moveTo(256,74);g.lineTo(251,66);g.lineTo(261,66);g.closePath();g.fill();g.font='600 20px IBM Plex Mono, monospace';}g.fillText('AOA '+(a.alpha/DEG).toFixed(1),80,300);g.fillText(Math.round(a.vs/FT*60/10)*10+' fpm',436,300);
+  g.font=hf(700,26,'IBM Plex Mono, monospace');g.textAlign='center';g.textBaseline='middle';
+  g.strokeRect(36,236,88,40);g.fillText(String(Math.round(a.ias)),80,256);g.strokeRect(388,236,96,40);g.fillText(String(Math.round(max(0,a.alt))),436,256);if(a.agl<2500){g.font=hf(600,18,'IBM Plex Mono, monospace');g.fillText('R '+Math.round(max(0,a.agl)),436,326);g.font=hf(700,26,'IBM Plex Mono, monospace');}
+  g.font=hf(600,20,'IBM Plex Mono, monospace');g.fillText(String(Math.round(((a.psiB/DEG)%360+360)%360)).padStart(3,'0'),256,60);
+  {const hd=((a.psiB/DEG)%360+360)%360,pp=7;g.save();g.beginPath();g.rect(126,70,260,40);g.clip();g.lineWidth=2*HUDK.l;for(let d=Math.floor((hd-20)/5)*5;d<=hd+20;d+=5){const x=256+(d-hd)*pp,dd=((d%360)+360)%360;g.beginPath();g.moveTo(x,74);g.lineTo(x,dd%10===0?86:80);g.stroke();if(dd%10===0){g.font=hf(600,15,'IBM Plex Mono, monospace');g.fillText(String(dd/10).padStart(2,'0'),x,98);}}
+    const df=clamp(hdgDiff(ap.sel.hdg,hd),-18,18),x=256+df*pp;g.beginPath();g.moveTo(x-8,72);g.lineTo(x-8,80);g.lineTo(x,74);g.lineTo(x+8,80);g.lineTo(x+8,72);g.stroke();g.restore();g.beginPath();g.moveTo(256,74);g.lineTo(251,66);g.lineTo(261,66);g.closePath();g.fill();g.font=hf(600,20,'IBM Plex Mono, monospace');}g.fillText('AOA '+(a.alpha/DEG).toFixed(1),80,300);g.fillText(Math.round(a.vs/FT*60/10)*10+' fpm',436,300);
   // flight path marker: where the aircraft is actually going (offset from the boresight by AoA and sideslip)
   {const fx=c-clamp(a.beta/DEG*ppd,-150,150),fy=c+clamp(a.alpha/DEG*ppd,-150,180);g.beginPath();g.arc(fx,fy,11,0,2*PI);g.moveTo(fx-11,fy);g.lineTo(fx-28,fy);g.moveTo(fx+11,fy);g.lineTo(fx+28,fy);g.moveTo(fx,fy-11);g.lineTo(fx,fy-24);g.stroke();}
-  g.font='600 20px IBM Plex Mono, monospace';g.textAlign='left';g.fillText('G '+nzOf(a).toFixed(1),40,340);g.fillText('M '+(a.V/340).toFixed(2),40,366);g.textAlign='center';
-  if(a.stallW){g.font='700 32px Rajdhani, sans-serif';g.fillText('STALL',256,140);}
-  if(!a.gear&&a.agl<1000){g.font='700 24px Rajdhani, sans-serif';g.fillText('GEAR',256,420);}
+  g.font=hf(600,20,'IBM Plex Mono, monospace');g.textAlign='left';g.fillText('G '+nzOf(a).toFixed(1),40,340);g.fillText('M '+(a.V/340).toFixed(2),40,366);g.textAlign='center';
+  if(a.stallW){g.font=hf(700,32,'Rajdhani, sans-serif');g.fillText('STALL',256,140);}
+  if(!a.gear&&a.agl<1000){g.font=hf(700,24,'Rajdhani, sans-serif');g.fillText('GEAR',256,420);}
   d.t.needsUpdate=true;}
 const tubPlanes=[[1,0,0,-0.55],[-1,0,0,-0.55],[0,0,-1,-4.95],[0,0,1,2.9],[0,-1,0,0.15]].map(v=>new THREE.Plane(new THREE.Vector3(v[0],v[1],v[2]),v[3]));
 const tubWorld=tubPlanes.map(p=>p.clone());
 function setTubClip(on){const f=drone.getObjectByName('fuselage');if(!f)return;f.material.clippingPlanes=on?tubWorld:[];f.material.clipIntersection=true;f.material.needsUpdate=true;}
 function updateTubClip(){drone.updateMatrixWorld(true);tubPlanes.forEach((p,i)=>tubWorld[i].copy(p).applyMatrix4(drone.matrixWorld));}
-function updateCockpit(dt){const on=camMode==='cockpit';ck.dtc=dt;if(ck.boot!=null&&ck.boot<9&&!LOAD.on)ck.boot+=dt;cockpit.visible=on;view.classList.toggle('ckView',on);if(on!==ck.was){ck.t=1;setTubClip(on);const sn=drone.getObjectByName('sensor');if(sn)sn.visible=!on;$('app').classList.toggle('ckFull',on);if(!on){ckTip.hidden=true;canvas.style.cursor='';}}ck.was=on;if(!on)return;updateTubClip();updateCockpitControls();
+function updateCockpit(dt){const on=camMode==='cockpit';if(on&&!ck.was&&!ck.fovSet)ck.fov=ckFov();ck.dtc=dt;if(ck.boot!=null&&ck.boot<9&&!LOAD.on)ck.boot+=dt;cockpit.visible=on;view.classList.toggle('ckView',on);if(on!==ck.was){ck.t=1;setTubClip(on);const sn=drone.getObjectByName('sensor');if(sn)sn.visible=!on;$('app').classList.toggle('ckFull',on);if(!on){ckTip.hidden=true;canvas.style.cursor='';}}ck.was=on;if(!on)return;updateTubClip();updateCockpitControls();
   ck.stick.rotation.x=(ac.de||0)*0.3;ck.stick.rotation.z=-(ac.da||0)*0.3;ck.thr.position.z=-0.2+0.15-sim.throttle*0.3;
   ck.ped[0].position.z=-0.92-(ac.drTot||0)*0.05;ck.ped[1].position.z=-0.92+(ac.drTot||0)*0.05;
   if(ck.glare){ck.lad.updateMatrixWorld();const n=_cv.set(0,0,1).transformDirection(ck.lad.matrixWorld),k=clamp(n.dot(_cr.copy(SUNOFF).normalize()),0,1);ck.glare.material.opacity=0.24*k*k*(1-GLU.uNight.value);}
@@ -2421,8 +2427,8 @@ canvas.addEventListener('pointermove',e=>{if(camMode!=='cockpit'){ckTip.hidden=t
   else{canvas.style.cursor='grab';ckTip.hidden=true;}});
 canvas.addEventListener('pointerup',()=>{ck.drag=null;apHold.stop();canvas.style.cursor='grab';});canvas.addEventListener('pointercancel',()=>{ck.drag=null;apHold.stop();});
 canvas.addEventListener('pointerleave',()=>{ckTip.hidden=true;apHold.stop();});
-canvas.addEventListener('wheel',e=>{if(camMode!=='cockpit')return;e.preventDefault();const p=ckPick(e);if(p&&p.h.wheel&&p.h.wheel(p.uv,e.deltaY,e))return;ck.fov=clamp(ck.fov+e.deltaY*0.03,28,85);},{passive:false});
-canvas.addEventListener('dblclick',()=>{ck.headY=0;ck.headP=MOB?-0.26:CKP;ck.fov=74;});
+canvas.addEventListener('wheel',e=>{if(camMode!=='cockpit')return;e.preventDefault();const p=ckPick(e);if(p&&p.h.wheel&&p.h.wheel(p.uv,e.deltaY,e))return;ck.fovSet=true;ck.fov=clamp(ck.fov+e.deltaY*0.03,28,85);},{passive:false});
+canvas.addEventListener('dblclick',()=>{ck.headY=0;ck.headP=MOB?-0.26:CKP;ck.fov=ckFov();});
 /* ================= Cockpit controls: glareshield autopilot, gear and flap levers, switches, draggable throttle ================= */
 // cockpit display canvases are re-uploaded many times a second: skip building mipmaps on every upload (the main cost)
 Object.values(ckTex).forEach(d=>{if(d&&d.t){d.t.generateMipmaps=false;d.t.minFilter=THREE.LinearFilter;}});

@@ -9,6 +9,8 @@ s=open('hawk-landing.src.html',encoding='utf-8').read()
 sim=open('sim-block.js',encoding='utf-8').read();gau=open('gauge-block.js',encoding='utf-8').read()
 aud=open('audio-block.js',encoding='utf-8').read().replace('const src=(buf,rate)=>','audio.white=white;audio.brown=brown;const src=(buf,rate)=>',1)
 out=s.replace('/*__SIM__*/',sim).replace('/*__AUDIO__*/',aud).replace('/*__GAUGE__*/',gau);assert '/*__' not in out
+import datetime;stamp=datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')   # build stamp in the panel footer, to tell versions apart
+assert out.count('<div class="credit-foot">Made by Baris Hiz</div>')==1;out=out.replace('<div class="credit-foot">Made by Baris Hiz</div>','<div class="credit-foot">Made by Baris Hiz · build '+stamp+'</div>')
 open('out/hawk-landing.html','w',encoding='utf-8').write(out)
 art=out.replace('<a href="testcell" id="tcLink">','<a href="https://tf10k-turbofan.vercel.app/testcell" id="tcLink">').replace('<a class="opt" id="btnEngine" href="testcell">','<a class="opt" id="btnEngine" href="https://tf10k-turbofan.vercel.app/testcell" target="_blank" rel="noopener">')
 art=art.replace("'ob_'+key+'.dat'","'ob_'+key+'.wasm'")  # artifacts only serve known binary types; same gzip bytes

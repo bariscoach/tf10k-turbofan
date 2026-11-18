@@ -231,6 +231,7 @@ main{display:grid;grid-template-columns:1fr 372px;min-height:0}
 @media (max-width:700px){.mcards{grid-template-columns:1fr}}
 .scen.dest{grid-template-columns:repeat(4,1fr)} .scen.two{grid-template-columns:repeat(2,1fr)}
 #toast{position:absolute;left:50%;top:96px;transform:translateX(-50%);z-index:4;max-width:min(560px,90%);padding:8px 16px;border-radius:6px;background:rgba(10,14,20,.82);border:1px solid var(--line-2);font-family:var(--font-display);font-weight:700;font-size:20px;letter-spacing:.06em;text-align:center;color:var(--fg);pointer-events:none;transition:opacity .3s}
+#panel .chip.warnc{color:var(--amber);border-color:var(--amber)}
 #toast.go{color:var(--hud);border-color:rgba(125,245,160,.6)} #toast.warn{color:var(--amber);border-color:var(--amber)} #toast.off{opacity:0}
 #view.ckView #toast{top:56px} .scen.dest button small{display:block;color:var(--fg-mute);font-family:var(--font-mono);font-size:10px}
 #map{position:absolute;right:max(10px,env(safe-area-inset-right,0px));bottom:max(10px,env(safe-area-inset-bottom,0px));width:210px;height:210px;border-radius:6px;border:1px solid rgba(63,211,230,.4);background:rgba(13,19,27,.72);cursor:pointer;z-index:3;touch-action:none}
@@ -472,6 +473,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
             <dt>↓ ↑ / S W</dt><dd>Pull back (nose up) / push forward (nose down), as in flight sims <button type="button" class="chip" id="chipInv" aria-pressed="false" style="margin-left:6px;padding:1px 6px;font-size:11px">Arcade pitch (↑ nose up)</button></dd>
             <dt>Q E</dt><dd>Rudder left / right (steers on the ground). Auto-rudder keeps turns coordinated unless you switch it off</dd>
             <dt>[ ] · T</dt><dd>Trim nose down / up · fly-by-wire on or off (on: a centred stick holds the flight path and bank, full stick pulls up to 9 g)</dd>
+            <dt>J</dt><dd>Post-stall mode: the nozzle vectors ±20° in pitch and yaw and the AoA and g limiters are off. For a Cobra: about 230 kt, full afterburner, full aft stick for about 2 s, then let go. The nose goes past 70° and the speed bleeds away, and with the stick released the nozzle brings the nose back down. With rudder or roll stick at high AoA the nozzle yaws the aircraft round (a flat turn). The autopilot is unavailable while it is on</dd>
             <dt>Heading</dt><dd>The tape at the top shows your heading in the box; the cyan bug is the autopilot's selected heading (solid while the autopilot is flying it) and the magenta diamond points to the destination runway. The map repeats both: a green line for your heading and a dashed cyan line with a bug for the selected heading</dd>
             <dt>L · K</dt><dd>Landing lights · taxi light. All exterior lights (nav, beacon, strobe, landing, taxi, logo) have switches on the left console in the cockpit and in the Systems panel. Choose day, dusk or night on the setup screen</dd>
             <dt>Z · panel</dt><dd>Autopilot on/off; set IAS, HDG, ALT, V/S and use A/THR, HDG, ALT, V/S, APP (ILS with autoland)</dd>
@@ -558,6 +560,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
             <button class="chip ico" id="bBrk" type="button" title="Wheel brakes (B)"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/><path d="M15.5 5.5a8 8 0 0 1 3 3"/></svg><span class="lbl">Brakes</span></button>
             <button class="chip ico on" id="bTrim" type="button" title="Fly-by-wire auto-trim (T)"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l4-12 4 12M5.5 14h5"/><path d="M15 12h6M18 9v6"/></svg><span class="lbl">Trim on</span></button>
             <button class="chip ico on" id="bRud" type="button" title="Auto-rudder, keeps turns coordinated"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 20l3-16h4l-2 16z"/><path d="M13 13l6 2"/></svg><span class="lbl">Rudder on</span></button>
+            <button class="chip ico" id="bPst" type="button" title="Thrust vectoring post-stall mode (J): limiters off, for the Cobra and other post-stall manoeuvres"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h9l4-2v10l-4-2H3z"/><path d="M19 6l2 6-2 6"/></svg><span class="lbl">TVC</span></button>
             <button class="chip ico" id="bTime" type="button" title="Speed up time in cruise (Y)"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg><span class="lbl">×1</span></button>
             <div class="lightRow" role="group" aria-label="Exterior lights"><button class="chip on" data-l="nav" type="button" title="Navigation lights" aria-label="Navigation lights"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="12" r="3" fill="#ff5347" stroke="none"/><circle cx="17.5" cy="12" r="3" fill="#55db8e" stroke="none"/><path d="M9.5 12h5"/></svg></button><button class="chip on" data-l="bcn" type="button" title="Beacon" aria-label="Beacon"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="3" fill="#ff5347" stroke="none"/><path d="M12 4v3M5.5 7l2 2M18.5 7l-2 2M4 14h2.5M17.5 14H20"/></svg></button><button class="chip on" data-l="strb" type="button" title="Strobes" aria-label="Strobes"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3L6 13h5l-1 8 7-10h-5z"/></svg></button><button class="chip on" data-l="ldg" type="button" title="Landing lights (L)" aria-label="Landing lights"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5h5v5H3z"/><path d="M8 9.5l12-4M8 14.5l12 4M8 12h12"/></svg></button><button class="chip" data-l="taxi" type="button" title="Taxi light (K)" aria-label="Taxi light"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6.5h4v4H5z"/><path d="M9 8.5l8 6M7 10.5l4 9M12 6l6 2"/></svg></button><button class="chip" data-l="logo" type="button" title="Tail logo light" aria-label="Tail logo light"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20h13l-3-13h-5z"/><circle cx="12.5" cy="4" r="1.6" fill="currentColor"/></svg></button></div>
           </div>
@@ -588,12 +591,13 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
           <dt>Stall, flaps 30</dt><dd>98 kt at 21° AoA · Vref 127 kt</dd>
           <dt>Stall, clean</dt><dd>103 kt at 24° AoA</dd>
           <dt>Engine</dt><dd>TF-10K, 10,000 lbf dry, 23,000 lbf with afterburner (last 10 % of the throttle) · T/W 0.78 dry, 1.8 wet</dd>
+          <dt>Thrust vectoring</dt><dd>Axisymmetric nozzle, ±20° pitch and yaw at 60°/s · post-stall flight to beyond 90° AoA (J)</dd>
           <dt>Tail clearance</dt><dd>about 13° nose-up on the mains</dd>
           <dt>Airfields</dt><dd>18 across Turkey: Istanbul (IST, SAW, ISL, SMD), Ankara, İzmir, Antalya, Dalaman, Bodrum, Adana, Kayseri, Konya, Samsun, Trabzon, Gaziantep, Diyarbakır, Erzurum and Van</dd>
         </dl>
         <ul id="msgs"></ul>
       </details>
-      <div class="credit-foot">Made by Baris Hiz · build 2026-11-18 03:35 UTC</div>
+      <div class="credit-foot">Made by Baris Hiz · build 2026-11-18 03:50 UTC</div>
     </aside>
   </main>
 </div>
@@ -854,7 +858,9 @@ function worldAt(end,u,v,y){return new THREE.Vector3(end.thr.x+end.d.x*u+end.r.x
 function findRunway(p){for(const ap of AIRPORTS){const l=local(ap.ends[0],p);if(l.u>=0&&l.u<=ap.len&&abs(l.v)<=ap.w/2)return {ap,l};}return null;}
 function approachEnd(ap,p){return local(ap.ends[0],p).u<ap.len/2?ap.ends[0]:ap.ends[1];}
 const SCEN=[{name:'Calm',wind:[0,0,0],gust:0,label:'calm',cloud:0.4},{name:'Crosswind',wind:[-6.2,0,0],gust:0,label:'12 kt from 090',cloud:0.55},{name:'Gusty',wind:[-9.3,0,2],gust:1,label:'18 kt from 100, gusts',cloud:0.7}];
-let scen=0,invert=true,autoTrim=true,autoRudder=true;
+let scen=0,invert=true,autoTrim=true,autoRudder=true,pst=false;   // pst: thrust-vectoring post-stall mode (J)
+// thrust vectoring: the nozzle swivels ±20° in pitch and yaw at 60°/s; arm from the CG to the nozzle hinge, and the yaw inertia
+const TVC={max:20*DEG,rate:60*DEG,arm:6.5,Iz:52000};
 // pitch/roll model (normalised moments): trim AoA, AoA stiffness, elevator power, pitch damping, aileron power, roll damping, dihedral, auto-trim gain
 const PM={qref:0.5*1.225*61.7*61.7,a0:6*DEG,ka:6,kd:1.3,kq:3.2,la:1.3,lp:2.4,ld:0.12,at:1.6,
   // directional: weathercock stiffness, yaw damping, rudder power, adverse yaw, side force, dihedral effect (roll from sideslip)
@@ -880,7 +886,7 @@ const ap={on:false,athr:false,lat:'HDG',vert:'VS',app:false,loc:false,gs:false,a
 let onApChange=()=>{};
 function apCurAlt(){return Math.round(max(0,ac.alt)/100)*100;}
 function apCurVs(){return clamp(Math.round(ac.vs/FT*60/100)*100,-4000,4000);}
-function apEngage(on){if(on===ap.on)return;if(on&&ac.onGround){ap.msg='AP unavailable on the ground';ap.msgT=3;onApChange();return;}ap.on=on;ap.I=0;if(on){if(ap.vert!=='ALT'&&!ap.gs){ap.vert='VS';ap.sel.vs=apCurVs();}ap.altArm=true;if(!ap.loc)ap.lat='HDG';}else{ap.app=false;ap.loc=false;ap.gs=false;ap.lat='HDG';ap.vert='VS';}onApChange();}
+function apEngage(on){if(on===ap.on)return;if(on&&pst){ap.msg='AP unavailable · post-stall mode';ap.msgT=3;onApChange();return;}if(on&&ac.onGround){ap.msg='AP unavailable on the ground';ap.msgT=3;onApChange();return;}ap.on=on;ap.I=0;if(on){if(ap.vert!=='ALT'&&!ap.gs){ap.vert='VS';ap.sel.vs=apCurVs();}ap.altArm=true;if(!ap.loc)ap.lat='HDG';}else{ap.app=false;ap.loc=false;ap.gs=false;ap.lat='HDG';ap.vert='VS';}onApChange();}
 function apDisconnect(why){if(!ap.on)return;apEngage(false);ap.msg=why||'AP OFF';ap.msgT=4;audio.apDisc&&audio.apDisc();onApChange();}
 function apMode(m){
   if(m==='AP'){ap.on?apDisconnect('AP OFF'):apEngage(true);return;}
@@ -941,6 +947,7 @@ const ac={gy:0,alt:0,pos:new THREE.Vector3(),V:70,gamma:0,psi:0,theta:0,phi:0,q:
 const inp={pitch:0,roll:0,kUp:false,kDn:false,kL:false,kR:false,kRudL:false,kRudR:false,trimUp:false,trimDn:false};
 
 function resetFlight(){
+  pst=false;ac.tvP=0;ac.tvY=0;
   const s=SCEN[scen];ac.wind.set(...s.wind);ac.gustV.set(0,0,0);
   ac.pos.copy(worldAt(target,-9300,120,549));ac.V=82;ac.gamma=-2.5*DEG;ac.psi=target.hdg*DEG;ac.psiB=ac.psi;ac.r=0;ac.beta=0;ac.dr=0;ac.psiDot=0;ac.fpHold=null;ac.drTot=0;ac.gc=[0,0,0];ac.wasC=false;ac.settleT=0;ac.jolt=0;ac.surf='grass';ac.stopSurf='';ac.gy=gnd(ac.pos.x,ac.pos.z);ac.agl=(ac.pos.y-ac.gy-AC.gearH)/FT;ac.alt=(ac.pos.y-AC.gearH)/FT;ac.vs=-ac.V*sin(2.5*DEG);ac.ias=ac.V/KT;ac.rwy=null;ac.de=0;ac.da=0;
   ap.on=false;ap.athr=false;ap.app=false;ap.loc=false;ap.gs=false;ap.lat='HDG';ap.vert='VS';ap.msg='';ap.sel={ias:160,hdg:Math.round(target.hdg)%360,alt:Math.round(ac.alt/100)*100,vs:-700};onApChange();
@@ -956,7 +963,12 @@ function resetFlight(){
 }
 const sq16=h=>{const x=16*h*16*h;return x/(1+x);};
 const rollY=a=>GX.ext*cos(a.theta)-GEAR[1].l*sin(a.theta)-GX.stat*(a.wf==null?1:a.wf);
-function CL(a,f){const st=AC.aStall[f];const lin=AC.clA*(a-AC.a0)+AC.clFlap[f];if(a<=st)return max(lin,-0.9)+(ac.splr?AC.clSplr:0);const peak=AC.clA*(st-AC.a0)+AC.clFlap[f];return max(0.3,peak-(a-st)*AC.cls)+(ac.splr?AC.clSplr:0);}
+// past the stall the lift curve dips, then blends into flat-plate lift (about 1.15·sin 2α) all the way to 90° and beyond,
+// so a post-stall manoeuvre like the Cobra still has realistic lift and enormous drag at 60–90° angle of attack
+const sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
+function CL(a,f){const st=AC.aStall[f],sp=ac.splr?AC.clSplr:0;const lin=AC.clA*(a-AC.a0)+AC.clFlap[f];
+  if(a<=st){if(a>=-20*DEG)return max(lin,-0.9)+sp;return lerp(max(lin,-0.9),1.15*sin(2*a),sstep(-20*DEG,-40*DEG,a))+sp;}
+  const peak=AC.clA*(st-AC.a0)+AC.clFlap[f];return lerp(max(0.3,peak-(a-st)*AC.cls),1.15*sin(2*a),sstep(st,st+20*DEG,a))+sp;}
 // International Standard Atmosphere: temperature falls 6.5 °C per km to 11 km, then stays at -56.5 °C; pressure, density and the
 // speed of sound follow, so the Mach number, the engine's thrust and the drag rise near Mach 1 come out right at any height
 function isa(h){h=clamp(h,-500,20000);const T=h<11000?288.15-0.0065*h:216.65,p=h<11000?101325*pow(T/288.15,5.2559):22632*exp(-(h-11000)/6341.6);return{T,rho:p/(287.05*T),a:sqrt(401.87*T)};}
@@ -992,13 +1004,24 @@ function flyStep(dt){
   const qbar=0.5*rho*a.V*a.V,qn=qbar/PM.qref,sq=sqrt(max(qn,0.04));
   a.stalled=a.alpha>st&&!a.onGround;a.stallW=a.alpha>st-3*DEG&&!a.onGround;
   // pitching moment: static stability about trim AoA, elevator (+trim), pitch damping; elevator weaker when stalled
-  let dEl=clamp(a.de+a.trim,-1.4,1.4)*(a.stalled?0.55:1);
+  let dEl=clamp(a.de+a.trim,-1.4,1.4)*(pst?1-0.45*sstep(st,st+15*DEG,a.alpha):a.stalled?0.55:1);
   // fly-by-wire g limiter: elevator can't demand more AoA than the +9/-3 g limits allow at this speed
   // full stick reaches the g limit, or just past the stall AoA when slow, so a stall is still possible
-  if(autoTrim&&!a.onGround&&qbar>50&&!ap.on){const W=acMass()*9.81,an=n=>AC.a0+(n*W/(qbar*AC.S)-AC.clFlap[f])/AC.clA,el=x=>PM.ka*(x-PM.a0)/PM.kd;
+  if(autoTrim&&!a.onGround&&qbar>50&&!ap.on&&!pst){const W=acMass()*9.81,an=n=>AC.a0+(n*W/(qbar*AC.S)-AC.clFlap[f])/AC.clA,el=x=>PM.ka*(x-PM.a0)/PM.kd;
     const ka=clamp((a.airT||0)/2,0,1),kf=ka*ka*(3-2*ka);dEl=clamp((a.de*(1+0.6*kf)+a.trim)*(a.stalled?0.55:1),el(max(an(PM.nzMin),-12*DEG)),el(min(an(PM.nzMax),st-PM.aoaMargin)));}
-  let qd=qn*(-PM.ka*(a.alpha-PM.a0)+PM.kd*dEl)-PM.kq*sq*(a.q-(autoTrim&&!a.onGround?a.qRef||0:0));
-  if(a.stalled){const ex=(a.alpha-st)/DEG;qd-=ex*0.05*max(qn,0.3);a.p+=(Math.random()-0.5)*ex*0.9*DEG;}
+  // thrust-vectoring nozzle (post-stall mode only): the stick sets the pitch angle, pedals and (at high AoA) the roll stick the yaw
+  // angle; with the stick released it damps the pitch rate and
+  // pushes the nose back down to a normal angle of attack (as Su-35 control laws do). The nozzle follows its command at 60°/s.
+  {let cp=0,cy=0;if(pst&&!a.onGround){cp=abs(a.de)>0.05?a.de*TVC.max:-0.35*a.q-1.2*max(0,a.alpha-st+6*DEG);cy=clamp(a.drTot+0.6*a.da*sstep(20*DEG,45*DEG,a.alpha),-1,1)*TVC.max-0.25*a.r*sstep(20*DEG,40*DEG,a.alpha);}
+    a.tvP=ramp(a.tvP||0,clamp(cp,-TVC.max,TVC.max),TVC.rate);a.tvY=ramp(a.tvY||0,clamp(cy,-TVC.max,TVC.max),TVC.rate);}
+  // static pitch stability: in post-stall mode the fly-by-wire no longer adds stability, so the airframe is only lightly stable;
+  // past the stall it has the pitch-up tendency of a relaxed-stability fighter (neutral by about 50°), then grows strongly nose-down
+  // past 60°, which is what stops the nose and brings it back down at the end of a Cobra
+  const aS=!pst?a.alpha-PM.a0:0.4*(min(a.alpha,st)-PM.a0)-0.3*clamp(a.alpha-st,0,30*DEG)+1.6*max(0,a.alpha-60*DEG);
+  let qd=qn*(-PM.ka*aS+PM.kd*dEl)-PM.kq*sq*(pst?1-0.5*sstep(st,st+20*DEG,a.alpha):1)*(a.q-(autoTrim&&!a.onGround&&!pst?a.qRef||0:0));
+  if(a.stalled){const ex=(a.alpha-st)/DEG;
+    if(pst){a.p+=sin(a.t*2.7)*min(ex,40)*0.5*DEG*dt;}   // gentle wing rock and some extra damping, no random departure
+    else{qd-=ex*0.05*max(qn,0.3);a.p+=(Math.random()-0.5)*ex*0.9*DEG;}}
   // rolling moment: aileron, roll damping, dihedral
   let pd;
   if(autoTrim&&!a.onGround){
@@ -1014,14 +1037,15 @@ function flyStep(dt){
   // auto-trim: with the yoke centred the drone holds its attitude, like fly-by-wire
   // auto-trim holds the flight path with the yoke centred and adds back-pressure in turns (fly-by-wire style)
   // just after liftoff the takeoff (nose-down) trim is wound towards what holds the present angle of attack, so the nose stays put when the stick is released
-  if(autoTrim&&!ap.on&&!a.onGround&&!a.stalled&&a.airT<3&&a.toPhase&&a.toPhase!=='climb'){const tq=clamp((a.alpha-PM.a0)*PM.ka/PM.kd,-1,1);if(tq>a.trim)a.trim+=(tq-a.trim)*(1-exp(-dt/0.7));}
+  if(autoTrim&&!ap.on&&!pst&&!a.onGround&&!a.stalled&&a.airT<3&&a.toPhase&&a.toPhase!=='climb'){const tq=clamp((a.alpha-PM.a0)*PM.ka/PM.kd,-1,1);if(tq>a.trim)a.trim+=(tq-a.trim)*(1-exp(-dt/0.7));}
   const normalAtt=abs(a.phi)<62*DEG&&abs(a.theta)<60*DEG;
-  if(abs(pIn)>0.02||a.onGround||ap.on||!normalAtt)a.fpHold=null;else if(a.fpHold==null&&abs(a.de)<0.03&&abs(a.gamma)<30*DEG)a.fpHold=a.gamma;
+  if(abs(pIn)>0.02||a.onGround||ap.on||pst||!normalAtt)a.fpHold=null;else if(a.fpHold==null&&abs(a.de)<0.03&&abs(a.gamma)<30*DEG)a.fpHold=a.gamma;
   if(autoTrim&&!ap.on&&!a.onGround&&!a.stalled&&a.fpHold!=null)a.trim=clamp(a.trim+(PM.fk*(a.fpHold-a.gamma)-PM.fq*(a.q-(a.onGround?0:a.qRef||0)))*dt,-1,1);
-  else if(autoTrim&&!ap.on&&!a.onGround&&!a.stalled&&abs(pIn)<0.02&&qbar>50){const nz=qbar*AC.S*CL(a.alpha,f)/(acMass()*9.81);const nzT=abs(a.phi)<90*DEG&&abs(a.theta)<60*DEG?min(2,1/max(cos(a.phi),0.5)):1;a.trim=clamp(a.trim+0.35*(nzT-nz)*dt/max(qn,0.5),-1,1);}
+  else if(autoTrim&&!ap.on&&!pst&&!a.onGround&&!a.stalled&&abs(pIn)<0.02&&qbar>50){const nz=qbar*AC.S*CL(a.alpha,f)/(acMass()*9.81);const nzT=abs(a.phi)<90*DEG&&abs(a.theta)<60*DEG?min(2,1/max(cos(a.phi),0.5)):1;a.trim=clamp(a.trim+0.35*(nzT-nz)*dt/max(qn,0.5),-1,1);}
   const hb=max(0,a.pos.y-a.gy-AC.gearH+1.1)/AC.span,ge=sq16(hb);
   const cl=CL(a.alpha,f)*(1+0.09*(1-ge));const cd=AC.cd0+AC.k*cl*cl*ge+AC.cdFlap[f]+AC.cdGear*a.gearT+(a.splr?AC.cdSplr:0)+(a.stalled?0.015*(a.alpha-st)/DEG:0)+0.6*a.beta*a.beta+waveCd(a.mach||0);
-  const L=qbar*AC.S*cl,D=qbar*AC.S*cd;
+  const cdP=a.stalled?lerp(cd,AC.cd0+1.85*sin(a.alpha)**2+AC.cdGear*a.gearT,sstep(st,st+20*DEG,a.alpha)):cd;
+  const L=qbar*AC.S*cl,D=qbar*AC.S*cdP;
   const m=acMass(),g=9.81;a.wf=1-clamp(L/(m*g),0,1);
   // engine net thrust with ram-drag loss
   // installed thrust: falls with air density (about sigma^0.75) and with speed, until ram compression recovers it near Mach 1
@@ -1049,12 +1073,13 @@ function flyStep(dt){
     a.V=max(0,a.V+dV*dt);syncFromEuler(a);
   }else{
     // 6-DOF: body rates (roll p, pitch q, yaw r) turn the attitude quaternion; lift, drag, thrust, side force, gravity and gear act on the velocity vector
+    {const tv=T*TVC.arm;qd+=tv*sin(a.tvP||0)/GX.Iy;a.r+=tv*sin(a.tvY||0)/TVC.Iz*dt;}
     a.q+=qd*dt;a.p+=pd*dt;a.r+=rd*dt;
     const w=_v1.set(a.q,-a.r,-a.p),wl=w.length();if(wl>1e-9)a.Q.multiply(_q1.setFromAxisAngle(w.divideScalar(wl),wl*dt)).normalize();
     const B=bodyAxes(a),V0=a.va.length(),vh=V0>1?a.va.clone().divideScalar(V0):B.f.clone();
     const lift=B.u.clone().addScaledVector(vh,-B.u.dot(vh));if(lift.lengthSq()>1e-6)lift.normalize();
     const side=B.rt.clone().addScaledVector(vh,-B.rt.dot(vh));if(side.lengthSq()>1e-6)side.normalize();
-    const F=lift.multiplyScalar(L).addScaledVector(vh,-D).addScaledVector(B.f,T).addScaledVector(side,qbar*AC.S*PM.yb*a.beta);F.y-=m*g;
+    const F=lift.multiplyScalar(L).addScaledVector(vh,-D).addScaledVector(B.f,T*cos(a.tvP||0)*cos(a.tvY||0)).addScaledVector(B.u,-T*sin(a.tvP||0)).addScaledVector(B.rt,-T*sin(a.tvY||0)).addScaledVector(side,qbar*AC.S*PM.yb*a.beta);F.y-=m*g;
     if(G&&G.any){F.y+=G.Fz;const surf=surfaceAt(a.pos);const mu=surf==='grass'?0.08:0.02;F.addScaledVector(vh,-(mu*G.Fz+(a.brk&&G.mains?0.25*G.Fz:0)));}
     a.va.addScaledVector(F,dt/m);
     // tyres in contact scrub off sideways motion and yaw
@@ -1735,7 +1760,7 @@ const mBody=std({color:0xdadee3,metalness:0.3,roughness:0.5}),mDark=std({color:0
 // exterior light switches and the aircraft's light objects
 const LIGHTS={nav:true,bcn:true,strb:true,ldg:true,taxi:false,logo:false};
 const ACL={pts:null,keys:[],lens:[],ldg:null,taxi:null,beams:[]};
-let abFlame=[],abLight=null,abLvl=0,exhaust,navL,navR,strobe,gearGroup,gearUnits=[],ctrlSurf=[],canards=[];
+let nozP=null,abFlame=[],abLight=null,abLvl=0,exhaust,navL,navR,strobe,gearGroup,gearUnits=[],ctrlSurf=[],canards=[];
 let canopyG,leSurf=[],rudders=[],sbrakes=[],gearDoors=[],mLiner;const anim={flap:0,le:0,sb:0,door:1};
 {// H-20: lofted blended fuselage with chined nose, cranked delta wing with LE flaps and split flaperons, all-moving canards, twin canted fins with rudders on
  // blended booms, exterior canopy + dorsal spine, ventral intake with diverter, convergent petal nozzle, speed brakes, gear pods/wells/doors, painted panel detail
@@ -1915,14 +1940,16 @@ let canopyG,leSurf=[],rudders=[],sbrakes=[],gearDoors=[],mLiner;const anim={flap
   // ---------- nozzle: afterbody ring, 16 convergent petals with seals, hot liner, turbine face, tail cone ----------
   add(new THREE.Mesh(new THREE.CylinderGeometry(0.555,0.57,0.3,HI?40:24,1,true).rotateX(PI/2),std({color:0x3e4247,metalness:0.75,roughness:0.4,side:THREE.DoubleSide})),0,0,7.12);
   {const [c,g]=mkCan(8,128);const gr=g.createLinearGradient(0,0,0,128);gr.addColorStop(0,'#6d6a66');gr.addColorStop(0.45,'#7a6f62');gr.addColorStop(0.75,'#6a6a7c');gr.addColorStop(1,'#3d3b3a');g.fillStyle=gr;g.fillRect(0,0,8,128);
+    // the thrust-vectoring nozzle swivels about a hinge ring at the afterbody (petals, liner, exhaust glow and afterburner flame move with it)
+    nozP=new THREE.Group();nozP.position.z=7.12;drone.add(nozP);
     const mPet=std({map:toTex(c,true),metalness:0.85,roughness:0.36,side:THREE.DoubleSide});const NP=16;
-    for(let i=0;i<NP;i++){const p=new THREE.Mesh(new THREE.CylinderGeometry(0.47,0.548,0.62,3,1,true,i/NP*2*PI,2*PI/NP*0.86).rotateX(PI/2),mPet);p.position.z=7.5;drone.add(p);}
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.462,0.538,0.6,NP*2,1,true).rotateX(PI/2),std({color:0x232427,metalness:0.6,roughness:0.6,side:THREE.DoubleSide})),0,0,7.49);}
+    for(let i=0;i<NP;i++){const p=new THREE.Mesh(new THREE.CylinderGeometry(0.47,0.548,0.62,3,1,true,i/NP*2*PI,2*PI/NP*0.86).rotateX(PI/2),mPet);p.position.z=7.5-7.12;nozP.add(p);}
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.462,0.538,0.6,NP*2,1,true).rotateX(PI/2),std({color:0x232427,metalness:0.6,roughness:0.6,side:THREE.DoubleSide})),0,0,7.49-7.12,nozP);}
   mLiner=std({color:0x2c2a28,metalness:0.6,roughness:0.55,emissive:0xff6a2a,emissiveIntensity:0,side:THREE.BackSide});
-  add(new THREE.Mesh(new THREE.CylinderGeometry(0.44,0.44,0.62,HI?32:20,1,true).rotateX(PI/2),mLiner),0,0,7.45);
+  add(new THREE.Mesh(new THREE.CylinderGeometry(0.44,0.44,0.62,HI?32:20,1,true).rotateX(PI/2),mLiner),0,0,7.45-7.12,nozP);
   {const tf=add(new THREE.Mesh(new THREE.CircleGeometry(0.44,HI?32:20),std({color:0x1e1f22,metalness:0.7,roughness:0.6,emissive:0x5a2008,emissiveIntensity:0.4})),0,0,7.16);
     add(new THREE.Mesh(new THREE.ConeGeometry(0.15,0.42,16).rotateX(PI/2),std({color:0x3a3633,metalness:0.8,roughness:0.45})),0,0,7.38);}
-  exhaust=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.42,1,16,1,true).rotateX(PI/2).translate(0,0,0.5),mGlow);exhaust.position.set(0,0,7.7);drone.add(exhaust);
+  exhaust=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.42,1,16,1,true).rotateX(PI/2).translate(0,0,0.5),mGlow);exhaust.position.set(0,0,7.7-7.12);nozP.add(exhaust);
   // afterburner: two additive flame cones with travelling shock diamonds, plus a warm light on the tail
   {const fl=(r0,r1,len,k)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(r1,r0,len,24,20,true).rotateX(PI/2).translate(0,0,len/2),new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,fog:false,
       uniforms:{uT:{value:0},uI:{value:0},uK:{value:k}},vertexShader:'#include <common>\n#include <logdepthbuf_pars_vertex>\nvarying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);\n#include <logdepthbuf_vertex>\n}',
@@ -1931,7 +1958,7 @@ uniform float uT,uI,uK;varying vec2 vUv;void main(){
 #include <logdepthbuf_fragment>
 float x=vUv.y;float dm=pow(max(0.0,sin(x*3.14159*6.0-0.4)),4.0)*(1.0-x);float fl=0.8+0.2*sin(x*40.0-uT*34.0)*sin(uT*21.0+x*9.0);
         vec3 c=mix(vec3(1.0,0.5,0.16),vec3(0.35,0.5,1.0),smoothstep(0.0,0.4,x));c=mix(c,vec3(1.0,0.9,0.75),clamp(dm*1.3+uK*0.35*(1.0-x),0.0,1.0));
-        float a=pow(1.0-x,1.7)*(0.42+uK*0.3)*fl+dm*(0.4+uK*0.3);gl_FragColor=vec4(c*1.15,clamp(a*uI,0.0,0.92));}`}));m.position.set(0,0,7.72);m.visible=false;drone.add(m);return m;};
+        float a=pow(1.0-x,1.7)*(0.42+uK*0.3)*fl+dm*(0.4+uK*0.3);gl_FragColor=vec4(c*1.15,clamp(a*uI,0.0,0.92));}`}));m.position.set(0,0,7.72-7.12);m.visible=false;nozP.add(m);return m;};
    abFlame=[fl(0.43,0.14,6.2,0),fl(0.27,0.03,4.0,1)];abLight=new THREE.PointLight(0xff9a4a,0,22,2);abLight.position.set(0,0.2,8.6);drone.add(abLight);}
   // ---------- exterior lights: nav (red left, green right, white tail), red beacons, white double-flash strobes, landing, taxi, logo ----------
   {const top=fusTopY(0.6,0)+0.06,bot=fusBotY(0.6,0)-0.06;
@@ -2526,6 +2553,7 @@ const CTPB=[['AP','AP'],['ATHR','A/THR'],['HDG','HDG'],['ALT','ALT HOLD'],['VS',
  sw('brk',-0.386,0.17,'BRAKES',()=>ac.brk,()=>toggleBrk(),'Wheel brakes (B)');
  sw('atrim',0.386,-0.52,'A-TRIM',()=>autoTrim,()=>toggleAutoTrim(),'Fly-by-wire auto-trim, holds the flight path and bank with the stick centred (T)');
  sw('arud',0.474,-0.52,'A-RUD',()=>autoRudder,()=>toggleAutoRudder(),'Auto-rudder, keeps turns coordinated');
+ sw('pst',0.430,-0.43,'PST',()=>pst,()=>togglePst(),'Thrust-vectoring post-stall mode, AoA and g limiters off (J)');
  // exterior light switches: a row of six small toggles with green indicators on the left console
  const lsw=(k,x,z,text,tipT)=>{const g=new THREE.Group();g.position.set(x,-0.505,z);cockpit.add(g);
    const base=add(new THREE.Mesh(new THREE.BoxGeometry(0.03,0.01,0.036),mPlate),0,0,0,g);const tog=add(new THREE.Mesh(new THREE.BoxGeometry(0.008,0.028,0.008),mMetal),0,0.018,0,g);
@@ -2580,7 +2608,7 @@ function updateCockpitControls(){drawMCP();drawCTP();
   ['N','L','R'].forEach(n=>ckLights['gear'+n].material.color.setHex(ac.gearT>0.97?0x37e36e:ac.gearT>0.03?0xff3b30:0x1c2228));
   ck.fl=ck.fl==null?ac.flaps:ck.fl+(ac.flaps-ck.fl)*min(1,dtc*7);ck.flapArm.position.z=-0.05+ck.fl*0.05;
   (ck.switches||[]).forEach(s=>{const tg=s.get()?-0.5:0.5;if(s.rx==null){s.rx=tg;s.rv=0;}s.rv+=((tg-s.rx)*900-s.rv*34)*dtc;s.rx+=s.rv*dtc;s.tog.rotation.x=s.rx;});
-  ckLights.splr.material.color.setHex(ac.splr?0xffb432:0x1c2228);ckLights.brk.material.color.setHex(ac.brk?0xffb432:0x1c2228);ckLights.atrim.material.color.setHex(autoTrim?0x37e36e:0x1c2228);ckLights.arud.material.color.setHex(autoRudder?0x37e36e:0x1c2228);
+  ckLights.splr.material.color.setHex(ac.splr?0xffb432:0x1c2228);ckLights.brk.material.color.setHex(ac.brk?0xffb432:0x1c2228);ckLights.atrim.material.color.setHex(autoTrim?0x37e36e:0x1c2228);ckLights.arud.material.color.setHex(autoRudder?0x37e36e:0x1c2228);if(ckLights.pst)ckLights.pst.material.color.setHex(pst?0xffb432:0x1c2228);
   (ck.lightSw||[]).forEach(k=>ckLights['L_'+k].material.color.setHex(LIGHTS[k]?0x37e36e:0x1c2228));}
 const ckRay=new THREE.Raycaster(),ckNdc=new THREE.Vector2();const ckTip=document.createElement('div');ckTip.id='ckTip';ckTip.hidden=true;view.appendChild(ckTip);
 function ckPick(e){const r=canvas.getBoundingClientRect();ckNdc.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);ckRay.setFromCamera(ckNdc,camera);
@@ -2792,7 +2820,7 @@ window.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.ta
   if(k==='q'||k==='Q'||k===','){inp.kRudL=true;e.preventDefault();return;}if(k==='e'||k==='E'||k==='.'){inp.kRudR=true;e.preventDefault();return;}
   if(k==='z'||k==='Z'){apMode('AP');e.preventDefault();return;}
   if((k==='x'||k==='X')&&camMode==='cockpit'){ck.glance=true;e.preventDefault();return;}
-  if(k===']'||k==='Home'){inp.trimUp=true;e.preventDefault();return;}if(k==='['||k==='End'){inp.trimDn=true;e.preventDefault();return;}if(k==='t'||k==='T'){toggleAutoTrim();e.preventDefault();return;}
+  if(k===']'||k==='Home'){inp.trimUp=true;e.preventDefault();return;}if(k==='['||k==='End'){inp.trimDn=true;e.preventDefault();return;}if(k==='t'||k==='T'){toggleAutoTrim();e.preventDefault();return;}if(k==='j'||k==='J'){togglePst();e.preventDefault();return;}
   if(k==='ArrowUp'||k==='w'||k==='W')inp[SETTINGS.inv?'kDn':'kUp']=true;else if(k==='ArrowDown'||k==='s'||k==='S')inp[SETTINGS.inv?'kUp':'kDn']=true;else if(k==='ArrowLeft'||k==='a'||k==='A')inp.kL=true;else if(k==='ArrowRight'||k==='d'||k==='D')inp.kR=true;
   else if(k==='PageUp'||k==='+'||k==='='||k==='PageDown'||k==='-'||k==='_'){if(ap.athr){ap.athr=false;ap.msg='A/THR OFF · manual thrust';ap.msgT=3;onApChange();}setThrottle(+thr.value+(k==='PageUp'||k==='+'||k==='='?4:-4));}
   else if(k==='f'||k==='F')cycleFlaps();else if(k==='g'||k==='G')toggleGear();else if(k==='b'||k==='B')toggleBrk();else if(k===' ')toggleSplr();
@@ -2812,12 +2840,15 @@ function toggleSplr(){ac.splr=!ac.splr;syncSys();audio.clunk&&audio.clunk(0.3);}
 document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{ac.flaps=+b.dataset.f;syncSys();audio.clunk&&audio.clunk(0.3);}));$('bGear').addEventListener('click',toggleGear);$('bBrk').addEventListener('click',toggleBrk);$('bSplr').addEventListener('click',toggleSplr);
 function syncSys(){const F=['Flaps 0','Flaps 15','Flaps 30'][ac.flaps];{const mf=$('mFlap');if(mf){mf.textContent=F;mf.classList.toggle('on',ac.flaps>0);$('mGear').textContent=ac.gear?'Gear ▼':'Gear ▲';$('mGear').classList.toggle('on',!!ac.gear);$('mBrk').classList.toggle('on',ac.brk);$('mSplr').classList.toggle('on',ac.splr);}}$('sFLAP').textContent=F;[0,1,2].forEach(i=>$('f'+i).classList.toggle('on',ac.flaps===i));
   $('sGEAR').textContent=ac.gear?'Gear down':'Gear up';$('sGEAR').classList.toggle('off',!ac.gear);$('gearTxt').textContent=ac.gear?'Gear down':'Gear up';
-  $('bTrim').querySelector('.lbl').textContent=autoTrim?'Trim on':'Trim off';$('bTrim').classList.toggle('on',autoTrim);$('bRud').querySelector('.lbl').textContent=autoRudder?'Rudder on':'Rudder off';$('bRud').classList.toggle('on',autoRudder);
+  $('bTrim').querySelector('.lbl').textContent=autoTrim?'Trim on':'Trim off';$('bTrim').classList.toggle('on',autoTrim);$('bRud').querySelector('.lbl').textContent=autoRudder?'Rudder on':'Rudder off';$('bRud').classList.toggle('on',autoRudder);{const b=$('bPst');b.querySelector('.lbl').textContent=pst?'PST on':'TVC';b.classList.toggle('on',pst);b.classList.toggle('warnc',pst);}
   $('sSPLR').classList.toggle('off',!ac.splr);$('bSplr').classList.toggle('on',ac.splr);$('sBRK').classList.toggle('off',!ac.brk);$('bBrk').classList.toggle('on',ac.brk);}
 $('chipSound').addEventListener('click',e=>{audio.on=!audio.on;e.currentTarget.setAttribute('aria-pressed',String(audio.on));ensureGameAudio();applyVolume();});
 $('vol').addEventListener('input',e=>{audio.vol=+e.target.value/100;applyVolume();});
 $('chipInv').addEventListener('click',e=>{invert=!invert;e.currentTarget.setAttribute('aria-pressed',String(!invert));});
 function toggleAutoTrim(){autoTrim=!autoTrim;syncSys();}
+// post-stall mode: thrust vectoring on, angle-of-attack and g limiters off, autopilot unavailable (J)
+function togglePst(on){pst=on==null?!pst:!!on;if(pst){apDisconnect('AP DISC · post-stall mode');ac.fpHold=null;}
+  onEvent(pst?'Post-stall mode ON · thrust vectoring, AoA and g limits off. Full aft stick for a Cobra, release to recover':'Post-stall mode OFF · fly-by-wire limits back on',pst?'warn':'');syncSys();}
 function toggleAutoRudder(){autoRudder=!autoRudder;syncSys();}
 function syncLights(){document.querySelectorAll('[data-l]').forEach(b=>b.classList.toggle('on',!!LIGHTS[b.dataset.l]));const m=$('mLights');if(m)m.classList.toggle('on',LIGHTS.ldg);}
 function toggleLight(k){LIGHTS[k]=!LIGHTS[k];syncLights();audio.click&&audio.click();}
@@ -2849,7 +2880,7 @@ onApChange=function(){
   {const b=$('mApBtn');if(b)b.classList.toggle('on',ap.on);}
   const m=$('apMsg');if(ap.msg){m.textContent=ap.msg;m.classList.add('warn');}else{m.textContent='';m.classList.remove('warn');}
 };
-$('bTrim').addEventListener('click',toggleAutoTrim);
+$('bTrim').addEventListener('click',toggleAutoTrim);$('bPst').addEventListener('click',()=>togglePst());
 document.querySelectorAll('#tod button').forEach(b=>b.addEventListener('click',()=>{tod=+b.dataset.t;document.querySelectorAll('#tod button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));applyTOD();}));
 document.querySelectorAll('#scen button').forEach(b=>b.addEventListener('click',()=>{scen=+b.dataset.s;document.querySelectorAll('#scen button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}));
 // Start, Fly again and R only put the loading card up (over the menu) and return, so the browser paints straight away; the flight
@@ -3059,7 +3090,7 @@ function updateHUD(dt){
   if(ap.msgT>0){ap.msgT-=dt;if(ap.msgT<=0){ap.msg='';onApChange();}}
   if((a.t*4|0)!==(updateHUD.k||0)){updateHUD.k=a.t*4|0;onApChange();}
   const ws=[];
-  if(a.phase==='fly'){if(a.stalled)ws.push(['STALL','']);else if(a.stallW)ws.push(['STALL','amb']);
+  if(a.phase==='fly'){if(pst)ws.push(['PST · TVC','amb']);if(a.stalled&&!pst)ws.push(['STALL','']);else if(a.stallW&&!pst)ws.push(['STALL','amb']);
     if(a.agl<500&&a.agl>5&&!a.gear)ws.push(['TOO LOW · GEAR','']);
     if(a.vs/FT*60<-1200&&a.agl<1500&&a.agl>10)ws.push(['SINK RATE','']);
     if(gsDev>0.5&&lt.u>-5500&&lt.u<-200&&abs(lt.v)<800&&a.agl>60)ws.push(['GLIDESLOPE','amb']);
@@ -3176,6 +3207,7 @@ function frame(now){
     const sb=ease(anim.sb),dr=ease(anim.door);sbrakes.forEach(b=>{b.piv.rotation.x=b.dir*sb*b.max;b.well.visible=sb>0.01;});
     gearDoors.forEach(d=>{d.h.rotation.z=d.sd*dr*d.max;});
     canopyG.visible=camMode!=='cockpit';}
+  if(nozP)nozP.rotation.set(-(ac.tvP||0),ac.tvY||0,0);   // nozzle follows the vectoring angles
   const th=sim.thrust/ENG.thrustMax;mGlow.opacity=sim.lit?0.03+0.1*th:0;exhaust.scale.z=0.3+1.6*th;
   // afterburner lights above about 90 % thrust
   {const want=sim.ab>0.005?0.35+0.65*sim.ab:0;abLvl+=(want-abLvl)*(1-exp(-dtFrame/0.25));const on=abLvl>0.01;abFlame.forEach((m,i)=>{m.visible=on;if(on){m.material.uniforms.uT.value=now/1000;m.material.uniforms.uI.value=abLvl*(i?1.0:0.8);m.scale.set(1,1,0.55+0.45*abLvl+0.03*sin(now/37+i));}});

@@ -26,6 +26,6 @@ out+=["const audio={whoomp(){},clunk(){},thud(){},crashSound(){},chirp(){},click
 out+=page[c0:c1+1]
 out+=["let onEvent=(t)=>{EVENTS.push([ac.t.toFixed(1),t]);};let mission='approach';"]
 out+=page[d0:d1+1]
-out+=["module.exports={sync:()=>{ac.pOm=null;syncFromEuler(ac);},setMission:(m)=>{mission=m;},vrCalc,events:EVENTS,ac,inp,sim,AC,PM,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget:(e)=>{target=e;},setAutoTrim:(v)=>{autoTrim=v;},setAutoRudder:(v)=>{autoRudder=v;},local,worldAt,resetFlight:()=>{RESULT=null;resetFlight();},flyStep,step,CL,setScen:(i)=>{scen=i;},vref:()=>vrefCalc(),isa,acMass,result:()=>RESULT,setThrottle:(v)=>{sim.throttle=Math.max(0,Math.min(100,v))/100;}};"]
+out+=["module.exports={sync:()=>{ac.pOm=null;syncFromEuler(ac);},setMission:(m)=>{mission=m;},vrCalc,events:EVENTS,ac,inp,sim,AC,PM,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget:(e)=>{target=e;},setAutoTrim:(v)=>{autoTrim=v;},setAutoRudder:(v)=>{autoRudder=v;},setPst:(v)=>{pst=v;},local,worldAt,resetFlight:()=>{RESULT=null;resetFlight();},flyStep,step,CL,setScen:(i)=>{scen=i;},vref:()=>vrefCalc(),isa,acMass,result:()=>RESULT,setThrottle:(v)=>{sim.throttle=Math.max(0,Math.min(100,v))/100;}};"]
 open(os.path.join(here,'harness.js'),'w',encoding='utf-8').write('\n'.join(out)+'\n')
 print('harness.js:',len(out),'lines')

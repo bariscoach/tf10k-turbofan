@@ -153,7 +153,7 @@ main{display:grid;grid-template-columns:1fr 372px;min-height:0}
 #panel{display:flex;flex-direction:column;gap:8px;padding-block:10px 14px}
 #panel .eng,#panel .mcp,#panel .sys,#panel .thrBox{padding:8px}
 #panel .sec-h{margin:0 0 5px}
-#panel .gauges4{max-width:none;margin:0 0 5px;gap:4px} #panel .gauge{height:62px} #panel .gauge canvas{display:block;width:100%;height:100%}
+#panel .gauges4{max-width:none;margin:0 0 5px;gap:4px} #panel .gauge{aspect-ratio:1;padding:0;background:#0b0e12} #panel .gauge canvas{display:block;width:100%;height:100%}
 #panel .ro{gap:4px} #panel .ro div{display:flex;align-items:center;gap:6px;padding:4px 6px} #panel .ro svg{width:15px;height:15px;flex:none;color:var(--fg-dim)} #panel .ro output{font-size:13px;overflow:hidden;text-overflow:ellipsis}
 #panel .mcpRow{gap:5px} #panel .knob label{font-size:10px} #panel .kr{display:grid;grid-template-columns:20px minmax(0,1fr) 20px;gap:2px} #panel .kr .ud{display:flex} #panel .kr .ud button{flex:1;padding:0;font-size:15px}
 #panel .lcd{font-size:15px;padding:5px 0;text-align:center}
@@ -172,7 +172,7 @@ main{display:grid;grid-template-columns:1fr 372px;min-height:0}
 #panel details.more[open]{display:grid;gap:8px} #panel details.more .adiBox{max-width:220px}
 /* short windows (13-inch laptops with the browser's bars): tighter still */
 @media (max-height:760px){#panel{gap:5px;padding-block:6px 10px} #panel .eng,#panel .mcp,#panel .sys,#panel .thrBox{padding:5px 6px} #panel .sec-h{margin-bottom:3px}
-  #panel .gauge{height:44px} #panel .ro div{padding:2px 6px} #panel .lcd{padding:3px 0} #panel .apb{padding:7px 2px 3px} #panel .mcpBtns{margin-top:4px}
+  #panel .ro div{padding:2px 6px} #panel .lcd{padding:3px 0} #panel .apb{padding:7px 2px 3px} #panel .mcpBtns{margin-top:4px}
   #panel .seg button{padding:5px 0} #panel .chip.ico{padding:3px 2px} #panel .lightRow .chip{padding:3px 0} #panel .tq{min-height:110px}}
 #pause kbd{font-family:var(--font-mono);font-size:11px;padding:1px 6px;border:1px solid var(--line-2);border-radius:4px;color:var(--fg)}
 #loading .lcard{width:min(440px,100%);padding:22px 24px;border-radius:10px;background:var(--panel);border:1px solid var(--line-2);display:grid;gap:12px}
@@ -2549,9 +2549,9 @@ function adiCore(g,S,a){const c=S/2,R=S*0.47,ppd=S/52;
 const css=getComputedStyle(document.documentElement);const C={};['cyan','amber','red','green','fg','fg-dim','line','line-2'].forEach(k=>C[k]=css.getPropertyValue('--'+k).trim());
 const FONT_MONO=css.getPropertyValue('--font-mono'),FONT_DISP=css.getPropertyValue('--font-display');
 /*__GAUGE__*/
-const gaN1=new Gauge('gN1',{min:0,max:110,tick:10,every:2,amber:100,red:105,label:'N1',unit:'% RPM',fmt:v=>v.toFixed(1)});
-const gaN2=new Gauge('gN2',{min:0,max:110,tick:10,every:2,amber:100,red:105,label:'N2',unit:'% RPM',fmt:v=>v.toFixed(1)});
-const gaEGT=new Gauge('gEGT',{min:0,max:1100,tick:100,every:2,amber:900,red:950,label:'EGT',unit:'°C',fmt:v=>String(Math.round(v))});
+const gaN1=new Gauge('gN1',{min:0,max:110,tick:10,every:2,amber:100,red:105,label:'N1',unit:'%',fmt:v=>v.toFixed(1)});
+const gaN2=new Gauge('gN2',{min:0,max:110,tick:10,every:2,amber:100,red:105,label:'N2',unit:'%',fmt:v=>v.toFixed(1)});
+const gaEGT=new Gauge('gEGT',{min:0,max:1100,tick:100,every:2,amber:900,red:950,label:'EGT',unit:'°C',tl:t=>String(t/100),fmt:v=>String(Math.round(v))});
 const gaFF=new Gauge('gFF',{min:0,max:4000,tick:500,every:2,amber:4000,red:4000,label:'FF',unit:'PPH',tl:t=>String(t/1000).replace('0.','.'),fmt:v=>String(Math.round(v/10)*10)});
 
 /* ================= Input ================= */

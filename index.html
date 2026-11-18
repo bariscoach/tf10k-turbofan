@@ -496,7 +496,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
 
     <aside id="panel">
       <div class="eng">
-        <div class="sec-h">TF-10K engine <span>10,000 lbf · ~8 s idle to full</span></div>
+        <div class="sec-h">TF-10K engine <span>10,000 lbf dry · 23,000 lbf with afterburner</span></div>
         <div class="gauges4">
           <div class="gauge"><canvas id="gN1"></canvas></div>
           <div class="gauge"><canvas id="gEGT"></canvas></div>
@@ -562,7 +562,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
           <dt>Length</dt><dd>14.9 m · twin canted tails</dd>
           <dt>Stall, flaps 30</dt><dd>98 kt at 21° AoA · Vref 127 kt</dd>
           <dt>Stall, clean</dt><dd>103 kt at 24° AoA</dd>
-          <dt>Engine</dt><dd>TF-10K, 10,000 lbf · T/W 0.78</dd>
+          <dt>Engine</dt><dd>TF-10K, 10,000 lbf dry, 23,000 lbf with afterburner (last 10 % of the throttle) · T/W 0.78 dry, 1.8 wet</dd>
           <dt>Tail clearance</dt><dd>about 13° nose-up on the mains</dd>
           <dt>Airfields</dt><dd>18 across Turkey: Istanbul (IST, SAW, ISL, SMD), Ankara, İzmir, Antalya, Dalaman, Bodrum, Adana, Kayseri, Konya, Samsun, Trabzon, Gaziantep, Diyarbakır, Erzurum and Van</dd>
         </dl>
@@ -586,12 +586,12 @@ const MOB=matchMedia('(pointer:coarse)').matches||(navigator.maxTouchPoints>1&&M
 const KT=0.5144, FT=0.3048, LBF=4.44822;
 
 /* engine: the TF-10K core, derated for the drone installation */
-const ENG={thrustMax:10000,n1Max:7400,n2Max:17800,fanBlades:24,bpr:5,opr:22,egtMax:950,ffMax:3300,ffIdle:520,massFlow:330,fanR:0.56,ambient:15};
+const ENG={thrustMax:10000,thrustAB:23000,ffAB:11500,n1Max:7400,n2Max:17800,fanBlades:24,bpr:5,opr:22,egtMax:950,ffMax:3300,ffIdle:520,massFlow:330,fanR:0.56,ambient:15};
 function syncUI(){}
 function tcode(t){const mm=Math.floor(t/60),ss=Math.floor(t%60);return (mm<10?'0':'')+mm+':'+(ss<10?'0':'')+ss;}
 /* ================= Simulation ================= */
 const sim={phase:'off',t:0,n1:0,n2:0,egt:ENG.ambient,ff:0,thrust:0,epr:1,opr:1,p3:14.7,t3:15,oilP:0,oilT:15,vib:0,
-  starter:false,ignition:false,fuelOn:false,lit:false,throttle:0,litT:0,n2dot:0,fuelUsed:0};
+  starter:false,ignition:false,fuelOn:false,lit:false,throttle:0,litT:0,n2dot:0,fuelUsed:0,ab:0,abOn:false,abT:0,thrustAB:0};
 const msgs=[];
 function log(text,level){msgs.push({t:sim.t,text,level:level||''});if(msgs.length>60)msgs.shift();renderMsgs();}
 function renderMsgs(){const ul=$('msgs');ul.innerHTML='';for(let i=msgs.length-1;i>=0&&i>=msgs.length-12;i--){const m=msgs[i];const li=document.createElement('li');li.className=m.level;const s=document.createElement('span');s.textContent=tcode(m.t);li.appendChild(s);li.appendChild(document.createTextNode(m.text));ul.appendChild(li);}}
@@ -623,7 +623,8 @@ function step(dt){
     if(s.starter&&s.n2>=50){s.starter=false;log('Starter cutout at 50 % N2.');audio.clunk(0.7);}
     if(s.n2>=59.6){s.phase='run';s.ignition=false;log('Stabilized at ground idle. Thrust lever live.','ok');syncUI();}
   }else if(s.phase==='run'){
-    const cmd=60+40*s.throttle,err=cmd-s.n2,x=clamp((s.n2-60)/40,0,1);
+    // the first 90 % of the throttle travel is dry power (full military thrust at the detent); the last 10 % is afterburner
+    const cmd=60+40*min(1,s.throttle/0.9),err=cmd-s.n2,x=clamp((s.n2-60)/40,0,1);
     n2dot=clamp(err*1.3,-(5+3*x),4+6*x);
   }else if(s.phase==='shutdown'){
     n2dot=-(0.6+0.07*s.n2);
@@ -636,6 +637,12 @@ function step(dt){
     if(s.phase==='start')fft=s.lit?300+220*clamp((s.n2-20)/40,0,1):300;
     else if(s.phase==='run'){const x=clamp((s.n2-60)/40,0,1);fft=520+3080*pow(x,1.6)+520*clamp(n2dot/8,0,1);}
   }
+  // afterburner: past the detent, with the core at full speed, it lights after a short delay; thrust and fuel flow build over
+  // about a second (min burner 15 % of the extra thrust, max 100 %) and it drops out at once when the throttle comes back
+  {const abCmd=s.phase==='run'&&s.lit&&s.throttle>0.905&&s.n2>97?clamp((s.throttle-0.9)/0.1,0.15,1):0;
+   if(abCmd>0){if(!s.abOn){s.abT+=dt;if(s.abT>0.4)s.abOn=true;}}else{s.abOn=false;s.abT=0;}
+   s.ab+=((s.abOn?abCmd:0)-s.ab)*(1-exp(-dt/(s.abOn?0.7:0.25)));if(s.ab<1e-3&&!s.abOn)s.ab=0;
+   s.thrustAB=(ENG.thrustAB-ENG.thrustMax)*s.ab;fft+=s.ab*ENG.ffAB;}
   s.ff+=(fft-s.ff)*(1-exp(-dt/0.35));s.fuelUsed+=s.ff/3600*dt;
   let egtT=ENG.ambient;
   if(s.lit)egtT=380+0.155*s.ff+(s.phase==='start'?190*clamp(1-(s.n2-20)/40,0,1):0);
@@ -728,10 +735,11 @@ function updateAudio(dt){
   set(a.core2.frequency,max(30,sh2*16));set(a.core2G.gain,0.01*pow(n2,2));
   set(a.hpc.frequency,max(100,min(9000,sh2*30)));set(a.hpcG.gain,n2>0.1?(0.003+0.004*pow(n2,3))*F:0);
   // jet
-  set(a.roarLP.frequency,(120+2200*pow(th,0.7))*D);set(a.roarG.gain,(s.lit?0.07+0.6*pow(th,0.8):0.03*n1)*R);
+  const ab=s.ab||0;   // afterburner: a deeper, louder roar and more low rumble
+  set(a.roarLP.frequency,(120+2200*pow(th,0.7)-400*ab)*D);set(a.roarG.gain,(s.lit?0.07+0.6*pow(th,0.8)+0.5*ab:0.03*n1)*R);
   set(a.midBP.frequency,(350+900*th)*D);set(a.midG.gain,(s.lit?0.05+0.45*pow(th,0.9):0.02*n1)*R);
   set(a.hissG.gain,(0.05*n1+0.3*pow(th,1.2))*R);
-  set(a.rumLP.frequency,55+70*th);set(a.rumG.gain,s.lit?0.16+0.5*th:0);
+  set(a.rumLP.frequency,55+70*th);set(a.rumG.gain,s.lit?0.16+0.5*th+0.45*ab:0);
   // starter
   set(a.st.frequency,max(40,sh2*26));set(a.stG.gain,s.starter?0.05:0);set(a.st2.frequency,max(30,sh2*13));set(a.st2G.gain,s.starter?0.04:0);
   set(a.st3.frequency,max(60,sh2*52));set(a.st3G.gain,s.starter?0.02:0);set(a.svG.gain,s.starter?0.035:0);
@@ -930,7 +938,7 @@ function isa(h){h=clamp(h,-500,20000);const T=h<11000?288.15-0.0065*h:216.65,p=h
 // weight follows the fuel: the reference 5,800 kg is with 3,000 lb aboard (a full 6,000 lb load is about 7,160 kg)
 const LB=0.4536,FUEL_REF=3000,acMass=()=>AC.mass+((ac.fuel??FUEL_REF)-FUEL_REF)*LB;
 // drag rise near Mach 1: shock waves on the wing and body from Mach 0.8, easing a little once supersonic
-const waveCd=M=>M<0.8?0:M<1.05?0.075*pow((M-0.8)/0.25,2.2):0.075-0.02*min(1,(M-1.05)/0.5);
+const waveCd=M=>M<0.8?0:M<1.05?0.035*pow((M-0.8)/0.25,2.2):0.035-0.01*min(1,(M-1.05)/0.5);
 function vrefCalc(f){f=f==null?ac.flaps:f;return 1.3*sqrt(2*acMass()*9.81/(1.225*AC.S*CL(AC.aStall[f],f)))/KT;}
 function flyStep(dt){
   const a=ac;a.t+=dt;a.gy=gnd(a.pos.x,a.pos.z);a.airT=a.onGround?0:(a.airT||0)+dt;
@@ -946,7 +954,7 @@ function flyStep(dt){
   if(ap.on&&a.stalled)apDisconnect('AP DISC · stall');
   const cmd=apGuidance(a,dt);let fast=false;
   if(cmd&&ap.on){pIn=cmd.de;rIn=cmd.da;fast=true;}
-  if(cmd&&cmd.thr!=null)setThrottle(cmd.thr);
+  if(cmd&&cmd.thr!=null)setThrottle(min(cmd.thr,90));   // auto-thrust stays in dry power
   a.de=ramp(a.de,pIn,fast||inp.pitch?6:(abs(pIn)>abs(a.de)?1.0:3.0));a.da=ramp(a.da,rIn,fast||inp.roll?6:(abs(rIn)>abs(a.da)?1.5:(autoTrim&&!a.onGround?8:3.5)));
   // rudder: pedals ramp; auto-rudder keeps the ball centred (sideslip zero) like the sims' assist
   const drAuto=autoRudder||ap.on?clamp(-3*a.beta-0.8*(a.r-(a.psiDot||0)),-0.6,0.6):0;
@@ -992,7 +1000,7 @@ function flyStep(dt){
   const m=acMass(),g=9.81;a.wf=1-clamp(L/(m*g),0,1);
   // engine net thrust with ram-drag loss
   // installed thrust: falls with air density (about sigma^0.75) and with speed, until ram compression recovers it near Mach 1
-  {const M=a.mach||0;a.thrN=sim.thrust*LBF*pow(rho/1.225,0.75)*(1-0.55*M+0.42*M*M);}
+  {const M=a.mach||0;a.thrN=(sim.thrust+(sim.thrustAB||0))*LBF*pow(rho/1.225,0.75)*(1-0.55*M+0.42*M*M);}
   const T=a.thrN;
   let dV=(T*cos(a.alpha)-D)/m-g*sin(a.gamma);
   let dG=(L*cos(a.phi)+T*sin(a.alpha)-m*g*cos(a.gamma))/(m*a.V);
@@ -1093,6 +1101,10 @@ function ensureGameAudio(){
   // cockpit-only sounds: air-conditioning hiss while the engine runs, and the rush of air over the canopy rising with airspeed
   {const out=audio.ui||audio.master,ecs=ctx.createBufferSource();ecs.buffer=audio.white;ecs.loop=true;ecs.start();const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=2200;gameAudio.ecsG=g(0);ecs.connect(hp).connect(gameAudio.ecsG).connect(out);
    const cw=ctx.createBufferSource();cw.buffer=audio.white;cw.loop=true;cw.start(0,0.37);const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=900;bp.Q.value=0.5;gameAudio.cabWindG=g(0);gameAudio.cabWindBP=bp;cw.connect(bp).connect(gameAudio.cabWindG).connect(out);}
+  // sonic boom: the N-wave of the shock pair, two sharp low cracks about a tenth of a second apart
+  audio.boom=(v)=>{const t=ctx.currentTime;for(const dt_ of[0,0.11]){const s_=ctx.createBufferSource();s_.buffer=audio.brown;const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=520;const e=g(0.0001);
+      e.gain.setValueAtTime(0.0001,t+dt_);e.gain.exponentialRampToValueAtTime(2.6*v,t+dt_+0.006);e.gain.exponentialRampToValueAtTime(0.0005,t+dt_+0.42);s_.connect(lp).connect(e).connect(audio.ui||audio.master);s_.start(t+dt_);s_.stop(t+dt_+0.5);
+      const c_=ctx.createBufferSource();c_.buffer=audio.white;const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=1800;const e2=g(0.0001);e2.gain.setValueAtTime(0.0001,t+dt_);e2.gain.exponentialRampToValueAtTime(0.5*v,t+dt_+0.003);e2.gain.exponentialRampToValueAtTime(0.0005,t+dt_+0.09);c_.connect(hp).connect(e2).connect(audio.ui||audio.master);c_.start(t+dt_);c_.stop(t+dt_+0.12);}};
   audio.thud=(v)=>{const t=ctx.currentTime;const s=ctx.createBufferSource();s.buffer=audio.brown;const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=300;const e=g(0.0001);e.gain.setValueAtTime(1.2*v,t);e.gain.exponentialRampToValueAtTime(0.0005,t+0.35);s.connect(lp).connect(e).connect(audio.master);s.start(t);s.stop(t+0.4);
     const sc=ctx.createBufferSource();sc.buffer=audio.white;const bp2=ctx.createBiquadFilter();bp2.type='bandpass';bp2.frequency.value=2200;bp2.Q.value=2;const e2=g(0.0001);e2.gain.setValueAtTime(0.35*v,t);e2.gain.exponentialRampToValueAtTime(0.0005,t+0.5);sc.connect(bp2).connect(e2).connect(audio.master);sc.start(t);sc.stop(t+0.6);};
   audio.crashSound=()=>{const t=ctx.currentTime;const s=ctx.createBufferSource();s.buffer=audio.brown;const e=g(0.0001);e.gain.setValueAtTime(2.5,t);e.gain.exponentialRampToValueAtTime(0.0005,t+1.6);s.connect(e).connect(audio.master);s.start(t);s.stop(t+1.7);
@@ -2071,7 +2083,18 @@ const vapor={sheets:[],tip:[],I:0};
  // soft camera-facing clouds over each wing, so the vapour reads from any angle
  for(const sd of[-1,1])for(const[x,y,z,w]of[[1.9,0.55,1.0,3.4],[3.3,0.45,2.0,2.8],[2.6,0.7,2.6,2.6]]){const p=new THREE.Sprite(m);p.position.set(sd*x,y,z);p.scale.set(w*1.4,w*0.7,1);p.userData.w=w;p.visible=false;drone.add(p);vapor.sheets.push(p);}
  vapor.mat=m;}
-function updateVapor(dt){const M=ac.mot;if(!M||ac.onGround||ac.phase!=='fly'){vapor.I=0;}else{
+// vapor cone: near Mach 1 the air over the wing expands and cools until its moisture condenses, a collar of cloud with a
+// sharp front edge that fades aft; strongest in the moist air low down, gone once fully supersonic
+{const c=document.createElement('canvas');c.width=256;c.height=128;const g=c.getContext('2d');const gr=g.createLinearGradient(0,0,0,128);
+ gr.addColorStop(0,'rgba(255,255,255,0)');gr.addColorStop(0.08,'rgba(255,255,255,0.95)');gr.addColorStop(0.35,'rgba(255,255,255,0.55)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,256,128);
+ g.globalCompositeOperation='destination-out';for(let i=0;i<70;i++){const x=Math.random()*256;g.fillStyle='rgba(0,0,0,'+(0.1+Math.random()*0.35)+')';g.fillRect(x,0,1+Math.random()*5,128);}
+ const t=new THREE.CanvasTexture(c);t.wrapS=THREE.RepeatWrapping;
+ const geo=new THREE.CylinderGeometry(1.3,5.4,4.2,40,1,true);geo.rotateX(-PI/2);   // narrow end forward, flaring aft over the wing
+ vapor.cone=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({map:t,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide}));vapor.cone.position.set(0,0.05,2.0);vapor.cone.visible=false;drone.add(vapor.cone);}
+function updateVapor(dt){
+  {const M=ac.mach||0,hum=clamp(1-(ac.pos.y-400)/7500,0.12,1),want=ac.phase==='fly'&&!ac.onGround?clamp((M-0.88)/0.06,0,1)*(1-clamp((M-1.02)/0.05,0,1))*hum:0;
+   vapor.cI=(vapor.cI||0)+(want-(vapor.cI||0))*(1-exp(-dt/0.15));const k=vapor.cI;vapor.cone.visible=k>0.02;
+   if(vapor.cone.visible){vapor.cone.material.opacity=0.75*k*(0.85+0.15*Math.random());vapor.cone.material.map.offset.x=(vapor.cone.material.map.offset.x+dt*0.07)%1;vapor.cone.scale.set(1,1,0.8+0.4*k);}}const M=ac.mot;if(!M||ac.onGround||ac.phase!=='fly'){vapor.I=0;}else{
     const st=AC.aStall[ac.flaps|0],sp=clamp((ac.V-75)/60,0,1);
     const want=clamp(max(clamp((M.nz-3.5)/3,0,1)*sp,clamp((ac.alpha/st-0.6)/0.3,0,1)*clamp((ac.V-60)/50,0,1)*0.8),0,1)*(ac.alt<26000?1:0.4);
     vapor.I+=(want-vapor.I)*(1-exp(-dt/0.12));}
@@ -2328,7 +2351,7 @@ function drawCockpitDisplays(a){
      g.fillStyle='#e3eaf2';g.font='600 14px IBM Plex Mono, monospace';g.textAlign='right';g.fillText(txt,500,y);};
    const run=sim.lit,oil=run?42+sim.n2*0.3:sim.n2*0.6,hyd=min(3000,sim.n2*40);
    bar(64,'N2 %',sim.n2,110,sim.n2.toFixed(1));bar(88,'FF PPH',sim.ff,4000,fmt(Math.round(sim.ff/10)*10),'#3fd3e6');bar(112,'OIL PSI',oil,100,String(Math.round(oil)));bar(136,'HYD PSI',hyd,3200,fmt(Math.round(hyd/10)*10));
-   bar(160,'FUEL LB',ac.fuel,6000,fmt(ac.fuel),ac.fuel<300?'#ff5347':'#ffb432');bar(184,'THR %',sim.throttle*100,100,String(Math.round(sim.throttle*100)),'#cfd8e2');
+   bar(160,'FUEL LB',ac.fuel,6000,fmt(ac.fuel),ac.fuel<300?'#ff5347':'#ffb432');bar(184,sim.ab>0.02?'THR · AB':'THR %',sim.throttle*100,100,String(Math.round(sim.throttle*100)),sim.ab>0.02?'#ff9a3c':'#cfd8e2');
    const row=(x0,x1,t,v,y,col)=>{g.fillStyle='#8b9aab';g.font='700 14px Rajdhani, sans-serif';g.textAlign='left';g.textBaseline='middle';g.fillText(t,x0,y);g.fillStyle=col||'#e3eaf2';g.font='600 14px IBM Plex Mono, monospace';g.textAlign='right';g.fillText(v,x1,y);};
    panel(260,216,246,140,'AUTOPILOT');{const on=ap.on,G='#7df5a0',D='#5f6d7d';
      row(270,498,'AP',on?'ENGAGED':'OFF',250,on?G:D);row(270,498,'A/THR',ap.athr?'SPD '+ap.sel.ias:'OFF',274,ap.athr?G:D);
@@ -2947,7 +2970,7 @@ function updateHUD(dt){
   const a=ac;setTxt(H.ias,fmt(a.ias));setTxt(H.alt,fmt(max(0,a.alt)));setTxt(H.altU,a.agl<2500?'ft · '+fmt(max(0,a.agl))+' above ground':'ft above sea level');setTxt(H.vs,fmt(Math.round(a.vs/FT*60/10)*10));setTxt(H.aoa,fmt(a.alpha/DEG,1)+'°');setTxt(H.pitch,fmt(a.theta/DEG,0)+'°');setTxt(H.bank,fmt(a.phi/DEG,0)+'°');
   let trk=((a.psiB/DEG)%360+360)%360;setTxt(H.hdg,String(Math.round(trk)).padStart(3,'0'));drawHdgTape(trk);
   const lt=local(target,a.pos);const distNm=max(0,-lt.u)/1852;setTxt(H.dist,lt.u<0?distNm.toFixed(1)+' nm':fmt(lt.u)+' m in');setTxt(H.dest,target.id+' · '+target.ap.name);
-  const w=SCEN[scen];setTxt(H.wind,w.label);setTxt(H.n1,fmt(sim.n1)+' %');setTxt(H.vref,(a.onGround&&a.toPhase&&a.toPhase!=='air'&&a.toPhase!=='climb')?'Vr '+vrCalc():'Vref '+fmt(vref()));setTxt(H.thr,'Thr '+fmt(sim.throttle*100)+' %');setTxt($('sTRIM'),(autoTrim?'A-trim ':'Trim ')+(ac.trim>=0?'+':'')+(ac.trim||0).toFixed(2));
+  const w=SCEN[scen];setTxt(H.wind,w.label);setTxt(H.n1,fmt(sim.n1)+' %');setTxt(H.vref,(a.onGround&&a.toPhase&&a.toPhase!=='air'&&a.toPhase!=='climb')?'Vr '+vrCalc():'Vref '+fmt(vref()));setTxt(H.thr,'Thr '+fmt(sim.throttle*100)+' %'+(sim.ab>0.02?' · AB':''));setTxt($('sTRIM'),(autoTrim?'A-trim ':'Trim ')+(ac.trim>=0?'+':'')+(ac.trim||0).toFixed(2));
   drawADI(a);
   // ILS: glideslope to the aim point, localizer to the far end
   const gsAng=atan2(a.pos.y-AC.gearH-target.ap.elev,max(1,target.aim-lt.u))/DEG;const gsDev=clamp(3-gsAng,-0.7,0.7);
@@ -3078,7 +3101,7 @@ function frame(now){
     canopyG.visible=camMode!=='cockpit';}
   const th=sim.thrust/ENG.thrustMax;mGlow.opacity=sim.lit?0.03+0.1*th:0;exhaust.scale.z=0.3+1.6*th;
   // afterburner lights above about 90 % thrust
-  {const want=sim.lit?clamp((th-0.88)/0.1,0,1):0;abLvl+=(want-abLvl)*(1-exp(-dtFrame/0.25));const on=abLvl>0.01;abFlame.forEach((m,i)=>{m.visible=on;if(on){m.material.uniforms.uT.value=now/1000;m.material.uniforms.uI.value=abLvl*(i?1.0:0.8);m.scale.set(1,1,0.55+0.45*abLvl+0.03*sin(now/37+i));}});
+  {const want=sim.ab>0.005?0.35+0.65*sim.ab:0;abLvl+=(want-abLvl)*(1-exp(-dtFrame/0.25));const on=abLvl>0.01;abFlame.forEach((m,i)=>{m.visible=on;if(on){m.material.uniforms.uT.value=now/1000;m.material.uniforms.uI.value=abLvl*(i?1.0:0.8);m.scale.set(1,1,0.55+0.45*abLvl+0.03*sin(now/37+i));}});
    if(abLight)abLight.intensity=abLvl*60;mLiner.emissiveIntensity=sim.lit?0.12+1.1*th+abLvl*2.5:0;}
   strobe.visible=LIGHTS.strb&&((now/1000)%1.2)<0.042;
   // exterior lights follow their switches (taxi light only with the nose gear down); landing lamps light the ground, strongest at night
@@ -3107,6 +3130,9 @@ function frame(now){
     const inC=camMode==='cockpit',t=audio.ctx.currentTime;
     if(audio.cab){audio.cab.frequency.setTargetAtTime(inC?900:20000,t,0.06);audio.cabSh.gain.setTargetAtTime(inC?6:0,t,0.06);}
     if(gameAudio.ecsG){const v=clamp(ac.ias/320,0,1.3);gameAudio.ecsG.gain.setTargetAtTime(inC&&sim.n2>40?0.012:0,t,0.3);gameAudio.cabWindG.gain.setTargetAtTime(inC?0.008+0.16*v*v:0,t,0.15);gameAudio.cabWindBP.frequency.setTargetAtTime(600+900*v,t,0.15);}
+    // sonic boom: in the tower and fly-by views, heard when the supersonic aircraft's shock cone sweeps over the camera (the camera
+    // falls inside the Mach cone behind it); louder close by
+    {const M=ac.mach||0,inCone=out&&M>1.0&&ac.mot&&-rel.dot(_v1.copy(ac.mot.v).normalize())>Math.cos(Math.asin(1/M));if(inCone&&!audio.inCone&&audio.boom)audio.boom(clamp(400/d,0.12,1));audio.inCone=inCone;}
     const fd=ac.Q?rel.dot(bodyAxes(ac).f):0;audio.dirF=inC?1:0.55+0.45*(0.5+0.5*fd);audio.dirR=inC?1:0.6+0.4*(0.5-0.5*fd);}
   PERF.m('camera');
   if(camMode==='cockpit'&&ndMode==='cam'){ck.eoT=(ck.eoT||0)+1;if(ck.eoT%(MOB?4:3)===1){renderEO();drawEOOverlay(now);}}PERF.m('eo');

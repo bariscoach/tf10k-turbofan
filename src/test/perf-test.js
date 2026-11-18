@@ -11,11 +11,13 @@ function setup(end,h,V,fuel=3000){const e=H.AIRPORTS.flatMap(x=>x.ends).find(x=>
   a.trim=(a.alpha-H.PM.a0)*H.PM.ka/H.PM.kd;a.va.set(Math.sin(a.psiB),0,-Math.cos(a.psiB)).multiplyScalar(V);a.pOm=null;H.sync();H.inp.pitch=0;H.inp.roll=0;}
 const nz=()=>{const at=H.isa(a.pos.y);return 0.5*at.rho*a.V*a.V*H.AC.S*H.CL(a.alpha,a.flaps)/(H.acMass()*9.81);};
 const rows=[];let fail=0;const check=(name,val,lo,hi,unit,dec=1)=>{const ok=val>=lo&&val<=hi;if(!ok)fail++;rows.push(`${ok?'ok  ':'FAIL'} ${name.padEnd(44)} ${val.toFixed(dec).padStart(7)} ${unit.padEnd(6)} (expected ${lo}–${hi})`);};
-// 1. top level speed: full thrust, autopilot holds altitude, until it stops accelerating
-for(const[h,lo,hi,label]of[[600,0.84,0.97,'sea level (600 m)'],[10000,0.74,0.95,'10 km']]){
-  setup('IST 16R',h,200);H.apMode('AP');H.apMode('ALT');if(H.ap.athr)H.apMode('ATHR');H.setThrottle(100);
+// 1. top level speed, dry (throttle at the 90 % detent) and in full afterburner, autopilot holding altitude, until it stops accelerating
+for(const[thr,h,lo,hi,label]of[[90,600,0.84,0.97,'dry, sea level (600 m)'],[90,10000,0.80,0.97,'dry, 10 km'],[100,600,0.98,1.15,'afterburner, sea level'],[100,10000,1.10,1.50,'afterburner, 10 km']]){
+  setup('IST 16R',h,thr>90?260:200);H.apMode('AP');H.apMode('ALT');if(H.ap.athr)H.apMode('ATHR');H.setThrottle(thr);
   tick(240);const m0=a.mach;tick(30);check('top level speed, '+label,a.mach,lo,hi,'Mach',3);
-  rows.push(`     still accelerating by ${(a.mach-m0).toFixed(3)} Mach in the last 30 s; ${Math.round(a.V/KT)} kt true, ${Math.round(a.ias)} kt indicated, thrust ${Math.round(a.thrN/4.448)} lbf`);}
+  rows.push(`     change in the last 30 s ${(a.mach-m0).toFixed(3)} Mach; ${Math.round(a.V/KT)} kt true, ${Math.round(a.ias)} kt indicated, thrust ${Math.round(a.thrN/4.448)} lbf, fuel flow ${Math.round(H.sim.ff)} pph`);}
+// afterburner fuel burn: full afterburner burns about three to five times the fuel of full dry power
+{setup('IST 16R',600,200);H.setThrottle(90);tick(20);const dry=H.sim.ff;H.setThrottle(100);tick(20);check('fuel flow, full afterburner ÷ full dry power',H.sim.ff/dry,3,5.5,'×');}
 // 2. full pull at 400 kt, 3 km: the g limiter holds about 9 g
 setup('ESB 03R',3000,400*KT);H.setThrottle(100);tick(2);let mx=0;H.inp.pitch=1;for(let i=0;i<300;i++){tick(0.01);mx=Math.max(mx,nz());}H.inp.pitch=0;
 check('peak load factor, full pull at 400 kt',mx,8.3,9.4,'g');

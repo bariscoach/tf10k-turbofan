@@ -78,10 +78,11 @@ function updateAudio(dt){
   set(a.core2.frequency,max(30,sh2*16));set(a.core2G.gain,0.01*pow(n2,2));
   set(a.hpc.frequency,max(100,min(9000,sh2*30)));set(a.hpcG.gain,n2>0.1?(0.003+0.004*pow(n2,3))*F:0);
   // jet
-  set(a.roarLP.frequency,(120+2200*pow(th,0.7))*D);set(a.roarG.gain,(s.lit?0.07+0.6*pow(th,0.8):0.03*n1)*R);
+  const ab=s.ab||0;   // afterburner: a deeper, louder roar and more low rumble
+  set(a.roarLP.frequency,(120+2200*pow(th,0.7)-400*ab)*D);set(a.roarG.gain,(s.lit?0.07+0.6*pow(th,0.8)+0.5*ab:0.03*n1)*R);
   set(a.midBP.frequency,(350+900*th)*D);set(a.midG.gain,(s.lit?0.05+0.45*pow(th,0.9):0.02*n1)*R);
   set(a.hissG.gain,(0.05*n1+0.3*pow(th,1.2))*R);
-  set(a.rumLP.frequency,55+70*th);set(a.rumG.gain,s.lit?0.16+0.5*th:0);
+  set(a.rumLP.frequency,55+70*th);set(a.rumG.gain,s.lit?0.16+0.5*th+0.45*ab:0);
   // starter
   set(a.st.frequency,max(40,sh2*26));set(a.stG.gain,s.starter?0.05:0);set(a.st2.frequency,max(30,sh2*13));set(a.st2G.gain,s.starter?0.04:0);
   set(a.st3.frequency,max(60,sh2*52));set(a.st3G.gain,s.starter?0.02:0);set(a.svG.gain,s.starter?0.035:0);

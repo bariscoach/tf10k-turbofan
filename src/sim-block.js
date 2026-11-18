@@ -1,6 +1,6 @@
 /* ================= Simulation ================= */
 const sim={phase:'off',t:0,n1:0,n2:0,egt:ENG.ambient,ff:0,thrust:0,epr:1,opr:1,p3:14.7,t3:15,oilP:0,oilT:15,vib:0,
-  starter:false,ignition:false,fuelOn:false,lit:false,throttle:0,litT:0,n2dot:0,fuelUsed:0};
+  starter:false,ignition:false,fuelOn:false,lit:false,throttle:0,litT:0,n2dot:0,fuelUsed:0,ab:0,abOn:false,abT:0,thrustAB:0};
 const msgs=[];
 function log(text,level){msgs.push({t:sim.t,text,level:level||''});if(msgs.length>60)msgs.shift();renderMsgs();}
 function renderMsgs(){const ul=$('msgs');ul.innerHTML='';for(let i=msgs.length-1;i>=0&&i>=msgs.length-12;i--){const m=msgs[i];const li=document.createElement('li');li.className=m.level;const s=document.createElement('span');s.textContent=tcode(m.t);li.appendChild(s);li.appendChild(document.createTextNode(m.text));ul.appendChild(li);}}
@@ -32,7 +32,8 @@ function step(dt){
     if(s.starter&&s.n2>=50){s.starter=false;log('Starter cutout at 50 % N2.');audio.clunk(0.7);}
     if(s.n2>=59.6){s.phase='run';s.ignition=false;log('Stabilized at ground idle. Thrust lever live.','ok');syncUI();}
   }else if(s.phase==='run'){
-    const cmd=60+40*s.throttle,err=cmd-s.n2,x=clamp((s.n2-60)/40,0,1);
+    // the first 90 % of the throttle travel is dry power (full military thrust at the detent); the last 10 % is afterburner
+    const cmd=60+40*min(1,s.throttle/0.9),err=cmd-s.n2,x=clamp((s.n2-60)/40,0,1);
     n2dot=clamp(err*1.3,-(5+3*x),4+6*x);
   }else if(s.phase==='shutdown'){
     n2dot=-(0.6+0.07*s.n2);
@@ -45,6 +46,12 @@ function step(dt){
     if(s.phase==='start')fft=s.lit?300+220*clamp((s.n2-20)/40,0,1):300;
     else if(s.phase==='run'){const x=clamp((s.n2-60)/40,0,1);fft=520+3080*pow(x,1.6)+520*clamp(n2dot/8,0,1);}
   }
+  // afterburner: past the detent, with the core at full speed, it lights after a short delay; thrust and fuel flow build over
+  // about a second (min burner 15 % of the extra thrust, max 100 %) and it drops out at once when the throttle comes back
+  {const abCmd=s.phase==='run'&&s.lit&&s.throttle>0.905&&s.n2>97?clamp((s.throttle-0.9)/0.1,0.15,1):0;
+   if(abCmd>0){if(!s.abOn){s.abT+=dt;if(s.abT>0.4)s.abOn=true;}}else{s.abOn=false;s.abT=0;}
+   s.ab+=((s.abOn?abCmd:0)-s.ab)*(1-exp(-dt/(s.abOn?0.7:0.25)));if(s.ab<1e-3&&!s.abOn)s.ab=0;
+   s.thrustAB=(ENG.thrustAB-ENG.thrustMax)*s.ab;fft+=s.ab*ENG.ffAB;}
   s.ff+=(fft-s.ff)*(1-exp(-dt/0.35));s.fuelUsed+=s.ff/3600*dt;
   let egtT=ENG.ambient;
   if(s.lit)egtT=380+0.155*s.ff+(s.phase==='start'?190*clamp(1-(s.n2-20)/40,0,1):0);

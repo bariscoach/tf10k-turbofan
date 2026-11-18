@@ -2098,7 +2098,15 @@ const ckGrain=(()=>{const c=document.createElement('canvas');c.width=c.height=25
  {const c=document.createElement('canvas');c.width=128*DS;c.height=384*DS;const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;ckTex.aux={c,g:c.getContext('2d'),t,W:128*DS,H:384*DS};
   const ag=new THREE.Group();ag.position.set(0.505,-0.455,-0.73);ag.rotation.x=-0.28;cockpit.add(ag);
   box(0.088,0.25,0.04,mCowl,0,0,-0.021,ag);add(new THREE.Mesh(new THREE.PlaneGeometry(0.074,0.222),new THREE.MeshBasicMaterial({map:t,toneMapped:false})),0,0,0.001,ag);
-  for(let i=0;i<3;i++)add(new THREE.Mesh(new THREE.TorusGeometry(0.0315,0.0045,8,28),mBezel),0,0.074-i*0.074,0.004,ag);}
+  for(let i=0;i<3;i++)add(new THREE.Mesh(new THREE.TorusGeometry(0.0315,0.0045,8,28),mBezel),0,0.074-i*0.074,0.004,ag);
+  // 3D needles over the printed dials: each turns every frame with a damped movement, casts a soft shadow on the dial, turns
+  // on a metal hub, and sits under a glass cover that reflects the cockpit like the main display's glass
+  ck.auxN=[];{const sh=new THREE.Shape();sh.moveTo(-0.005,0.0011);sh.lineTo(0.0245,0.00028);sh.lineTo(0.0245,-0.00028);sh.lineTo(-0.005,-0.0011);sh.closePath();const ng=new THREE.ShapeGeometry(sh);
+   const mN=new THREE.MeshBasicMaterial({color:0xf2efe6}),mS=new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.45,depthWrite:false});
+   const mG=new THREE.MeshStandardMaterial({color:0x0b1118,transparent:true,opacity:0.18,roughness:0.04,metalness:0.3,envMapIntensity:1.6,depthWrite:false});
+   for(let i=0;i<3;i++){const y=0.074-i*0.074,sd=add(new THREE.Mesh(ng,mS),0.0009,y-0.0013,0.0016,ag),n=add(new THREE.Mesh(ng,mN),0,y,0.0026,ag);
+     cyl(0.0024,0.0024,0.002,mMetal,0,y,0.0034,ag,12).rotation.x=PI/2;const gl=add(new THREE.Mesh(new THREE.CircleGeometry(0.0305,32),mG),0,y,0.0058,ag);gl.userData.keepOrder=5;
+     ck.auxN.push({n,s:sd,v:0});}}}
  // ---------- cockpit tub: floor, walls, front bulkhead, structure ----------
  box(1.1,0.04,1.9,mShell,0,-1.0,-0.2);
  for(const sd of[-1,1]){box(0.04,0.72,1.9,mShell,0.55*sd,-0.64,-0.2);
@@ -2226,18 +2234,21 @@ function drawCockpitDisplays(a){
   // standby attitude display
   {const d=ckTex.stby,g=ckBg(d,'#05080b');g.save();g.translate(28,20);adiCore(g,200,a);g.restore();g.fillStyle='#e3eaf2';g.font='600 20px IBM Plex Mono, monospace';g.textBaseline='middle';
    g.textAlign='left';g.fillText(String(Math.round(a.ias)),6,238);g.textAlign='right';g.fillText(String(Math.round(max(0,a.alt))),250,238);g.textAlign='center';g.fillStyle='#8b9aab';g.font='700 13px Rajdhani, sans-serif';g.fillText('STBY',128,240);d.t.needsUpdate=true;}
-  // round gauges: white pointers on black dials
-  {const d=ckTex.aux,g=ckBg(d,'#0a0b0c');const dial=(cy,v,max_,lbl,marks,red)=>{const cx=64,r=50,A0=0.75*PI,SW=1.5*PI;g.fillStyle='#050505';g.beginPath();g.arc(cx,cy,r+6,0,2*PI);g.fill();
-      g.strokeStyle='#e8e8e2';g.fillStyle='#e8e8e2';for(let i=0;i<=20;i++){const an=A0+SW*i/20,l=i%5===0?9:5;g.lineWidth=i%5===0?2.2:1.2;g.beginPath();g.moveTo(cx+cos(an)*r,cy+sin(an)*r);g.lineTo(cx+cos(an)*(r-l),cy+sin(an)*(r-l));g.stroke();}
-      if(red!=null){g.strokeStyle='#e0382c';g.lineWidth=4;g.beginPath();g.arc(cx,cy,r-2,A0+SW*red,A0+SW);g.stroke();}
-      g.font='600 11px IBM Plex Mono, monospace';g.textAlign='center';g.textBaseline='middle';marks.forEach((m,i)=>{const an=A0+SW*i/(marks.length-1);g.fillText(m,cx+cos(an)*(r-19),cy+sin(an)*(r-19));});
-      g.font='700 12px Rajdhani, sans-serif';g.fillText(lbl,cx,cy+24);const an=A0+SW*clamp(v/max_,0,1);g.strokeStyle='#ffffff';g.lineWidth=3;g.beginPath();g.moveTo(cx-cos(an)*8,cy-sin(an)*8);g.lineTo(cx+cos(an)*(r-8),cy+sin(an)*(r-8));g.stroke();g.fillStyle='#bfbfbf';g.beginPath();g.arc(cx,cy,5,0,2*PI);g.fill();};
-   dial(64,sim.n2,110,'RPM %',['0','','50','','100'],0.93);dial(192,sim.egt,1100,'FTIT °C',['0','','5','','10'],0.86);dial(320,ac.fuel,6000,'FUEL LB',['0','2','4','6'],null);d.t.needsUpdate=true;}
+  // round gauges: the printed dial faces, drawn once (the needles are 3D and turn every frame in updateCockpit)
+  if(!ck.auxFace){ck.auxFace=true;const d=ckTex.aux,g=ckBg(d,'#0a0b0c');
+   const dial=(cy,lbl,marks,red)=>{const cx=64,r=52,A0=0.75*PI,SW=1.5*PI;
+     const gr=g.createRadialGradient(cx,cy-r*0.45,r*0.1,cx,cy,r+4);gr.addColorStop(0,'#262c33');gr.addColorStop(1,'#060708');g.fillStyle=gr;g.beginPath();g.arc(cx,cy,r+4,0,2*PI);g.fill();
+     if(red!=null){g.strokeStyle='#e0382c';g.lineWidth=4;g.beginPath();g.arc(cx,cy,r-3,A0+SW*red,A0+SW);g.stroke();}
+     g.strokeStyle='#ecefeb';g.fillStyle='#ecefeb';for(let i=0;i<=20;i++){const an=A0+SW*i/20,maj=i%5===0,l=maj?10:5;g.lineWidth=maj?2.4:1.2;g.beginPath();g.moveTo(cx+cos(an)*r,cy+sin(an)*r);g.lineTo(cx+cos(an)*(r-l),cy+sin(an)*(r-l));g.stroke();}
+     g.font='600 13px IBM Plex Mono, monospace';g.textAlign='center';g.textBaseline='middle';marks.forEach((m,i)=>{if(!m)return;const an=A0+SW*i/(marks.length-1);g.fillText(m,cx+cos(an)*(r-22),cy+sin(an)*(r-22));});
+     g.fillStyle='#c9d1d8';g.font='700 12px Rajdhani, sans-serif';g.fillText(lbl,cx,cy+r*0.62);};
+   dial(64,'RPM %',['0','','50','','100'],0.93);dial(192,'FTIT ×100',['0','','5','','10'],0.86);dial(320,'FUEL ×1000',['0','2','4','6'],null);d.t.needsUpdate=true;}
   // nav display
   if(ndMode!=='cam'){if(!TOPO.state&&TERR.c&&BASE.n>=8)buildTopo();const d=ckTex.nd,g=ckBg(d,'#04070a');mapCore(g,512,MAPR[mapRi],14,TOPO.c);
     g.font='700 16px Rajdhani, sans-serif';g.textBaseline='middle';g.fillStyle='rgba(6,14,20,.72)';g.fillRect(6,6,124,24);g.fillRect(430,6,76,24);g.fillStyle='#cfe9f0';g.textAlign='left';g.fillText('TSD · '+MAPR[mapRi]+' NM',12,18);g.textAlign='center';g.fillText(TOPO.c?'TOPO':'SAT',468,18);d.t.needsUpdate=true;}
   }
 
+  if(ck.boot!=null&&ck.boot<2.6)ck.auxFace=false;
   if(ck.boot!=null&&ck.boot<2.6)[['pfd',0],['eng',0.3],['nd',0.55],['stby',0.15],['aux',0.4]].forEach(([n,dl])=>{if(ckTex[n])bootScreen(ckTex[n],ck.boot-0.5-dl);});}
 // the HUD is drawn to scale (its pitch ladder sits on the real horizon), so on a small screen it covers little of the view and
 // its text gets tiny: text and line weights grow (positions don't, so it stays true to the horizon) until the main figures
@@ -2270,6 +2281,7 @@ function updateTubClip(){drone.updateMatrixWorld(true);tubPlanes.forEach((p,i)=>
 function updateCockpit(dt){const on=camMode==='cockpit';if(on&&!ck.was&&!ck.fovSet)ck.fov=ckFov();ck.dtc=dt;if(ck.boot!=null&&ck.boot<9&&!LOAD.on)ck.boot+=dt;cockpit.visible=on;view.classList.toggle('ckView',on);if(on!==ck.was){ck.t=1;setTubClip(on);const sn=drone.getObjectByName('sensor');if(sn)sn.visible=!on;$('app').classList.toggle('ckFull',on);if(!on){ckTip.hidden=true;canvas.style.cursor='';}}ck.was=on;if(!on)return;updateTubClip();updateCockpitControls();
   ck.stick.rotation.x=(ac.de||0)*0.3;ck.stick.rotation.z=-(ac.da||0)*0.3;ck.thr.position.z=-0.2+0.15-sim.throttle*0.3;
   ck.ped[0].position.z=-0.92-(ac.drTot||0)*0.05;ck.ped[1].position.z=-0.92+(ac.drTot||0)*0.05;
+  if(ck.auxN){const vals=[sim.n2/110,sim.egt/1100,ac.fuel/6000],k=1-exp(-dt/0.25);ck.auxN.forEach((d,i)=>{d.v+=(clamp(vals[i],0,1)-d.v)*k;d.n.rotation.z=d.s.rotation.z=-(0.75*PI+1.5*PI*d.v);});}
   if(ck.glare){ck.lad.updateMatrixWorld();const n=_cv.set(0,0,1).transformDirection(ck.lad.matrixWorld),k=clamp(n.dot(_cr.copy(SUNOFF).normalize()),0,1);ck.glare.material.opacity=0.24*k*k*(1-GLU.uNight.value);}
   // canvases are re-uploaded to the GPU each time they are redrawn, so redraw only as often as the eye needs:
   // HUD 30 times a second, flight display 10, engine/standby/gauges/map about 3
@@ -2288,6 +2300,7 @@ canvas.addEventListener('dblclick',()=>{ck.headY=0;ck.headP=MOB?-0.26:CKP;ck.fov
 /* ================= Cockpit controls: glareshield autopilot, gear and flap levers, switches, draggable throttle ================= */
 // cockpit display canvases are re-uploaded many times a second: skip building mipmaps on every upload (the main cost)
 Object.values(ckTex).forEach(d=>{if(d&&d.t){d.t.generateMipmaps=false;d.t.minFilter=THREE.LinearFilter;}});
+ckTex.aux.t.generateMipmaps=true;ckTex.aux.t.minFilter=THREE.LinearMipmapLinearFilter;   // the dial faces are static: smooth them
 const ckHits=[];const ckLights={};
 const CTPB=[['AP','AP'],['ATHR','A/THR'],['HDG','HDG'],['ALT','ALT HOLD'],['VS','V/S'],['APP','APP']],CTPS=[['ias','SPD'],['hdg','HDG'],['alt','ALT'],['vs','V/S']];
 {const mPlate=std({color:0x1b1f24,roughness:0.8,metalness:0.2}),mMetal=std({color:0x7d8690,roughness:0.4,metalness:0.7}),mBlack=std({color:0x0d0f12,roughness:0.9});

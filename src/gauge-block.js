@@ -1,5 +1,5 @@
 class Gauge{constructor(id,o){this.c=$(id);this.ctx=this.c.getContext('2d');this.o=o;}
-  draw(v){const {c,ctx,o}=this;const dpr=min(window.devicePixelRatio||1,2);const W=c.clientWidth||160,H=c.clientHeight||147;const pw=Math.round(W*dpr),ph=Math.round(H*dpr);if(c.width!==pw||c.height!==ph){c.width=pw;c.height=ph;}
+  draw(v){const {c,ctx,o}=this;const dpr=min(window.devicePixelRatio||1,2);const [sw,sh]=sizeOf(c),W=sw||160,H=sh||147;const key=Math.round(v*10)+'|'+W+'x'+H;if(key===this.k)return;this.k=key;   // skip unchanged redrawsconst pw=Math.round(W*dpr),ph=Math.round(H*dpr);if(c.width!==pw||c.height!==ph){c.width=pw;c.height=ph;}
     ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
     const cx=W/2,cy=H*0.54,R=min(W*0.34,H*0.36);const a0=0.75*PI,a1=2.25*PI;const f=x=>a0+(a1-a0)*clamp((x-o.min)/(o.max-o.min),0,1);
     const col=v>=o.red?C.red:v>=o.amber?C.amber:C.cyan;

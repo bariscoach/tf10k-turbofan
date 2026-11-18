@@ -969,6 +969,10 @@ const SETTINGS={q:'auto',vol:null,eng:100,ui:100,sens:100,inv:false,route:null};
 try{Object.assign(SETTINGS,JSON.parse(localStorage.getItem('redapple.settings')||'{}'));}catch(e){}
 function saveSettings(){try{localStorage.setItem('redapple.settings',JSON.stringify(SETTINGS));}catch(e){}}
 const PAUSE={on:false};
+// element sizes come from a ResizeObserver, so per-frame drawing never makes the browser lay out the page on the spot: reading
+// clientWidth right after the HUD's text updates forced a full reflow every frame, over 100 ms when a warning banner appeared
+const SZ=new Map(),szRO=new ResizeObserver(es=>{for(const e of es)SZ.set(e.target,[e.contentRect.width,e.contentRect.height]);});
+function sizeOf(el){let s=SZ.get(el);if(!s){s=[el.clientWidth,el.clientHeight];SZ.set(el,s);szRO.observe(el);}return s;}
 const ASSET='assets/';const PHOTO={sky:false,ground:0};const procScenery=[];
 const texLoader=new THREE.TextureLoader();
 // images are decoded off the main thread before use; otherwise the browser decodes a big JPEG in the middle of the frame that
@@ -2438,7 +2442,7 @@ document.querySelectorAll('.viewbar button').forEach(b=>b.addEventListener('clic
 
 /* ================= Throttle: big drag-anywhere lever with detents ================= */
 const thr=$('throttle'),tq=$('tq'),tqH=$('tqHandle'),tqF=$('tqFill');
-function updateThrOut(){const v=+thr.value;{const mt=$('mtTrack');if(mt){const h=mt.clientHeight||170;$('mtHandle').style.top=(15+(h-30)*(1-v/100))+'px';$('mtFill').style.height=v+'%';$('mtPct').textContent=Math.round(v);}}$('thrOut').textContent=v<=0?'Idle':v>=100?'TO/GA':v.toFixed(0)+' %';
+function updateThrOut(){const v=+thr.value;{const mt=$('mtTrack');if(mt){const h=sizeOf(mt)[1]||170;$('mtHandle').style.top=(15+(h-30)*(1-v/100))+'px';$('mtFill').style.height=v+'%';$('mtPct').textContent=Math.round(v);}}$('thrOut').textContent=v<=0?'Idle':v>=100?'TO/GA':v.toFixed(0)+' %';
   const r=tq.getBoundingClientRect(),h=(r.height||196)-24;tqH.style.top=(12+h*(1-v/100))+'px';tqF.style.height=v+'%';$('tqPct').textContent=Math.round(v);tq.setAttribute('aria-valuenow',String(Math.round(v)));}
 function setThrottle(v){v=clamp(v,0,100);thr.value=v;sim.throttle=v/100;updateThrOut();}
 function manualThrust(){if(ap.athr){ap.athr=false;ap.msg='A/THR OFF · manual thrust';ap.msgT=3;onApChange();}}
@@ -2455,7 +2459,7 @@ function renderLever(){}
 
 /* ================= Attitude indicator (pitch ladder, bank scale, slip) ================= */
 const adiC=$('adi'),adiX=adiC.getContext('2d');
-function drawADI(a){const dpr=min(window.devicePixelRatio||1,2);const S=adiC.clientWidth||180;if(adiC.width!==Math.round(S*dpr)){adiC.width=adiC.height=Math.round(S*dpr);}
+function drawADI(a){const dpr=min(window.devicePixelRatio||1,2);const S=sizeOf(adiC)[0]||180;if(adiC.width!==Math.round(S*dpr)){adiC.width=adiC.height=Math.round(S*dpr);}
   const g=adiX;g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,S,S);adiCore(g,S,a);
   setTxt($('adiP'),(a.theta/DEG>=0?'+':'')+(a.theta/DEG).toFixed(1)+'°');setTxt($('adiB'),(a.phi>=0?'R ':'L ')+abs(a.phi/DEG).toFixed(0)+'°');
 }
@@ -2633,7 +2637,7 @@ const mapC=$('map'),mapX=mapC.getContext('2d');const MAPR=[20,40,80,160,320,640]
 $('mapRange').addEventListener('click',()=>{mapRi=(mapRi+1)%MAPR.length;$('mapRange').textContent='Map '+MAPR[mapRi]+' nm';});
 function mapXY(x,z,S,sc){return [S/2+(x-ac.pos.x)*sc,S/2+(z-ac.pos.z)*sc];}
 function drawMap(){
-  const dpr=min(window.devicePixelRatio||1,2);const S=mapC.clientWidth||210;if(mapC.width!==Math.round(S*dpr)){mapC.width=mapC.height=Math.round(S*dpr);}
+  const dpr=min(window.devicePixelRatio||1,2);const S=sizeOf(mapC)[0]||210;if(mapC.width!==Math.round(S*dpr)){mapC.width=mapC.height=Math.round(S*dpr);}
   const g=mapX;g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,S,S);mapCore(g,S,MAPR[mapRi],10);
 }
 // heading tape, as on a PFD or fighter HUD: scale slides under a fixed caret, the current heading sits in the box,

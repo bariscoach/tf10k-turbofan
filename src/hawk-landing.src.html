@@ -223,6 +223,7 @@ main{display:grid;grid-template-columns:1fr 372px;min-height:0}
 @media (max-width:700px){.mcards{grid-template-columns:1fr}}
 .scen.dest{grid-template-columns:repeat(4,1fr)} .scen.two{grid-template-columns:repeat(2,1fr)}
 #toast{position:absolute;left:50%;top:96px;transform:translateX(-50%);z-index:4;max-width:min(560px,90%);padding:8px 16px;border-radius:6px;background:rgba(10,14,20,.82);border:1px solid var(--line-2);font-family:var(--font-display);font-weight:700;font-size:20px;letter-spacing:.06em;text-align:center;color:var(--fg);pointer-events:none;transition:opacity .3s}
+#warn span.grn{border-color:var(--hud);color:var(--hud);animation:none}
 #panel .chip.warnc{color:var(--amber);border-color:var(--amber)}
 #toast.go{color:var(--hud);border-color:rgba(125,245,160,.6)} #toast.warn{color:var(--amber);border-color:var(--amber)} #toast.off{opacity:0}
 #view.ckView #toast{top:56px} .scen.dest button small{display:block;color:var(--fg-mute);font-family:var(--font-mono);font-size:10px}
@@ -463,6 +464,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
             <dt>↓ ↑ / S W</dt><dd>Pull back (nose up) / push forward (nose down), as in flight sims <button type="button" class="chip" id="chipInv" aria-pressed="false" style="margin-left:6px;padding:1px 6px;font-size:11px">Arcade pitch (↑ nose up)</button></dd>
             <dt>Q E</dt><dd>Rudder left / right (steers on the ground). Auto-rudder keeps turns coordinated unless you switch it off</dd>
             <dt>[ ] · T</dt><dd>Trim nose down / up · fly-by-wire on or off (on: a centred stick holds the flight path and bank, full stick pulls up to 9 g)</dd>
+            <dt>U</dt><dd>Drag chute: after touchdown (weight on the wheels) the brake chute streams from the tail and opens in about a second, adding up to 0.45 g of braking at landing speed. It shreds above 185 kt and burns off if the afterburner is lit; in a crosswind it pulls the nose into wind. Press U again to jettison it, normally below about 40 kt</dd>
             <dt>J</dt><dd>Post-stall mode: the nozzle vectors ±20° in pitch and yaw and the AoA and g limiters are off. For a Cobra: about 230 kt, full afterburner, full aft stick for about 2 s, then let go. The nose goes past 70° and the speed bleeds away, and with the stick released the nozzle brings the nose back down. With rudder or roll stick at high AoA the nozzle yaws the aircraft round (a flat turn). The autopilot is unavailable while it is on</dd>
             <dt>Heading</dt><dd>The tape at the top shows your heading in the box; the cyan bug is the autopilot's selected heading (solid while the autopilot is flying it) and the magenta diamond points to the destination runway. The map repeats both: a green line for your heading and a dashed cyan line with a bug for the selected heading</dd>
             <dt>L · K</dt><dd>Landing lights · taxi light. All exterior lights (nav, beacon, strobe, landing, taxi, logo) have switches on the left console in the cockpit and in the Systems panel. Choose day, dusk or night on the setup screen</dd>
@@ -548,6 +550,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
             <button type="button" class="glever" id="bGear" title="Landing gear (G)"><span class="glights"><i></i><i></i><i></i></span><b id="gearTxt">Gear up</b></button>
             <button class="chip ico" id="bSplr" type="button" title="Speed brake (Space)"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16h20M7 16l3-7M17 16l-3-7"/></svg><span class="lbl">Spd brake</span></button>
             <button class="chip ico" id="bBrk" type="button" title="Wheel brakes (B)"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/><path d="M15.5 5.5a8 8 0 0 1 3 3"/></svg><span class="lbl">Brakes</span></button>
+            <button class="chip ico" id="bChute" type="button" title="Drag chute (U): deploy after touchdown, press again to jettison"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11a9 7 0 0 1 18 0"/><path d="M3 11c1.5-1.3 3-1.3 4.5 0 1.5-1.3 3-1.3 4.5 0 1.5-1.3 3-1.3 4.5 0 1.5-1.3 3-1.3 4.5 0"/><path d="M3 11l9 9 9-9M7.5 11l4.5 9 4.5-9"/></svg><span class="lbl">Chute</span></button>
             <button class="chip ico on" id="bTrim" type="button" title="Fly-by-wire auto-trim (T)"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l4-12 4 12M5.5 14h5"/><path d="M15 12h6M18 9v6"/></svg><span class="lbl">Trim on</span></button>
             <button class="chip ico on" id="bRud" type="button" title="Auto-rudder, keeps turns coordinated"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 20l3-16h4l-2 16z"/><path d="M13 13l6 2"/></svg><span class="lbl">Rudder on</span></button>
             <button class="chip ico" id="bPst" type="button" title="Thrust vectoring post-stall mode (J): limiters off, for the Cobra and other post-stall manoeuvres"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h9l4-2v10l-4-2H3z"/><path d="M19 6l2 6-2 6"/></svg><span class="lbl">TVC</span></button>
@@ -581,6 +584,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
           <dt>Stall, flaps 30</dt><dd>98 kt at 21° AoA · Vref 127 kt</dd>
           <dt>Stall, clean</dt><dd>103 kt at 24° AoA</dd>
           <dt>Engine</dt><dd>TF-10K, 10,000 lbf dry, 23,000 lbf with afterburner (last 10 % of the throttle) · T/W 0.78 dry, 1.8 wet</dd>
+          <dt>Drag chute</dt><dd>5 m ribbon chute in a tail canister · about 10 m² drag area · deploy after touchdown, up to 185 kt (U)</dd>
           <dt>Thrust vectoring</dt><dd>Axisymmetric nozzle, ±20° pitch and yaw at 60°/s · post-stall flight to beyond 90° AoA (J)</dd>
           <dt>Tail clearance</dt><dd>about 13° nose-up on the mains</dd>
           <dt>Airfields</dt><dd>18 across Turkey: Istanbul (IST, SAW, ISL, SMD), Ankara, İzmir, Antalya, Dalaman, Bodrum, Adana, Kayseri, Konya, Samsun, Trabzon, Gaziantep, Diyarbakır, Erzurum and Van</dd>
@@ -777,8 +781,40 @@ function apGuidance(a,dt){
 const ac={gy:0,alt:0,pos:new THREE.Vector3(),V:70,gamma:0,psi:0,theta:0,phi:0,q:0,p:0,alpha:0,flaps:0,gear:1,gearT:1,splr:false,brk:false,onGround:false,stalled:false,stallW:false,vs:0,ias:0,agl:0,thrN:0,wind:new THREE.Vector3(),gustT:0,gustV:new THREE.Vector3(),fuel:2400,phase:'standby',td:null,maxBank:0,tdTime:0,stopDist:0,t:0,touch:0};
 const inp={pitch:0,roll:0,kUp:false,kDn:false,kL:false,kR:false,kRudL:false,kRudR:false,trimUp:false,trimDn:false};
 
+/* drag chute */
+// A ribbon brake chute packed in a canister above the tail, as on the Su-27, F-16 (Norway) or MiG-29: 5 m nominal diameter, about
+// 10 m² of drag area fully open (0.45 g at 130 kt, fading with speed squared, so it does most of its work early in the roll where
+// wheel brakes are weakest). It streams only with weight on the wheels and the gear down. Opening is staged: the pilot chute pulls
+// the bag and the lines stretch (0.35 s), the reefed canopy opens to about a third of its area (to 0.7 s), then it disreefs to full,
+// with a little overshoot and breathing. Above 185 kt it shreds; afterburner flame burns it off; in a crosswind it weathervanes,
+// pulling the tail downwind so the nose swings into wind. Press again to jettison (normally before about 40 kt, before turning off).
+const CHUTE={CdS:10,vMax:185,armH:0.55,yaw:0.08};
+const _cF=new THREE.Vector3();
+const chute={st:'stowed',t:0,infl:0,F:0,Vr:0,lon:0,lat:0,rel:new THREE.Vector3(),kt:0,ktOff:0,why:''};
+function chuteReset(){Object.assign(chute,{st:'stowed',t:0,infl:0,F:0,Vr:0,lon:0,lat:0,kt:0,ktOff:0,why:''});chute.rel.set(0,0,0);}
+function chuteCmd(){const a=ac;if(a.phase!=='fly')return;
+  if(chute.st==='stowed'){const wow=a.onGround||!!(a.gc&&(a.gc[1]>0||a.gc[2]>0));
+    if(!wow||a.gearT<0.95){onEvent('Drag chute inhibited · it deploys only with weight on the wheels','warn');return;}
+    chute.st='out';chute.t=0;chute.infl=0;chute.kt=a.ias;onEvent('Drag chute · deployed at '+fmt(a.ias)+' kt','go');audio.clunk&&audio.clunk(0.6);syncSys();return;}
+  if(chute.st==='out')chuteRelease('jettison');}
+function chuteRelease(why){chute.st=why==='jettison'?'gone':'failed';chute.why=why;chute.ktOff=ac.ias;chute.F=0;chute.infl=0;
+  onEvent(why==='jettison'?'Drag chute jettisoned at '+fmt(ac.ias)+' kt':why==='shred'?'Drag chute failed · shredded above '+CHUTE.vMax+' kt':'Drag chute burned off · afterburner lit with the chute out','warn');
+  audio.clunk&&audio.clunk(0.4);syncSys();}
+// drag force (N) of the chute this step; also leaves its direction relative to the aircraft in chute.lon (backwards) and chute.lat (right)
+function chuteForce(a,dt,wind,rho){if(chute.st!=='out'){chute.F=0;return 0;}
+  const t0=chute.t,t=chute.t+=dt;
+  if(t0<0.35&&t>=0.35)audio.thud&&audio.thud(0.3);if(t0<0.75&&t>=0.75)audio.thud&&audio.thud(0.55);
+  let A=t<0.35?0.02:t<0.7?0.3:0.3+0.7*sstep(0.7,1.25,t)+0.08*sin(clamp((t-0.9)/0.6,0,1)*PI);A*=1+0.03*sin(t*12.5);
+  // airflow at the chute: on the ground a.va is the ground velocity and the wind blows past; in the air a.va is already air-relative
+  const rel=chute.rel.copy(a.va).negate();if(a.onGround)rel.add(wind);const Vr=rel.length();chute.Vr=Vr;
+  A*=sstep(3,9,Vr);chute.infl=A;
+  if(t>0.3&&a.ias>CHUTE.vMax){chuteRelease('shred');return 0;}
+  if(t>0.2&&(sim.ab||0)>0.05){chuteRelease('burn');return 0;}
+  const F=0.5*rho*Vr*Vr*CHUTE.CdS*A;chute.F=F;
+  const f=_cF.set(sin(a.psiB),0,-cos(a.psiB));chute.lon=Vr>0.1?-rel.dot(f)/Vr:0;chute.lat=Vr>0.1?(rel.x*cos(a.psiB)+rel.z*sin(a.psiB))/Vr:0;
+  return F;}
 function resetFlight(){
-  pst=false;ac.tvP=0;ac.tvY=0;
+  pst=false;ac.tvP=0;ac.tvY=0;chuteReset();
   const s=SCEN[scen];ac.wind.set(...s.wind);ac.gustV.set(0,0,0);
   ac.pos.copy(worldAt(target,-9300,120,549));ac.V=82;ac.gamma=-2.5*DEG;ac.psi=target.hdg*DEG;ac.psiB=ac.psi;ac.r=0;ac.beta=0;ac.dr=0;ac.psiDot=0;ac.fpHold=null;ac.drTot=0;ac.gc=[0,0,0];ac.wasC=false;ac.settleT=0;ac.jolt=0;ac.surf='grass';ac.stopSurf='';ac.gy=gnd(ac.pos.x,ac.pos.z);ac.agl=(ac.pos.y-ac.gy-AC.gearH)/FT;ac.alt=(ac.pos.y-AC.gearH)/FT;ac.vs=-ac.V*sin(2.5*DEG);ac.ias=ac.V/KT;ac.rwy=null;ac.de=0;ac.da=0;
   ap.on=false;ap.athr=false;ap.app=false;ap.loc=false;ap.gs=false;ap.lat='HDG';ap.vert='VS';ap.msg='';ap.sel={ias:160,hdg:Math.round(target.hdg)%360,alt:Math.round(ac.alt/100)*100,vs:-700};onApChange();
@@ -882,6 +918,7 @@ function flyStep(dt){
   // installed thrust: falls with air density (about sigma^0.75) and with speed, until ram compression recovers it near Mach 1
   {const M=a.mach||0;a.thrN=(sim.thrust+(sim.thrustAB||0))*LBF*pow(rho/1.225,0.75)*(1-0.55*M+0.42*M*M);}
   const T=a.thrN;
+  const Fc=chuteForce(a,dt,wind,rho);   // drag chute, if streaming
   let dV=(T*cos(a.alpha)-D)/m-g*sin(a.gamma);
   let dG=(L*cos(a.phi)+T*sin(a.alpha)-m*g*cos(a.gamma))/(m*a.V);
   // landing gear contact while not yet settled: struts push up, pitch the nose down (mains behind CG), roll, and drag
@@ -893,9 +930,10 @@ function flyStep(dt){
     const W=m*g;const surf=surfaceAt(a.pos);a.surf=surf;const mu=surf==='grass'?0.09:0.02,bmu=surf==='grass'?0.18:0.33;
     a.brkF=(a.brkF||0)+((a.brk?1:0)-(a.brkF||0))*(1-exp(-dt/0.45));a.splF=(a.splF||0)+((a.splr?1:0)-(a.splF||0))*(1-exp(-dt/0.6));
     const roll=mu*W+a.brkF*bmu*W*clamp(a.V/8,0,1)+a.splF*0.1*W*clamp(a.V/40,0,1);
-    dV=(T-D-roll)/m;if(a.V<0.5&&dV<0){dV=0;a.V=0;}
+    dV=(T-D-roll-Fc*chute.lon)/m;if(a.V<0.5&&dV<0){dV=0;a.V=0;}
     a.gamma=0;{const y0=a.pos.y-a.gy,y1=rollY(a);a.yDot=(y1-y0)/dt;a.pos.y=a.gy+y1;const cm=GX.stat*a.wf;a.gc=[clamp(GX.ext*cos(a.theta)-y1-GEAR[0].l*sin(a.theta),0,GX.stroke),cm,cm];}
-    {const rT=a.steer*12*DEG*clamp(a.V/20,0,1)*clamp(1.4-a.V/80,0.35,1);a.r+=(rT-a.r)*(1-exp(-dt/0.25));}a.psiB+=a.r*dt;a.psi=a.psiB;a.beta=0;a.psiDot=a.r;a.phi+=(0-a.phi)*(1-exp(-dt/0.5));a.p=0;
+    {const rT=a.steer*12*DEG*clamp(a.V/20,0,1)*clamp(1.4-a.V/80,0.35,1)-CHUTE.yaw*Fc*chute.lat/m;a.r+=(rT-a.r)*(1-exp(-dt/0.25));}a.psiB+=a.r*dt;a.psi=a.psiB;a.beta=0;a.psiDot=a.r;a.phi+=(0-a.phi)*(1-exp(-dt/0.5));a.p=0;
+    qd-=Fc*CHUTE.armH/GX.Iy;   // the chute pulls above the CG: nose down
     {const wf=1-clamp(L/W,0,1);qd-=wf*(W*GX.arm/GX.Iy+1.5*a.q);}
     a.q+=qd*dt;a.theta+=a.q*dt;
     if(a.theta<0){a.theta=0;a.q=max(0,a.q);}if(a.theta>13.5*DEG){a.theta=13.5*DEG;a.q=min(0,a.q);if(!a.toTail&&a.V>20){a.toTail=true;onEvent('Tail strike on rotation','warn');audio.thud&&audio.thud(0.5);}}
@@ -911,6 +949,7 @@ function flyStep(dt){
     const lift=B.u.clone().addScaledVector(vh,-B.u.dot(vh));if(lift.lengthSq()>1e-6)lift.normalize();
     const side=B.rt.clone().addScaledVector(vh,-B.rt.dot(vh));if(side.lengthSq()>1e-6)side.normalize();
     const F=lift.multiplyScalar(L).addScaledVector(vh,-D).addScaledVector(B.f,T*cos(a.tvP||0)*cos(a.tvY||0)).addScaledVector(B.u,-T*sin(a.tvP||0)).addScaledVector(B.rt,-T*sin(a.tvY||0)).addScaledVector(side,qbar*AC.S*PM.yb*a.beta);F.y-=m*g;
+    if(Fc>0){F.addScaledVector(chute.rel,Fc/max(chute.Vr,0.1));a.q-=Fc*CHUTE.armH/GX.Iy*dt;}
     if(G&&G.any){F.y+=G.Fz;const surf=surfaceAt(a.pos);const mu=surf==='grass'?0.08:0.02;F.addScaledVector(vh,-(mu*G.Fz+(a.brk&&G.mains?0.25*G.Fz:0)));}
     a.va.addScaledVector(F,dt/m);
     // tyres in contact scrub off sideways motion and yaw
@@ -979,6 +1018,7 @@ function ensureGameAudio(){
   const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=500;bp.Q.value=0.4;gameAudio.windG=g(0);noise.connect(bp).connect(gameAudio.windG).connect(audio.master);gameAudio.windBP=bp;
   const horn=ctx.createOscillator();horn.type='square';horn.frequency.value=420;const hg=g(0);gameAudio.hornG=hg;const hf=ctx.createBiquadFilter();hf.type='lowpass';hf.frequency.value=1800;horn.connect(hf).connect(hg).connect(audio.master);horn.start();
   gameAudio.hornOn=false;
+  {const n2=ctx.createBufferSource();n2.buffer=audio.white;n2.loop=true;n2.start(0,0.91);const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=240;bp.Q.value=0.9;gameAudio.chuteG=g(0);n2.connect(bp).connect(gameAudio.chuteG).connect(audio.master);}   // drag-chute flutter
   // cockpit-only sounds: air-conditioning hiss while the engine runs, and the rush of air over the canopy rising with airspeed
   {const out=audio.ui||audio.master,ecs=ctx.createBufferSource();ecs.buffer=audio.white;ecs.loop=true;ecs.start();const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=2200;gameAudio.ecsG=g(0);ecs.connect(hp).connect(gameAudio.ecsG).connect(out);
    const cw=ctx.createBufferSource();cw.buffer=audio.white;cw.loop=true;cw.start(0,0.37);const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=900;bp.Q.value=0.5;gameAudio.cabWindG=g(0);gameAudio.cabWindBP=bp;cw.connect(bp).connect(gameAudio.cabWindG).connect(out);}
@@ -997,6 +1037,7 @@ audio.chirp=(v)=>{const ctx=audio.ctx;if(!ctx||!audio.master)return;const t=ctx.
 audio.apDisc=()=>{const ctx=audio.ctx;if(!ctx||!audio.master)return;const t=ctx.currentTime;[0,0.32,0.64].forEach(o=>{const os=ctx.createOscillator();os.type='sine';os.frequency.setValueAtTime(880,t+o);os.frequency.linearRampToValueAtTime(660,t+o+0.25);const g=ctx.createGain();g.gain.setValueAtTime(0.0001,t+o);g.gain.exponentialRampToValueAtTime(0.12,t+o+0.02);g.gain.exponentialRampToValueAtTime(0.0005,t+o+0.28);os.connect(g).connect(audio.master);os.start(t+o);os.stop(t+o+0.3);});};
 function updateGameAudio(dt){
   if(!gameAudio.ready)return;const t=audio.ctx.currentTime;const v=clamp(ac.V/90,0,1.3);
+  if(gameAudio.chuteG){const q=chute.st==='out'?chute.infl*sstep(4,60,chute.Vr):0;gameAudio.chuteG.gain.setTargetAtTime(0.32*q*(1+0.45*sin(t*17)*sin(t*5.3)),t,0.03);}
   gameAudio.windG.gain.setTargetAtTime(0.02+0.35*v*v*(ac.gear?1.3:1)*(ac.splr?1.3:1)+(ac.onGround?(ac.surf==='grass'?0.25:0.08)*clamp(ac.V/50,0,1):0),t,0.1);gameAudio.windBP.frequency.setTargetAtTime(300+900*v,t,0.1);
   const on=ac.stallW&&ac.phase==='fly';if(on!==gameAudio.hornOn){gameAudio.hornOn=on;gameAudio.hornG.gain.setTargetAtTime(on?0.12:0,t,0.02);}
   if(on){gameAudio.hornG.gain.setValueAtTime((Math.floor(t*4)%2)?0.12:0.02,t);}
@@ -1591,7 +1632,7 @@ const mBody=std({color:0xdadee3,metalness:0.3,roughness:0.5}),mDark=std({color:0
 // exterior light switches and the aircraft's light objects
 const LIGHTS={nav:true,bcn:true,strb:true,ldg:true,taxi:false,logo:false};
 const ACL={pts:null,keys:[],lens:[],ldg:null,taxi:null,beams:[]};
-let nozP=null,abFlame=[],abLight=null,abLvl=0,exhaust,navL,navR,strobe,gearGroup,gearUnits=[],ctrlSurf=[],canards=[];
+let nozP=null,chuteCap=null,CH3=null,abFlame=[],abLight=null,abLvl=0,exhaust,navL,navR,strobe,gearGroup,gearUnits=[],ctrlSurf=[],canards=[];
 let canopyG,leSurf=[],rudders=[],sbrakes=[],gearDoors=[],mLiner;const anim={flap:0,le:0,sb:0,door:1};
 {// H-20: lofted blended fuselage with chined nose, cranked delta wing with LE flaps and split flaperons, all-moving canards, twin canted fins with rudders on
  // blended booms, exterior canopy + dorsal spine, ventral intake with diverter, convergent petal nozzle, speed brakes, gear pods/wells/doors, painted panel detail
@@ -1773,6 +1814,9 @@ let canopyG,leSurf=[],rudders=[],sbrakes=[],gearDoors=[],mLiner;const anim={flap
   {const [c,g]=mkCan(8,128);const gr=g.createLinearGradient(0,0,0,128);gr.addColorStop(0,'#6d6a66');gr.addColorStop(0.45,'#7a6f62');gr.addColorStop(0.75,'#6a6a7c');gr.addColorStop(1,'#3d3b3a');g.fillStyle=gr;g.fillRect(0,0,8,128);
     // the thrust-vectoring nozzle swivels about a hinge ring at the afterbody (petals, liner, exhaust glow and afterburner flame move with it)
     nozP=new THREE.Group();nozP.position.z=7.12;drone.add(nozP);
+    // drag-chute canister on top of the afterbody, with a cap that blows off when the chute streams
+    {const mc=std({color:0x3c4046,metalness:0.6,roughness:0.5});add(new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.17,0.8,20).rotateX(PI/2),mc),0,0.6,6.65);
+     chuteCap=add(new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.16,0.06,20).rotateX(PI/2),std({color:0x8a3a1c,metalness:0.4,roughness:0.55})),0,0.6,7.07);}
     const mPet=std({map:toTex(c,true),metalness:0.85,roughness:0.36,side:THREE.DoubleSide});const NP=16;
     for(let i=0;i<NP;i++){const p=new THREE.Mesh(new THREE.CylinderGeometry(0.47,0.548,0.62,3,1,true,i/NP*2*PI,2*PI/NP*0.86).rotateX(PI/2),mPet);p.position.z=7.5-7.12;nozP.add(p);}
     add(new THREE.Mesh(new THREE.CylinderGeometry(0.462,0.538,0.6,NP*2,1,true).rotateX(PI/2),std({color:0x232427,metalness:0.6,roughness:0.6,side:THREE.DoubleSide})),0,0,7.49-7.12,nozP);}
@@ -2305,6 +2349,48 @@ const tubPlanes=[[1,0,0,-0.55],[-1,0,0,-0.55],[0,0,-1,-4.95],[0,0,1,2.9],[0,-1,0
 const tubWorld=tubPlanes.map(p=>p.clone());
 function setTubClip(on){const f=drone.getObjectByName('fuselage');if(!f)return;f.material.clippingPlanes=on?tubWorld:[];f.material.clipIntersection=true;f.material.needsUpdate=true;}
 function updateTubClip(){drone.updateMatrixWorld(true);tubPlanes.forEach((p,i)=>tubWorld[i].copy(p).applyMatrix4(drone.matrixWorld));}
+// drag chute in the scene: ribbon canopy (orange and white gores with gaps between the ribbons), 16 suspension lines to a confluence,
+// a riser to the canister, and the small pilot chute behind; it streams along the airflow and droops as the air slows
+function makeChute3D(){const g=new THREE.Group();g.visible=false;
+  const c=document.createElement('canvas');c.width=512;c.height=128;const x=c.getContext('2d');
+  for(let i=0;i<16;i++){x.fillStyle=i%2?'#f1ede4':'#ff6418';x.fillRect(i*32,0,32,128);}
+  x.clearRect(0,0,512,6);for(let y=18;y<128;y+=15)x.clearRect(0,y,512,3);x.fillStyle='rgba(0,0,0,0.25)';for(let i=0;i<16;i++)x.fillRect(i*32,0,1.5,128);
+  const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;
+  const mat=new THREE.MeshStandardMaterial({map:tex,alphaTest:0.5,side:THREE.DoubleSide,roughness:0.85,metalness:0});
+  const can=new THREE.Mesh(new THREE.SphereGeometry(1,32,10,0,2*PI,0.12,PI/2-0.12).rotateX(PI/2),mat);g.add(can);
+  const pil=new THREE.Mesh(new THREE.SphereGeometry(0.32,16,6,0,2*PI,0,PI/2).rotateX(PI/2),mat);g.add(pil);
+  const N=16,lp=new Float32Array((N+2)*6);const lg=new THREE.BufferGeometry();lg.setAttribute('position',new THREE.BufferAttribute(lp,3));
+  const lines=new THREE.LineSegments(lg,new THREE.LineBasicMaterial({color:0xcfc9bb}));lines.frustumCulled=false;g.add(lines);
+  return {g,can,pil,lines,lp,N,free:null,dir:new THREE.Vector3(0,0,1),pos:new THREE.Vector3()};}
+const _cA=new THREE.Vector3(),_cB=new THREE.Vector3(),_cC=new THREE.Vector3();
+function updateChute3D(dt){
+  if(chuteCap)chuteCap.visible=chute.st==='stowed';
+  if(chute.st==='stowed'){if(CH3){CH3.g.visible=false;CH3.free=null;}return;}
+  if(!CH3){CH3=makeChute3D();scene.add(CH3.g);}const C=CH3,g=C.g;g.visible=true;
+  drone.updateMatrixWorld();const att=_cA.set(0,0.6,7.1).applyMatrix4(drone.matrixWorld);const now=performance.now()/1000;
+  let Rr,stretch=1,attached=chute.st==='out';
+  if(attached){C.free=null;const t=chute.t;stretch=sstep(0,0.35,t);
+    // stream along the airflow, drooping as the dynamic pressure falls, with a slow sway
+    const Vr=max(chute.Vr,0.01);_cB.copy(chute.rel).multiplyScalar(1/Vr).multiplyScalar(min(Vr,40));_cB.y-=2.5+3*(1-sstep(5,25,Vr));
+    _cB.x+=sin(now*1.9)*0.9*sstep(10,40,Vr);_cB.y+=sin(now*1.4+1)*0.5*sstep(10,40,Vr);C.dir.copy(_cB).normalize();
+    Rr=t<0.35?0.12:1.7*sqrt(max(chute.infl,0.04));
+    C.pos.copy(att).addScaledVector(C.dir,13.5*stretch);const gy=gnd(C.pos.x,C.pos.z)+0.15+Rr*0.5;if(C.pos.y<gy)C.pos.y=gy;
+  }else{
+    // released: the canopy stops dead in the air (it moves with the wind), collapses and settles onto the runway
+    if(!C.free)C.free={age:0,v:ac.wind.clone().multiplyScalar(0.8)};const F=C.free;F.age+=dt;
+    C.pos.addScaledVector(F.v,dt);C.pos.y-=dt*2.2*sstep(0,0.5,F.age);const gy=gnd(C.pos.x,C.pos.z)+0.12;if(C.pos.y<gy){C.pos.y=gy;F.v.multiplyScalar(exp(-dt*3));}
+    C.dir.y+=(-0.15-C.dir.y)*(1-exp(-dt*2));C.dir.normalize();Rr=1.7*max(0.3,1-F.age/1.6);}
+  g.position.copy(C.pos);g.lookAt(_cC.copy(C.pos).add(C.dir));
+  const flat=attached?1:max(0.15,1-C.free.age/1.4);
+  if(attached&&chute.t<0.35)C.can.scale.set(0.12,0.12,1.4);else C.can.scale.set(Rr,Rr*flat,Rr*0.85);
+  C.pil.position.set(0,0,Rr*0.85+2.2);C.pil.visible=attached||C.free.age<2.5;
+  // lines: 16 from the skirt to the confluence 6 m ahead, one apex line to the pilot chute, and the riser to the canister
+  const lp=C.lp,cz=-6*stretch,sk=(attached&&chute.t<0.35)?0.12:Rr;let k=0;
+  for(let i=0;i<C.N;i++){const a_=i/C.N*2*PI;lp[k++]=cos(a_)*sk;lp[k++]=sin(a_)*sk*flat;lp[k++]=0;lp[k++]=0;lp[k++]=0;lp[k++]=attached?cz:cz*0.3;}
+  lp[k++]=0;lp[k++]=0;lp[k++]=Rr*0.85;lp[k++]=0;lp[k++]=0;lp[k++]=Rr*0.85+2.2;
+  if(attached){g.updateMatrixWorld();const r=g.worldToLocal(_cB.copy(att));lp[k++]=0;lp[k++]=0;lp[k++]=cz;lp[k++]=r.x;lp[k++]=r.y;lp[k++]=r.z;}
+  else{lp[k++]=0;lp[k++]=0;lp[k++]=cz*0.3;lp[k++]=0.4;lp[k++]=-0.1;lp[k++]=cz*0.3-5;}
+  C.lines.geometry.attributes.position.needsUpdate=true;}
 function updateCockpit(dt){const on=camMode==='cockpit';if(on&&!ck.was&&!ck.fovSet)ck.fov=ckFov();ck.dtc=dt;if(ck.boot!=null&&ck.boot<9&&!LOAD.on)ck.boot+=dt;cockpit.visible=on;view.classList.toggle('ckView',on);if(on!==ck.was){ck.t=1;setTubClip(on);const sn=drone.getObjectByName('sensor');if(sn)sn.visible=!on;$('app').classList.toggle('ckFull',on);if(!on){ckTip.hidden=true;canvas.style.cursor='';}}ck.was=on;if(!on)return;updateTubClip();updateCockpitControls();
   ck.stick.rotation.x=(ac.de||0)*0.3;ck.stick.rotation.z=-(ac.da||0)*0.3;ck.thr.position.z=-0.2+0.15-sim.throttle*0.3;
   ck.ped[0].position.z=-0.92-(ac.drTot||0)*0.05;ck.ped[1].position.z=-0.92+(ac.drTot||0)*0.05;
@@ -2382,6 +2468,7 @@ const CTPB=[['AP','AP'],['ATHR','A/THR'],['HDG','HDG'],['ALT','ALT HOLD'],['VS',
    const h={mesh:base,tog,get,click(){act();audio.click&&audio.click();},tip(){return tipT+': '+(get()?'on':'off')+', click to switch';}};ckHits.push(h);ckHits.push({...h,mesh:tog});ck.switches=(ck.switches||[]);ck.switches.push(h);};
  sw('splr',-0.474,0.17,'SPD BRK',()=>ac.splr,()=>toggleSplr(),'Speed brake (Space)');
  sw('brk',-0.386,0.17,'BRAKES',()=>ac.brk,()=>toggleBrk(),'Wheel brakes (B)');
+ sw('chute',-0.43,0.25,'CHUTE',()=>chute.st==='out',()=>chuteCmd(),'Drag chute: deploy after touchdown, click again to jettison (U)');
  sw('atrim',0.386,-0.52,'A-TRIM',()=>autoTrim,()=>toggleAutoTrim(),'Fly-by-wire auto-trim, holds the flight path and bank with the stick centred (T)');
  sw('arud',0.474,-0.52,'A-RUD',()=>autoRudder,()=>toggleAutoRudder(),'Auto-rudder, keeps turns coordinated');
  sw('pst',0.430,-0.43,'PST',()=>pst,()=>togglePst(),'Thrust-vectoring post-stall mode, AoA and g limiters off (J)');
@@ -2439,7 +2526,7 @@ function updateCockpitControls(){drawMCP();drawCTP();
   ['N','L','R'].forEach(n=>ckLights['gear'+n].material.color.setHex(ac.gearT>0.97?0x37e36e:ac.gearT>0.03?0xff3b30:0x1c2228));
   ck.fl=ck.fl==null?ac.flaps:ck.fl+(ac.flaps-ck.fl)*min(1,dtc*7);ck.flapArm.position.z=-0.05+ck.fl*0.05;
   (ck.switches||[]).forEach(s=>{const tg=s.get()?-0.5:0.5;if(s.rx==null){s.rx=tg;s.rv=0;}s.rv+=((tg-s.rx)*900-s.rv*34)*dtc;s.rx+=s.rv*dtc;s.tog.rotation.x=s.rx;});
-  ckLights.splr.material.color.setHex(ac.splr?0xffb432:0x1c2228);ckLights.brk.material.color.setHex(ac.brk?0xffb432:0x1c2228);ckLights.atrim.material.color.setHex(autoTrim?0x37e36e:0x1c2228);ckLights.arud.material.color.setHex(autoRudder?0x37e36e:0x1c2228);if(ckLights.pst)ckLights.pst.material.color.setHex(pst?0xffb432:0x1c2228);
+  ckLights.splr.material.color.setHex(ac.splr?0xffb432:0x1c2228);ckLights.brk.material.color.setHex(ac.brk?0xffb432:0x1c2228);ckLights.atrim.material.color.setHex(autoTrim?0x37e36e:0x1c2228);ckLights.arud.material.color.setHex(autoRudder?0x37e36e:0x1c2228);if(ckLights.chute)ckLights.chute.material.color.setHex(chute.st==='out'?0x37e36e:chute.st==='failed'?0xff3b30:0x1c2228);if(ckLights.pst)ckLights.pst.material.color.setHex(pst?0xffb432:0x1c2228);
   (ck.lightSw||[]).forEach(k=>ckLights['L_'+k].material.color.setHex(LIGHTS[k]?0x37e36e:0x1c2228));}
 const ckRay=new THREE.Raycaster(),ckNdc=new THREE.Vector2();const ckTip=document.createElement('div');ckTip.id='ckTip';ckTip.hidden=true;view.appendChild(ckTip);
 function ckPick(e){const r=canvas.getBoundingClientRect();ckNdc.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);ckRay.setFromCamera(ckNdc,camera);
@@ -2602,7 +2689,7 @@ window.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.ta
   if(k==='q'||k==='Q'||k===','){inp.kRudL=true;e.preventDefault();return;}if(k==='e'||k==='E'||k==='.'){inp.kRudR=true;e.preventDefault();return;}
   if(k==='z'||k==='Z'){apMode('AP');e.preventDefault();return;}
   if((k==='x'||k==='X')&&camMode==='cockpit'){ck.glance=true;e.preventDefault();return;}
-  if(k===']'||k==='Home'){inp.trimUp=true;e.preventDefault();return;}if(k==='['||k==='End'){inp.trimDn=true;e.preventDefault();return;}if(k==='t'||k==='T'){toggleAutoTrim();e.preventDefault();return;}if(k==='j'||k==='J'){togglePst();e.preventDefault();return;}
+  if(k===']'||k==='Home'){inp.trimUp=true;e.preventDefault();return;}if(k==='['||k==='End'){inp.trimDn=true;e.preventDefault();return;}if(k==='t'||k==='T'){toggleAutoTrim();e.preventDefault();return;}if(k==='j'||k==='J'){togglePst();e.preventDefault();return;}if(k==='u'||k==='U'){chuteCmd();e.preventDefault();return;}
   if(k==='ArrowUp'||k==='w'||k==='W')inp[SETTINGS.inv?'kDn':'kUp']=true;else if(k==='ArrowDown'||k==='s'||k==='S')inp[SETTINGS.inv?'kUp':'kDn']=true;else if(k==='ArrowLeft'||k==='a'||k==='A')inp.kL=true;else if(k==='ArrowRight'||k==='d'||k==='D')inp.kR=true;
   else if(k==='PageUp'||k==='+'||k==='='||k==='PageDown'||k==='-'||k==='_'){if(ap.athr){ap.athr=false;ap.msg='A/THR OFF · manual thrust';ap.msgT=3;onApChange();}setThrottle(+thr.value+(k==='PageUp'||k==='+'||k==='='?4:-4));}
   else if(k==='f'||k==='F')cycleFlaps();else if(k==='g'||k==='G')toggleGear();else if(k==='b'||k==='B')toggleBrk();else if(k===' ')toggleSplr();
@@ -2622,7 +2709,7 @@ function toggleSplr(){ac.splr=!ac.splr;syncSys();audio.clunk&&audio.clunk(0.3);}
 document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{ac.flaps=+b.dataset.f;syncSys();audio.clunk&&audio.clunk(0.3);}));$('bGear').addEventListener('click',toggleGear);$('bBrk').addEventListener('click',toggleBrk);$('bSplr').addEventListener('click',toggleSplr);
 function syncSys(){const F=['Flaps 0','Flaps 15','Flaps 30'][ac.flaps];{const mf=$('mFlap');if(mf){mf.textContent=F;mf.classList.toggle('on',ac.flaps>0);$('mGear').textContent=ac.gear?'Gear ▼':'Gear ▲';$('mGear').classList.toggle('on',!!ac.gear);$('mBrk').classList.toggle('on',ac.brk);$('mSplr').classList.toggle('on',ac.splr);}}$('sFLAP').textContent=F;[0,1,2].forEach(i=>$('f'+i).classList.toggle('on',ac.flaps===i));
   $('sGEAR').textContent=ac.gear?'Gear down':'Gear up';$('sGEAR').classList.toggle('off',!ac.gear);$('gearTxt').textContent=ac.gear?'Gear down':'Gear up';
-  $('bTrim').querySelector('.lbl').textContent=autoTrim?'Trim on':'Trim off';$('bTrim').classList.toggle('on',autoTrim);$('bRud').querySelector('.lbl').textContent=autoRudder?'Rudder on':'Rudder off';$('bRud').classList.toggle('on',autoRudder);{const b=$('bPst');b.querySelector('.lbl').textContent=pst?'PST on':'TVC';b.classList.toggle('on',pst);b.classList.toggle('warnc',pst);}
+  $('bTrim').querySelector('.lbl').textContent=autoTrim?'Trim on':'Trim off';$('bTrim').classList.toggle('on',autoTrim);$('bRud').querySelector('.lbl').textContent=autoRudder?'Rudder on':'Rudder off';$('bRud').classList.toggle('on',autoRudder);{const b=$('bChute'),st=chute.st;b.querySelector('.lbl').textContent=st==='stowed'?'Chute':st==='out'?'Jettison':st==='failed'?'Chute fail':'Chute gone';b.classList.toggle('on',st==='out');b.disabled=st==='gone'||st==='failed';}{const b=$('bPst');b.querySelector('.lbl').textContent=pst?'PST on':'TVC';b.classList.toggle('on',pst);b.classList.toggle('warnc',pst);}
   $('sSPLR').classList.toggle('off',!ac.splr);$('bSplr').classList.toggle('on',ac.splr);$('sBRK').classList.toggle('off',!ac.brk);$('bBrk').classList.toggle('on',ac.brk);}
 $('chipSound').addEventListener('click',e=>{audio.on=!audio.on;e.currentTarget.setAttribute('aria-pressed',String(audio.on));ensureGameAudio();applyVolume();});
 $('vol').addEventListener('input',e=>{audio.vol=+e.target.value/100;applyVolume();});
@@ -2662,7 +2749,7 @@ onApChange=function(){
   {const b=$('mApBtn');if(b)b.classList.toggle('on',ap.on);}
   const m=$('apMsg');if(ap.msg){m.textContent=ap.msg;m.classList.add('warn');}else{m.textContent='';m.classList.remove('warn');}
 };
-$('bTrim').addEventListener('click',toggleAutoTrim);$('bPst').addEventListener('click',()=>togglePst());
+$('bTrim').addEventListener('click',toggleAutoTrim);$('bChute').addEventListener('click',()=>chuteCmd());$('bPst').addEventListener('click',()=>togglePst());
 document.querySelectorAll('#tod button').forEach(b=>b.addEventListener('click',()=>{tod=+b.dataset.t;document.querySelectorAll('#tod button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));applyTOD();}));
 document.querySelectorAll('#scen button').forEach(b=>b.addEventListener('click',()=>{scen=+b.dataset.s;document.querySelectorAll('#scen button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}));
 // Start, Fly again and R only put the loading card up (over the menu) and return, so the browser paints straight away; the flight
@@ -2828,6 +2915,7 @@ function showResult(ok,why){
     add('Pitch at touchdown',fmt(t.pitch,1)+'°',t.tail?'bad':'');add('Peak sink on the struts',fmt(t.peak||t.vsFpm)+' fpm',(t.peak||0)<450?'ok':(t.peak||0)<700?'meh':'bad');
     add('Bounces',String(t.bounces||0),t.bounces?'meh':'ok');add('Crab at touchdown',fmt(t.crab||0,1)+'°',(t.crab||0)<4?'ok':(t.crab||0)<10?'meh':'bad');
     if(t.tail)add('Tail strike','yes','bad');if(t.noseFirst)add('Nose wheel first','yes','meh');add('Flaps',['0','15','30'][t.flaps]);
+    add('Drag chute',chute.st==='stowed'?'not used':'deployed at '+fmt(chute.kt)+' kt'+(chute.st==='gone'?', jettisoned at '+fmt(chute.ktOff)+' kt':chute.st==='failed'?(chute.why==='shred'?', shredded (limit '+CHUTE.vMax+' kt)':', burned off by the afterburner'):''),chute.st==='failed'?'bad':chute.st==='stowed'?'':'ok');
   }else{
     $('resTitle').textContent='Crashed';$('resSub').textContent=why;
     if(t){add('Sink rate at impact',fmt(t.vsFpm)+' fpm',t.vsFpm>700?'bad':'');add('Impact point',t.onRwy?fmt(t.dist)+' m past threshold':'off runway',t.onRwy?'':'bad');add('Speed at impact',fmt(t.ias)+' kt');add('Bank at impact',fmt(t.bank,1)+'°',t.bank>7?'bad':'');add('Gear',t.gear?'down':'up',t.gear?'':'bad');}
@@ -2872,7 +2960,7 @@ function updateHUD(dt){
   if(ap.msgT>0){ap.msgT-=dt;if(ap.msgT<=0){ap.msg='';onApChange();}}
   if((a.t*4|0)!==(updateHUD.k||0)){updateHUD.k=a.t*4|0;onApChange();}
   const ws=[];
-  if(a.phase==='fly'){if(pst)ws.push(['PST · TVC','amb']);if(a.stalled&&!pst)ws.push(['STALL','']);else if(a.stallW&&!pst)ws.push(['STALL','amb']);
+  if(a.phase==='fly'){if(chute.st==='out')ws.push(['CHUTE','grn']);if(pst)ws.push(['PST · TVC','amb']);if(a.stalled&&!pst)ws.push(['STALL','']);else if(a.stallW&&!pst)ws.push(['STALL','amb']);
     if(a.agl<500&&a.agl>5&&!a.gear)ws.push(['TOO LOW · GEAR','']);
     if(a.vs/FT*60<-1200&&a.agl<1500&&a.agl>10)ws.push(['SINK RATE','']);
     if(gsDev>0.5&&lt.u>-5500&&lt.u<-200&&abs(lt.v)<800&&a.agl>60)ws.push(['GLIDESLOPE','amb']);
@@ -2970,6 +3058,7 @@ function frame(now){
   // drawn aircraft rides up by the thickness of the surface under it; below 100 ft it looks ahead at the surface it will land on
   {const sf=ac.onGround?ac.surf:ac.agl<100?surfaceAt(ac.pos):null;if(sf){const tgt=sf==='runway'?0.12:sf==='pavement'?0.1:0.01;ac.surfY=ac.surfY==null?tgt:ac.surfY+(tgt-ac.surfY)*(1-exp(-dt/0.15));}}
   drone.position.copy(ac.pos);drone.position.y+=(ac.yEase||0)+(ac.surfY||0);if(ac.Q)drone.quaternion.copy(ac.Q);else{drone.rotation.set(0,0,0);drone.rotateY(-ac.psiB);drone.rotateX(ac.theta);drone.rotateZ(-ac.phi);}
+  updateChute3D(dt);
   // gear: retract forward into the pods/nose, struts compress, wheels spin with ground speed and spin down in the air
   const gE=clamp((ac.gearT-0.03)/0.94,0,1);
   gearUnits.forEach((u,i)=>{u.pivot.rotation.x=(1-gE)*PI/2*(u.fold||1);u.slide.position.y=u.axleY+(ac.gc?ac.gc[i]||0:0);

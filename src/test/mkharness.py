@@ -17,7 +17,7 @@ out=["const THREE=require('%s');"%three,
  "const document={getElementById:()=>({textContent:'',innerHTML:'',appendChild(){},value:'30',classList:{toggle(){},add(){},remove(){}},style:{}}),createElement:()=>({appendChild(){},className:'',classList:{toggle(){},add(){},remove(){}},style:{}})};",
  "const window={};const matchMedia=()=>({matches:false});const navigator={maxTouchPoints:0};const screen={width:1920,height:1080};"]
 out+=page[a0:b1+1]
-out+=["const audio={whoomp(){},clunk(){},thud(){},crashSound(){},chirp(){},click(){}};",
+out+=["const audio={whoomp(){},clunk(){},thud(){},crashSound(){},chirp(){},click(){},lock(){},msl(){}};",
  "function ensureAudio(){}function ensureGameAudio(){}",
  "const thr={value:30};function updateThrOut(){}function syncSys(){}",
  "let RESULT=null;function showResult(ok,why){RESULT={ok,why,td:ac.td,stop:ac.stopDist,z:ac.pos.z};}",
@@ -26,6 +26,7 @@ out+=["const audio={whoomp(){},clunk(){},thud(){},crashSound(){},chirp(){},click
 out+=page[c0:c1+1]
 out+=["let onEvent=(t)=>{EVENTS.push([ac.t.toFixed(1),t]);};let mission='approach';"]
 out+=page[d0:d1+1]
-out+=["module.exports={sync:()=>{ac.pOm=null;syncFromEuler(ac);},setMission:(m)=>{mission=m;},vrCalc,events:EVENTS,ac,inp,sim,AC,PM,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget:(e)=>{target=e;},setAutoTrim:(v)=>{autoTrim=v;},setAutoRudder:(v)=>{autoRudder=v;},setPst:(v)=>{pst=v;},chute,chuteCmd,local,worldAt,resetFlight:()=>{RESULT=null;resetFlight();},flyStep,step,CL,setScen:(i)=>{scen=i;},vref:()=>vrefCalc(),isa,acMass,result:()=>RESULT,setThrottle:(v)=>{sim.throttle=Math.max(0,Math.min(100,v))/100;}};"]
+cs=open(os.path.join(here,'..','combat-sim.js'),encoding='utf-8').read();out+=[cs[cs.index('// <combat-sim>'):cs.index('// </combat-sim>')]]
+out+=["module.exports={sync:()=>{ac.pOm=null;syncFromEuler(ac);},setMission:(m)=>{mission=m;},vrCalc,events:EVENTS,ac,inp,sim,AC,PM,ap,apMode,apSel,AIRPORTS,get target(){return target;},setTarget:(e)=>{target=e;},setAutoTrim:(v)=>{autoTrim=v;},setAutoRudder:(v)=>{autoRudder=v;},setPst:(v)=>{pst=v;},chute,chuteCmd,CMB,AMR,NM,combatReset,spawnBandits,mkBandit,combatStep,lockNext,fireMissile,dlzCalc,radarLook,breakLock,bodyAxes,local,worldAt,resetFlight:()=>{RESULT=null;resetFlight();},flyStep,step,CL,setScen:(i)=>{scen=i;},vref:()=>vrefCalc(),isa,acMass,result:()=>RESULT,setThrottle:(v)=>{sim.throttle=Math.max(0,Math.min(100,v))/100;}};"]
 open(os.path.join(here,'harness.js'),'w',encoding='utf-8').write('\n'.join(out)+'\n')
 print('harness.js:',len(out),'lines')

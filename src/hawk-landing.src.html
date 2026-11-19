@@ -167,6 +167,7 @@ main{display:grid;grid-template-columns:1fr 372px;min-height:0}
 #panel .lightRow{gap:4px;margin-top:0;flex-wrap:nowrap} #panel .lightRow .chip{flex:1;display:flex;align-items:center;justify-content:center;padding:4px 0} #panel .lightRow svg{width:19px;height:19px}
 #panel .thrBox{display:flex;flex-direction:column} #panel .tq{height:auto;flex:1;min-height:140px;margin:2px 0 6px} #panel .tqBtns{gap:3px} #panel .tqBtns .chip{padding:4px 2px;font-size:11px}
 #panel .det.ab{color:var(--amber)}
+#panel .wpn{padding:8px} .wpnRow{display:grid;grid-template-columns:repeat(3,1fr);gap:5px} .wpnRow .chip{padding:7px 2px;text-align:center} #bFire{color:var(--amber);border-color:rgba(255,180,50,.6)} .wpnStat{margin-top:5px;font-family:var(--font-mono);font-size:12px;color:var(--fg-dim)}
 #panel .sndRow{display:flex;gap:8px;align-items:center} #panel .sndRow .chip.ico{flex-direction:row;padding:4px 8px} #panel .sndRow .vol{flex:1;display:flex;align-items:center;gap:8px} #panel .sndRow .vol input{flex:1}
 #panel details.more{border-top:1px solid var(--line);padding-top:4px} #panel details.more summary{cursor:pointer;font-family:var(--font-display);font-weight:600;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-dim);padding:4px 0}
 #panel details.more[open]{display:grid;gap:8px} #panel details.more .adiBox{max-width:220px}
@@ -192,7 +193,7 @@ main{display:grid;grid-template-columns:1fr 372px;min-height:0}
 .heroT{margin:0!important;font-size:64px!important;letter-spacing:.06em!important;line-height:.95!important;text-transform:uppercase}
 .heroT em{font-style:normal;color:#ff5a4a}
 .tag{margin:10px 0 0;color:var(--fg-dim);font-size:16px;max-width:46ch;line-height:1.45}
-.opts{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.opts{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
 @media (max-width:980px){.opts{grid-template-columns:repeat(2,1fr)}}
 .opt{display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;padding:20px 18px 18px;border-radius:10px;border:1px solid var(--line-2);background:linear-gradient(180deg,#1a2430,#121a23);color:var(--fg);cursor:pointer;text-decoration:none;transition:transform .15s,border-color .15s,box-shadow .15s;min-width:0}
 .opt svg{width:42px;height:42px;color:var(--cyan)}
@@ -215,7 +216,7 @@ main{display:grid;grid-template-columns:1fr 372px;min-height:0}
 .scen button{padding:8px;border-radius:5px;border:1px solid var(--line-2);background:var(--panel-2);cursor:pointer;text-align:left;font-size:12px;line-height:1.3}
 .scen button b{display:block;font-family:var(--font-display);font-size:14px;letter-spacing:.04em}
 .scen button[aria-pressed="true"]{border-color:var(--cyan);color:var(--cyan)}
-.mcards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mcards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .mcard{display:flex;gap:14px;align-items:center;text-align:left;padding:14px 16px;border-radius:10px;border:1px solid var(--line-2);background:var(--panel-2);color:var(--fg-dim);cursor:pointer;font-size:13px;line-height:1.4}
 .mcard svg{width:46px;height:46px;flex:0 0 auto;color:var(--fg-mute)} .mcard b{display:block;font-family:var(--font-display);font-size:20px;letter-spacing:.03em;color:var(--fg);margin-bottom:2px}
 .mcard[aria-pressed="true"]{border-color:#ff5a4a;background:linear-gradient(180deg,#2a1717,#171214);color:var(--fg)} .mcard[aria-pressed="true"] svg{color:#ff5a4a}
@@ -381,6 +382,8 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
           <button type="button" id="mSplr" data-a="splr">Spd brk</button>
           <button type="button" id="mLights" data-a="lights">Lights</button>
           <button type="button" id="mApBtn" data-a="ap">AP</button>
+          <button type="button" id="mLock" data-a="lock" hidden>Lock</button>
+          <button type="button" id="mFire" data-a="fire" hidden>Fire</button>
         </div>
         <div id="mThr">
           <div class="mtBtns"><button type="button" data-t="100">TO/GA</button><button type="button" data-t="85">CLB</button><button type="button" data-t="0">IDLE</button></div>
@@ -400,6 +403,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
             <div class="opts">
               <button type="button" class="opt play" data-mission="takeoff"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M5 40 H43" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M8 33 L38 13" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2.5 2.5" opacity=".7"/><path d="M38 9 L41.5 12.5 L35 18 L37 26 L34.5 27 L30.5 20.5 L24 25 L24 28.5 L22 29.5 L20.5 25.5 L16.5 24 L17.5 22 L21 22 L25.5 15.5 L19 11.5 L20 9 L28 11 Z" fill="currentColor"/></svg><b>Take off</b><span>Line up on the runway, release the brakes and fly it off at Vr.</span></button>
               <button type="button" class="opt play" data-mission="approach"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M5 40 H43" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M10 12 L34 34" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2.5 2.5" opacity=".7"/><g transform="translate(48 0) scale(-1 1) rotate(-38 24 24)"><path d="M38 9 L41.5 12.5 L35 18 L37 26 L34.5 27 L30.5 20.5 L24 25 L24 28.5 L22 29.5 L20.5 25.5 L16.5 24 L17.5 22 L21 22 L25.5 15.5 L19 11.5 L20 9 L28 11 Z" fill="currentColor" transform="translate(-6 6)"/></g></svg><b>Land</b><span>Start 5 nm out on final and bring it down on the centreline.</span></button>
+              <button type="button" class="opt play" data-mission="intercept"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="15" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M24 3v12M24 33v12M3 24h12M33 24h12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><rect x="19" y="19" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M36 10 L41 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".7"/></svg><b>Intercept</b><span>Three bandits 40 nm out. Lock them on radar, fire AIM-120s beyond visual range, then land.</span></button>
               <a class="opt" id="btnEngine" href="testcell"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="21" fill="none" stroke="currentColor" stroke-width="2.5"/><circle cx="24" cy="24" r="4.5" fill="currentColor"/><path d="M24 24 Q35.1 28.7 40.0 24.0" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M24 24 Q28.5 35.1 35.3 35.3" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M24 24 Q19.3 35.1 24.0 40.0" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M24 24 Q12.9 28.5 12.7 35.3" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M24 24 Q12.9 19.3 8.0 24.0" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M24 24 Q19.5 12.9 12.7 12.7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M24 24 Q28.7 12.9 24.0 8.0" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M24 24 Q35.1 19.5 35.3 12.7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg><b>Meet the engine</b><span>Start, throttle and shut down the TF-10K in a 3D test cell.</span></a>
               <button type="button" class="opt" data-go="help"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 12 Q15 9 24 13 Q33 9 42 12 L42 37 Q33 34 24 38 Q15 34 6 37 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M24 13 L24 38" stroke="currentColor" stroke-width="2.5"/><path d="M11 18 Q15 17 19 18.5 M11 23 Q15 22 19 23.5 M29 18.5 Q33 17 37 18 M29 23.5 Q33 22 37 23" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg><b>How to play</b><span>Controls, the cockpit, taking off and landing.</span></button>
             </div>
@@ -413,6 +417,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
             <div class="mcards" id="mission">
               <button type="button" class="mcard" data-m="takeoff" aria-pressed="false"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M5 40 H43" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M8 33 L38 13" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2.5 2.5" opacity=".7"/><path d="M38 9 L41.5 12.5 L35 18 L37 26 L34.5 27 L30.5 20.5 L24 25 L24 28.5 L22 29.5 L20.5 25.5 L16.5 24 L17.5 22 L21 22 L25.5 15.5 L19 11.5 L20 9 L28 11 Z" fill="currentColor"/></svg><span><b>Take off</b>Lined up at the departure airport, engine at idle, parking brake set. Rotate at Vr, about 124 kt, then fly the route.</span></button>
               <button type="button" class="mcard" data-m="approach" aria-pressed="true"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M5 40 H43" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M10 12 L34 34" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2.5 2.5" opacity=".7"/><g transform="translate(48 0) scale(-1 1) rotate(-38 24 24)"><path d="M38 9 L41.5 12.5 L35 18 L37 26 L34.5 27 L30.5 20.5 L24 25 L24 28.5 L22 29.5 L20.5 25.5 L16.5 24 L17.5 22 L21 22 L25.5 15.5 L19 11.5 L20 9 L28 11 Z" fill="currentColor" transform="translate(-6 6)"/></g></svg><span><b>Land</b>Start 5 nm out on final at the arrival airport, 1,800 ft above it at 160 kt. Touch down, stop, or go around.</span></button>
+              <button type="button" class="mcard" data-m="intercept" aria-pressed="false"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="15" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M24 3v12M24 33v12M3 24h12M33 24h12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><rect x="19" y="19" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M36 10 L41 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".7"/></svg><span><b>Intercept</b>Start 16 nm out from the arrival airport at 20,000 ft, heading away from it. Three bandits come in from 40 nm: lock them (Tab), fire (Enter), then fly home and land.</span></button>
             </div>
             <h3>Route</h3>
             <div class="route"><label>Departure<select id="selDep"></select></label><span class="rarrow" aria-hidden="true">→</span><label>Arrival<select id="selArr"></select></label></div>
@@ -465,6 +470,8 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
             <dt>Q E</dt><dd>Rudder left / right (steers on the ground). Auto-rudder keeps turns coordinated unless you switch it off</dd>
             <dt>[ ] · T</dt><dd>Trim nose down / up · fly-by-wire on or off (on: a centred stick holds the flight path and bank, full stick pulls up to 9 g)</dd>
             <dt>U</dt><dd>Drag chute: after touchdown (weight on the wheels) the brake chute streams from the tail and opens in about a second, adding up to 0.45 g of braking at landing speed. It shreds above 185 kt and burns off if the afterburner is lit; in a crosswind it pulls the nose into wind. Press U again to jettison it, normally below about 40 kt</dd>
+            <dt>Tab · ⌫</dt><dd>Radar: lock the contact nearest the nose (again for the next one) · break the lock. The HUD then shows a box on the target, its range and height, the launch zone (Rmax tick, the no-escape bar, your range and closure), a steering dot to put in the circle and SHOOT when the shot is good</dd>
+            <dt>Enter</dt><dd>Fire an AIM-120. It flies on data from your radar while the lock holds (HUD 'A', seconds to going active), then on its own radar from about 9 nm ('T', seconds to impact). Bandits that get a launch warning turn across it, dive and drop chaff; shots inside the no-escape range rarely miss. Without a lock it flies straight out and looks for a target by itself</dd>
             <dt>J</dt><dd>Post-stall mode: the nozzle vectors ±20° in pitch and yaw and the AoA and g limiters are off. The stick commands pitch rate and the nose holds wherever you let go, even with no airspeed. For a Cobra: about 230 kt, full afterburner, full aft stick until the nose nears 70° (it runs on about 15° more), let go, then push forward to bring it back down. To hang nose-up at zero speed: pull to vertical, let go, and as the speed bleeds away hold about 95 % throttle (light afterburner) so the vertical speed stays near zero. With rudder or roll stick at high AoA the nozzle yaws the aircraft round (a flat turn). The autopilot is unavailable while it is on</dd>
             <dt>Heading</dt><dd>The tape at the top shows your heading in the box; the cyan bug is the autopilot's selected heading (solid while the autopilot is flying it) and the magenta diamond points to the destination runway. The map repeats both: a green line for your heading and a dashed cyan line with a bug for the selected heading</dd>
             <dt>L · K</dt><dd>Landing lights · taxi light. All exterior lights (nav, beacon, strobe, landing, taxi, logo) have switches on the left console in the cockpit and in the Systems panel. Choose day, dusk or night on the setup screen</dd>
@@ -568,6 +575,11 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
           <div class="tqBtns"><button type="button" class="chip" data-t="0">Idle</button><button type="button" class="chip" data-t="90" title="Full dry power">MIL</button><button type="button" class="chip" data-t="100" title="Full afterburner">AB</button></div>
           <input type="range" id="throttle" class="sr" min="0" max="100" step="0.5" value="0" aria-hidden="true" tabindex="-1">
         </div>
+      </div>
+      <div class="sys wpn" id="wpnBox" hidden>
+        <div class="sec-h">Weapons <span>Tab lock · Enter fire · ⌫ unlock</span></div>
+        <div class="wpnRow"><button type="button" class="chip" id="bLock" title="Lock the radar contact nearest the nose; again to step to the next (Tab)">Lock</button><button type="button" class="chip" id="bFire" title="Fire an AIM-120 at the locked target (Enter)">Fire</button><button type="button" class="chip" id="bUnlock" title="Break the lock (Backspace)">Unlock</button></div>
+        <div class="wpnStat" id="wpnStat">AIM-120 ×4</div>
       </div>
       <div class="chips sndRow">
         <button class="chip ico" id="chipSound" type="button" aria-pressed="true" title="Sound on or off"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg></button>
@@ -826,7 +838,13 @@ function resetFlight(){
     ac.onGround=true;ac.gear=1;ac.gearT=1;ac.flaps=1;ac.brk=true;ac.splr=false;ac.trim=-0.35;ac.gc=[GX.stat,GX.stat,GX.stat];ac.gy=e.ap.elev;ac.agl=0;ac.alt=e.ap.elev/FT;ap.sel.alt=Math.round((ac.alt+1800)/100)*100;ac.vs=0;ac.ias=0;ac.fuel=6000;ac.rwy=e;ap.sel.hdg=Math.round(e.hdg)%360;ac.surf='runway';
     Object.assign(sim,{phase:'run',n1:22,n2:60,egt:430,ff:520,thrust:600,lit:true,fuelOn:true,starter:false,ignition:false,throttle:0});thr.value=0;updateThrOut();ac.toPhase='hold';ac.airHigh=false;syncSys();
     onEvent('Lined up on '+e.id+'. Parking brake set. Press B to release, then full thrust.','');}
+  if(mission==='intercept'){const e=target;ac.pos.copy(worldAt(e,-16*NM,0,6100));ac.psi=ac.psiB=((e.hdg+180)%360)*DEG;ac.V=215;ac.gamma=0;ac.q=ac.p=ac.r=0;ac.phi=0;ac.gear=0;ac.gearT=0;ac.flaps=0;ac.fuel=6000;ac.vs=0;
+    {const rho=isa(ac.pos.y).rho;const aN=acMass()*9.81/(0.5*rho*ac.V*ac.V*AC.S)/AC.clA+AC.a0;ac.theta=aN;ac.trim=(aN-PM.a0)*PM.ka/PM.kd;}
+    ac.alt=(ac.pos.y-AC.gearH)/FT;ac.gy=gnd(ac.pos.x,ac.pos.z);ac.agl=(ac.pos.y-ac.gy-AC.gearH)/FT;ac.ias=ac.V*Math.sqrt(isa(ac.pos.y).rho/1.225)/KT;
+    Object.assign(sim,{phase:'run',n1:88,n2:96,egt:760,ff:2500,thrust:6800,lit:true,fuelOn:true,starter:false,ignition:false,throttle:0.88});thr.value=88;updateThrOut();
+    ap.sel.alt=Math.round(ac.alt/100)*100;ap.sel.hdg=Math.round((e.hdg+180)%360);ap.sel.ias=360;syncSys();}
   ac.pOm=null;ac.phiHold=null;ac.qRef=0;syncFromEuler(ac);
+  combatReset(mission==='intercept');if(mission==='intercept'){spawnBandits();onEvent('Three bandits 36–44 nm ahead. Radar on the left display: Tab to lock, Enter to fire.','warn');}
 }
 const sq16=h=>{const x=16*h*16*h;return x/(1+x);};
 const rollY=a=>GX.ext*cos(a.theta)-GEAR[1].l*sin(a.theta)-GX.stat*(a.wf==null?1:a.wf);
@@ -1016,6 +1034,7 @@ function flyStep(dt){
 }
 function crash(why){ac.phase='crash';showResult(false,why);audio.crashSound();}
 function finish(){ac.phase='done';const r=ac.rwy||target;ac.stopDist=local(r,ac.pos).u-ac.td.dist;ac.stopSurf=surfaceAt(ac.pos);showResult(true,'');}
+/*__CMBSIM__*/
 
 /* ================= Audio extras (wind, horn, impacts) ================= */
 const gameAudio={ready:false};
@@ -1105,29 +1124,58 @@ function detSlot(name,file){const d=DET[name]={map:{value:null},on:{value:0},gai
 detSlot('grass','grass.jpg');detSlot('aerial','aerial.jpg');detSlot('asphalt','asphalt.jpg');detSlot('concrete','concrete.jpg');
 const HOLES={value:Array.from({length:20},()=>new THREE.Vector4())},HOLEN={value:0};
 function addHole(x0,z0,x1,z1){if(HOLEN.value<20)HOLES.value[HOLEN.value++].set(x0,z0,x1,z1);}
+// sea surface: a tiling wave field (about 40 wind waves on a Phillips-like spectrum, longest ones strongest, spread around the wind
+// direction) stored as slopes and height in one texture; the water shader samples it at three scales drifting at different speeds,
+// so the pattern never visibly repeats. Wind strength and direction come from the scenario.
+const WATER={wind:{value:new THREE.Vector3(-0.7,0.7,0.3)},tex:{value:null}};
+{const N=256,h=new Float32Array(N*N),gx=new Float32Array(N*N),gy=new Float32Array(N*N);let sd=4242;const rnd=()=>((sd=(sd*16807)%2147483647)/2147483647);
+ const W=[];while(W.length<42){const k=2*Math.pow(14,rnd()),th=(rnd()+rnd()+rnd()-1.5)*0.9,kx=Math.round(k*cos(th)),ky=Math.round(k*sin(th));if(!kx&&!ky)continue;const kk=Math.hypot(kx,ky);W.push([kx,ky,pow(kk,-1.5)*(0.6+0.8*rnd()),rnd()*2*PI]);}
+ const C=2*PI/N;for(const [kx,ky,A,ph] of W)for(let y=0;y<N;y++)for(let x=0;x<N;x++){const a=C*(kx*x+ky*y)+ph,i=y*N+x,sn=sin(a);h[i]+=A*cos(a);gx[i]-=A*C*kx*sn;gy[i]-=A*C*ky*sn;}
+ let hn=1e9,hx=-1e9,rs=0;for(let i=0;i<N*N;i++){hn=min(hn,h[i]);hx=max(hx,h[i]);rs+=gx[i]*gx[i]+gy[i]*gy[i];}const sm=3*Math.sqrt(rs/(N*N)/2);
+ const d=new Uint8Array(N*N*4);for(let i=0;i<N*N;i++){d[i*4]=clamp(128+127*gx[i]/sm,0,255);d[i*4+1]=clamp(128+127*gy[i]/sm,0,255);d[i*4+2]=128;d[i*4+3]=255*(h[i]-hn)/(hx-hn);}
+ const t=new THREE.DataTexture(d,N,N,THREE.RGBAFormat);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.magFilter=THREE.LinearFilter;t.minFilter=THREE.LinearMipmapLinearFilter;t.generateMipmaps=true;t.anisotropy=MOB?4:8;t.needsUpdate=true;WATER.tex.value=t;}
 function addDetail(mat,slot,o){const d=DET[slot];o=o||{};
-  mat.onBeforeCompile=sh=>{sh.uniforms.detMap=d.map;sh.uniforms.detOn=d.on;sh.uniforms.uHoles=HOLES;sh.uniforms.uHoleN=HOLEN;sh.uniforms.detGain=d.gain;sh.uniforms.aerMap=DET.aerial.map;sh.uniforms.aerOn=DET.aerial.on;sh.uniforms.aerGain=DET.aerial.gain;sh.uniforms.wT=GLU.uTime;
+  mat.onBeforeCompile=sh=>{sh.uniforms.detMap=d.map;sh.uniforms.detOn=d.on;sh.uniforms.uHoles=HOLES;sh.uniforms.uHoleN=HOLEN;sh.uniforms.detGain=d.gain;sh.uniforms.aerMap=DET.aerial.map;sh.uniforms.aerOn=DET.aerial.on;sh.uniforms.aerGain=DET.aerial.gain;sh.uniforms.wT=GLU.uTime;sh.uniforms.wN=WATER.tex;sh.uniforms.uWind=WATER.wind;
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec2 vWp;').replace('#include <begin_vertex>','#include <begin_vertex>\nvWp=(modelMatrix*vec4(transformed,1.0)).xz;');
-    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec2 vWp;uniform sampler2D detMap;uniform float detOn;uniform vec4 uHoles[20];uniform int uHoleN;uniform float detGain;uniform sampler2D aerMap;uniform float aerOn;uniform float aerGain;uniform float wT;')
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec2 vWp;uniform sampler2D detMap;uniform float detOn;uniform vec4 uHoles[20];uniform int uHoleN;uniform float detGain;uniform sampler2D aerMap;uniform float aerOn;uniform float aerGain;uniform float wT;uniform sampler2D wN;uniform vec3 uWind;\nvec2 wRot(vec2 v,float c,float s){return vec2(c*v.x-s*v.y,s*v.x+c*v.y);}')
       .replace('#include <map_fragment>',`#include <map_fragment>
       ${o.base?'for(int i=0;i<20;i++){if(i>=uHoleN)break;vec4 r=uHoles[i];if(vWp.x>r.x&&vWp.x<r.z&&vWp.y>r.y&&vWp.y<r.w)discard;}':''}
-      float wtr=0.0;
+      float wtr=0.0;vec2 wsl=vec2(0.0);float wfoam=0.0;
       ${o.sat?`{vec3 c0=diffuseColor.rgb;float l0=dot(c0,vec3(0.3,0.59,0.11));wtr=smoothstep(0.0,0.008,c0.b-c0.g*1.02)*(1.0-smoothstep(0.05,0.11,l0));
         c0=mix(vec3(l0),c0,0.86);c0*=${(o.gain||1).toFixed(2)};c0=c0/(1.0+2.0*c0);diffuseColor.rgb=pow(c0,vec3(${(o.gamma||1).toFixed(2)}))*vec3(1.06,1.02,0.93);}`:''}
+      ${o.sat?`if(wtr>0.01){float wd=length(vViewPosition);float cw=uWind.x,sw=uWind.y,ws=uWind.z;vec2 q=wRot(vWp,cw,-sw);
+        // three layers of the wave field: long swell, wind waves turned 37° and drifting faster, and fine ripples near the eye
+        vec2 q2=wRot(q,0.8,-0.6),q3=wRot(q,0.6,0.8);
+        vec4 t1=texture2D(wN,q/113.0-vec2(wT*0.0105,0.0)),t2=texture2D(wN,q2/37.0-vec2(wT*0.019,wT*0.004)),t3=texture2D(wN,q3/11.0-vec2(wT*0.035,0.0));
+        float f2=1.0-smoothstep(3000.0,14000.0,wd),f3=1.0-smoothstep(150.0,1500.0,wd),amp=0.55+0.85*ws;
+        vec2 s1=t1.rg*2.0-1.0,s2=wRot(t2.rg*2.0-1.0,0.8,0.6),s3=wRot(t3.rg*2.0-1.0,0.6,-0.8);
+        wsl=wRot(s1*0.16+s2*0.13*f2+s3*0.09*f3,cw,sw)*amp;
+        float hgt=(t1.a*0.5+t2.a*0.32*f2+t3.a*0.18*f3)/(0.5+0.32*f2+0.18*f3);
+        // whitecaps on the highest crests (more with wind), breaking up with the fine ripples; far away only a faint whitening
+        float thr=0.9-0.2*ws;wfoam=smoothstep(thr,thr+0.06,hgt)*smoothstep(0.45,0.75,t3.a*f3+0.55*(1.0-f3))*(1.0-smoothstep(2500.0,9000.0,wd));
+        wfoam+=max(0.0,ws-0.35)*0.05*smoothstep(1500.0,9000.0,wd);
+        // surf: foam in the water next to the coast, in bands that run in towards the beach
+        #ifdef USE_MAP
+        if(wd<7000.0){float uvpm=length(dFdx(vMapUv))/max(length(dFdx(vWp)),1e-3);float land=0.0;
+          for(int i=0;i<6;i++){float a=float(i)*1.0472;vec3 cN=texture2D(map,vMapUv+vec2(cos(a),sin(a))*uvpm*48.0).rgb;float lN=dot(cN,vec3(0.3,0.59,0.11));
+            land+=1.0-smoothstep(0.0,0.008,cN.b-cN.g*1.02)*(1.0-smoothstep(0.05,0.11,lN));}
+          land/=6.0;float surf=smoothstep(0.08,0.5,land)*(0.55+0.45*sin(dot(vWp,vec2(cw,sw))*0.09-wT*1.1+t2.a*5.0))*smoothstep(0.3,0.7,t3.a*f3+0.5*(1.0-f3));
+          wfoam=max(wfoam,surf*(0.6+0.4*ws)*(1.0-smoothstep(3000.0,7000.0,wd)));}
+        #endif
+        wfoam=clamp(wfoam,0.0,1.0);
+        // water colour: the photo keeps its shallows and river plumes, pulled towards deep sea blue-green; light through the crests
+        vec3 deep=vec3(0.006,0.022,0.036);diffuseColor.rgb=mix(diffuseColor.rgb,mix(diffuseColor.rgb*0.8,deep,0.45),wtr);
+        diffuseColor.rgb+=vec3(0.0,0.03,0.026)*smoothstep(0.55,0.95,hgt)*wtr*(0.5+0.5*ws);
+        diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.82,0.85,0.86),wfoam*wtr);}`:''}
       if(detOn>0.5){float dd=length(vViewPosition);vec3 d1=texture2D(detMap,vWp*${(1/(o.s1||9)).toFixed(5)}).rgb,d2=texture2D(detMap,vWp.yx*${(1/(o.s2||83)).toFixed(5)}).rgb;
         vec3 dt=mix(d1,d2,smoothstep(${(o.n0||40).toFixed(1)},${(o.n1||400).toFixed(1)},dd))*detGain;dt=mix(vec3(dot(dt,vec3(0.3,0.59,0.11))),dt,${(o.tint==null?1:o.tint).toFixed(2)});
         float k=(1.0-smoothstep(${(o.f0||600).toFixed(1)},${(o.f1||5000).toFixed(1)},dd))*${(o.k||0.8).toFixed(2)}*(1.0-wtr);
         diffuseColor.rgb*=mix(vec3(1.0),dt,k);}
       ${o.aer?`if(aerOn>0.5){float dd=length(vViewPosition);float a1=dot(texture2D(aerMap,vWp*${(1/o.aer).toFixed(6)}).rgb,vec3(0.3,0.59,0.11))*aerGain,a2=dot(texture2D(aerMap,vWp.yx*${(1/(o.aer*5.3)).toFixed(6)}+0.37).rgb,vec3(0.3,0.59,0.11))*aerGain;
         diffuseColor.rgb*=mix(1.0,a1,${(o.ka||0.6).toFixed(2)}*(1.0-wtr)*(1.0-smoothstep(1500.0,9000.0,dd)))*mix(1.0,a2,${((o.ka||0.6)*0.6).toFixed(2)}*(1.0-wtr)*(1.0-smoothstep(6000.0,26000.0,dd)));}`:''}`)
-      .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,mix(0.06,0.2,smoothstep(400.0,14000.0,length(vViewPosition))),wtr);')
+      .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,mix(mix(0.045,0.16,smoothstep(300.0,12000.0,length(vViewPosition))),0.75,wfoam),wtr);')
       .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
-      if(wtr>0.01){float dd=length(vViewPosition),fw=1.0-smoothstep(250.0,7000.0,dd);vec2 g=vec2(0.0);
-        // a few wind waves (deep-water speeds), steepest near the eye; far away the roughness above stands in for them
-        const vec4 W0=vec4(0.80,0.60,0.21,0.06),W1=vec4(0.97,-0.24,0.33,0.05),W2=vec4(0.55,0.83,0.62,0.04),W3=vec4(0.20,0.98,1.13,0.03),W4=vec4(0.89,0.45,1.9,0.022);
-        #define WV(W) {float k=W.z,ph=k*dot(W.xy,vWp)-sqrt(9.81*k)*wT;g+=W.xy*(W.w*cos(ph));}
-        WV(W0)WV(W1)WV(W2)WV(W3)WV(W4)
-        vec3 nW=normalize(vec3(-g.x*fw,1.0,-g.y*fw));normal=normalize(mix(normal,normalize((viewMatrix*vec4(nW,0.0)).xyz),wtr));}`);};
+      if(wtr>0.01){vec3 nW=normalize(vec3(-wsl.x*(1.0-0.7*wfoam),1.0,-wsl.y*(1.0-0.7*wfoam)));normal=normalize(mix(normal,normalize((viewMatrix*vec4(nW,0.0)).xyz),wtr));}`);};
   mat.customProgramCacheKey=()=>'det'+slot+JSON.stringify(o);return mat;}
 {const pm=new THREE.PMREMGenerator(renderer);const es=new THREE.Scene();es.add(new THREE.Mesh(new THREE.BoxGeometry(12,12,12),new THREE.MeshBasicMaterial({color:new THREE.Color(0.5,0.6,0.75),side:THREE.BackSide})));
  const L=(w,h,x,y,z,rx,ry,c)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:c,side:THREE.DoubleSide}));m.position.set(x,y,z);m.rotation.set(rx,ry,0);es.add(m);};
@@ -1332,7 +1380,7 @@ function relief(m){const pa=m.geometry.attributes.position;for(let k=0;k<pa.coun
 function terrainChanged(){SAT.meshes.forEach(relief);BASE.meshes.forEach(relief);procScenery.forEach(o=>{if(o.userData.relief)relief(o);});ONTERR.forEach(g=>{g.position.y=gnd(g.position.x,g.position.z)+(g.userData.dy||0);});if(SAT.ready){plantTrees&&plantTrees();plantCity&&plantCity();}}
 {const im=new Image();im.onload=()=>{const n=im.width,c=document.createElement('canvas');c.width=c.height=n;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(im,0,0);const d=g.getImageData(0,0,n,n).data,h=new Float32Array(n*n);
    for(let k=0;k<n*n;k++)h[k]=(d[k*4]*256+d[k*4+1])/10;TERR.h=h;TERR.n=n;PHOTO.terrain=true;terrainChanged();};im.src=ASSET+'height.png';}
-{const far=new THREE.Mesh(new THREE.PlaneGeometry(500000,500000),new THREE.MeshStandardMaterial({color:0x1d3048,roughness:0.5}));far.rotation.x=-PI/2;far.position.y=-9;far.visible=false;scene.add(far);SAT.far=far;
+{const far=new THREE.Mesh(new THREE.PlaneGeometry(500000,500000),new THREE.MeshStandardMaterial({color:0x0c1e2c,roughness:0.16,metalness:0}));far.rotation.x=-PI/2;far.position.y=-9;far.visible=false;scene.add(far);SAT.far=far;
  const N=SAT.N,T=2*SAT.half/N,P=SAT.P,tg=SAT.thumb.getContext('2d');
  for(let j=0;j<N;j++)for(let i=0;i<N;i++)loadTex('g'+i+j+(MOB?'_m':'')+'.jpg',t=>{
    const m=new THREE.Mesh(new THREE.PlaneGeometry(T,T,MOB?96:180,MOB?96:180),addDetail(new THREE.MeshStandardMaterial({map:t,roughness:1,metalness:0,envMapIntensity:0.9}),'grass',{sat:1,gain:2.7,gamma:0.95,s1:5,s2:31,tint:0.2,k:0.6,f0:250,f1:2200,n0:25,n1:220,aer:210,ka:0.45}));
@@ -2388,7 +2436,8 @@ function drawCockpitDisplays(a){
      g.fillStyle='#c9d1d8';g.font='700 12px Rajdhani, sans-serif';g.fillText(lbl,cx,cy+r*0.62);};
    dial(64,'RPM %',['0','','50','','100'],0.93);dial(192,'FTIT ×100',['0','','5','','10'],0.86);dial(320,'FUEL ×1000',['0','2','4','6'],null);d.t.needsUpdate=true;}
   // nav display
-  if(ndMode!=='cam'){if(!TOPO.state&&TERR.c&&BASE.n>=8)buildTopo();const d=ckTex.nd,g=ckBg(d,'#04070a');mapCore(g,512,MAPR[mapRi],14,TOPO.c);
+  if(ndMode==='rdr')drawRadarMFD(ckTex.nd);
+  else if(ndMode!=='cam'){if(!TOPO.state&&TERR.c&&BASE.n>=8)buildTopo();const d=ckTex.nd,g=ckBg(d,'#04070a');mapCore(g,512,MAPR[mapRi],14,TOPO.c);
     g.font='700 16px Rajdhani, sans-serif';g.textBaseline='middle';g.fillStyle='rgba(6,14,20,.72)';g.fillRect(6,6,124,24);g.fillRect(430,6,76,24);g.fillStyle='#cfe9f0';g.textAlign='left';g.fillText('TSD · '+MAPR[mapRi]+' NM',12,18);g.textAlign='center';g.fillText(TOPO.c?'TOPO':'SAT',468,18);d.t.needsUpdate=true;}
   }
 
@@ -2417,7 +2466,9 @@ function drawHUD(a){{const P=Hh*0.1763/Math.tan(camera.fov*DEG/2);HUDK.k=clamp(1
   g.font=hf(600,20,'IBM Plex Mono, monospace');g.textAlign='left';g.fillText('G '+nzOf(a).toFixed(1),40,340);g.fillText('M '+(a.V/340).toFixed(2),40,366);g.textAlign='center';
   if(a.stallW){g.font=hf(700,32,'Rajdhani, sans-serif');g.fillText('STALL',256,140);}
   if(!a.gear&&a.agl<1000){g.font=hf(700,24,'Rajdhani, sans-serif');g.fillText('GEAR',256,420);}
+  drawCombatHUD(g,a,ppd,c);
   d.t.needsUpdate=true;}
+/*__CMBVIEW__*/
 const tubPlanes=[[1,0,0,-0.55],[-1,0,0,-0.55],[0,0,-1,-4.95],[0,0,1,2.9],[0,-1,0,0.15]].map(v=>new THREE.Plane(new THREE.Vector3(v[0],v[1],v[2]),v[3]));
 const tubWorld=tubPlanes.map(p=>p.clone());
 function setTubClip(on){const f=drone.getObjectByName('fuselage');if(!f)return;f.material.clippingPlanes=on?tubWorld:[];f.material.clipIntersection=true;f.material.needsUpdate=true;}
@@ -2608,11 +2659,11 @@ function ckPick(e){const r=canvas.getBoundingClientRect();ckNdc.set(((e.clientX-
 const eoCam=new THREE.PerspectiveCamera(20,1,2,60000);const eoRT=new THREE.WebGLRenderTarget(MOB?320:640,MOB?320:640,{samples:MOB?0:2});eoRT.texture.colorSpace=THREE.SRGBColorSpace;
 let ndMode='cam';const eoMat=new THREE.MeshBasicMaterial({map:eoRT.texture,toneMapped:true});let ndMatCanvas=null;
 const EOPOS=new THREE.Vector3(0,-0.42,-7.75);
-function eoAim(){return worldAt(target,target.aim,0,0.5);}
+function eoAim(){if(CMB.lock&&CMB.lock.alive)return CMB.lock.pos.clone();return worldAt(target,target.aim,0,0.5);}
 function renderEO(){drone.updateMatrixWorld(true);const p=EOPOS.clone().applyMatrix4(drone.matrixWorld);eoCam.position.copy(p);
   const aim=eoAim();const toA=aim.clone().sub(p);const dist=toA.length();const fwd=new THREE.Vector3(0,0,-1).applyQuaternion(drone.getWorldQuaternion(new THREE.Quaternion()));
-  const off=fwd.angleTo(toA);ck.eoLock=off<75*DEG&&dist<40000;eoCam.up.set(0,1,0);
-  if(ck.eoLock){eoCam.lookAt(aim);eoCam.fov=clamp(2*Math.atan(320/dist)/DEG,3,40);}else{eoCam.lookAt(p.clone().add(fwd.clone().multiplyScalar(1000)).add(new THREE.Vector3(0,-80,0)));eoCam.fov=40;}
+  const off=fwd.angleTo(toA);ck.eoLock=off<75*DEG&&dist<(CMB.lock?80000:40000);eoCam.up.set(0,1,0);
+  if(ck.eoLock){eoCam.lookAt(aim);eoCam.fov=clamp(2*Math.atan((CMB.lock?45:320)/dist)/DEG,CMB.lock?0.6:3,40);}else{eoCam.lookAt(p.clone().add(fwd.clone().multiplyScalar(1000)).add(new THREE.Vector3(0,-80,0)));eoCam.fov=40;}
   eoCam.updateProjectionMatrix();ck.eoDist=dist;ck.eoLos=Math.asin(clamp(toA.y/max(dist,1),-1,1))/DEG;
   const dv=drone.visible,cv=cockpit.visible;drone.visible=false;cockpit.visible=false;skyMesh.position.copy(p);
   renderer.setRenderTarget(eoRT);renderer.render(scene,eoCam);renderer.setRenderTarget(null);drone.visible=dv;cockpit.visible=cv;}
@@ -2629,7 +2680,7 @@ function drawEOOverlay(now){const d=ckTex.eo,g=d.g;g.setTransform(1,0,0,1,0,0);g
   g.fillStyle='rgba(5,8,11,0.55)';g.fillRect(0,0,512,26);g.fillRect(0,488,512,24);osb(g,['EO','IR','ZOOM','TRK','MAP'],['','','click: map','',''],'EO');
   d.t.needsUpdate=true;}
 function setNdMode(m){ndMode=m;if(!ndMatCanvas)ndMatCanvas=ck.ndScr.material;ck.ndScr.material=m==='cam'?eoMat:ndMatCanvas;ck.eoOv.visible=m==='cam';}
-ckHits.push({mesh:ck.ndScr,click(){setNdMode(ndMode==='cam'?'map':'cam');audio.click&&audio.click();},tip(){return ndMode==='cam'?'Nose camera, locked on '+target.id+': click for the map':'Map: click for the nose camera';}});
+ckHits.push({mesh:ck.ndScr,click(){setNdMode(ndMode==='cam'?'map':ndMode==='map'?'rdr':'cam');audio.click&&audio.click();},tip(){return ndMode==='cam'?'Nose camera, on '+(CMB.lock?'bandit '+CMB.lock.name:target.id)+': click for the map':ndMode==='map'?'Map: click for the radar':'Radar (B-scope): click for the nose camera';}});
 setNdMode('cam');
 /* camera */
 const fb={pos:new THREE.Vector3(),set:false,t:0,lead:300,side:1};
@@ -2763,6 +2814,7 @@ window.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.ta
   if(k==='z'||k==='Z'){apMode('AP');e.preventDefault();return;}
   if((k==='x'||k==='X')&&camMode==='cockpit'){ck.glance=true;e.preventDefault();return;}
   if(k===']'||k==='Home'){inp.trimUp=true;e.preventDefault();return;}if(k==='['||k==='End'){inp.trimDn=true;e.preventDefault();return;}if(k==='t'||k==='T'){toggleAutoTrim();e.preventDefault();return;}if(k==='j'||k==='J'){togglePst();e.preventDefault();return;}if(k==='u'||k==='U'){chuteCmd();e.preventDefault();return;}
+  if(k==='Tab'){cmbLock();e.preventDefault();return;}if(k==='Backspace'){cmbUnlock();e.preventDefault();return;}if(k==='Enter'&&$('title').hidden){cmbFire();e.preventDefault();return;}
   if(k==='ArrowUp'||k==='w'||k==='W')inp[SETTINGS.inv?'kDn':'kUp']=true;else if(k==='ArrowDown'||k==='s'||k==='S')inp[SETTINGS.inv?'kUp':'kDn']=true;else if(k==='ArrowLeft'||k==='a'||k==='A')inp.kL=true;else if(k==='ArrowRight'||k==='d'||k==='D')inp.kR=true;
   else if(k==='PageUp'||k==='+'||k==='='||k==='PageDown'||k==='-'||k==='_'){if(ap.athr){ap.athr=false;ap.msg='A/THR OFF · manual thrust';ap.msgT=3;onApChange();}setThrottle(+thr.value+(k==='PageUp'||k==='+'||k==='='?4:-4));}
   else if(k==='f'||k==='F')cycleFlaps();else if(k==='g'||k==='G')toggleGear();else if(k==='b'||k==='B')toggleBrk();else if(k===' ')toggleSplr();
@@ -2822,6 +2874,7 @@ onApChange=function(){
   {const b=$('mApBtn');if(b)b.classList.toggle('on',ap.on);}
   const m=$('apMsg');if(ap.msg){m.textContent=ap.msg;m.classList.add('warn');}else{m.textContent='';m.classList.remove('warn');}
 };
+$('bLock').addEventListener('click',cmbLock);$('bFire').addEventListener('click',cmbFire);$('bUnlock').addEventListener('click',cmbUnlock);
 $('bTrim').addEventListener('click',toggleAutoTrim);$('bChute').addEventListener('click',()=>chuteCmd());$('bPst').addEventListener('click',()=>togglePst());
 document.querySelectorAll('#tod button').forEach(b=>b.addEventListener('click',()=>{tod=+b.dataset.t;document.querySelectorAll('#tod button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));applyTOD();}));
 document.querySelectorAll('#scen button').forEach(b=>b.addEventListener('click',()=>{scen=+b.dataset.s;document.querySelectorAll('#scen button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}));
@@ -2838,7 +2891,7 @@ $('btnGo').addEventListener('click',()=>{ensureGameAudio();requestStart();});
 $('btnAgain').addEventListener('click',()=>{requestStart();});
 function goHome(){if(ap.on)apEngage(false);ap.athr=false;ac.phase='standby';$('result').hidden=true;$('title').hidden=false;$('app').classList.add('menu');frame.menu=true;$('mApDrawer').hidden=true;showScr('home');inp.kUp=inp.kDn=inp.kL=inp.kR=false;onApChange();}
 $('logoHome').addEventListener('click',goHome);
-function setMission(m){mission=m;document.querySelectorAll('#mission .mcard').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.m===m)));$('btnGo').textContent=m==='takeoff'?'Line up for takeoff':'Start approach';}
+function setMission(m){mission=m;document.querySelectorAll('#mission .mcard').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.m===m)));$('btnGo').textContent=m==='takeoff'?'Line up for takeoff':m==='intercept'?'Start intercept':'Start approach';}
 document.querySelectorAll('#mission .mcard').forEach(b=>b.addEventListener('click',()=>setMission(b.dataset.m)));
 document.querySelectorAll('[data-mission]').forEach(b=>b.addEventListener('click',()=>{setMission(b.dataset.mission);showScr('play');}));
 const toastEl=document.createElement('div');toastEl.id='toast';toastEl.className='off';view.appendChild(toastEl);let toastT=0;
@@ -2852,7 +2905,7 @@ function applyMob(){const app=$('app');const on=MOB&&(innerWidth<=1180||innerHei
   $('mRotate').hidden=!(on&&innerHeight>innerWidth&&!mRotDismissed);updateThrOut();}
 addEventListener('resize',applyMob);addEventListener('orientationchange',()=>setTimeout(applyMob,250));
 $('mRotateOk').addEventListener('click',()=>{mRotDismissed=true;$('mRotate').hidden=true;});
-document.querySelectorAll('#mBar button').forEach(b=>b.addEventListener('click',()=>{ensureGameAudio();const a=b.dataset.a;if(a==='flaps')cycleFlaps();else if(a==='gear')toggleGear();else if(a==='brk')toggleBrk();else if(a==='splr')toggleSplr();else if(a==='lights'){const on=!LIGHTS.ldg;LIGHTS.ldg=on;LIGHTS.taxi=on;syncLights();}else if(a==='ap')$('mApDrawer').hidden=!$('mApDrawer').hidden;}));
+document.querySelectorAll('#mBar button').forEach(b=>b.addEventListener('click',()=>{ensureGameAudio();const a=b.dataset.a;if(a==='flaps')cycleFlaps();else if(a==='gear')toggleGear();else if(a==='brk')toggleBrk();else if(a==='splr')toggleSplr();else if(a==='lights'){const on=!LIGHTS.ldg;LIGHTS.ldg=on;LIGHTS.taxi=on;syncLights();}else if(a==='ap')$('mApDrawer').hidden=!$('mApDrawer').hidden;else if(a==='lock')cmbLock();else if(a==='fire')cmbFire();}));
 $('mApClose').addEventListener('click',()=>{$('mApDrawer').hidden=true;});
 {const mt=$('mtTrack');let drag=false;const fromY=y=>{const r=mt.getBoundingClientRect();let v=(1-(y-r.top-15)/(r.height-30))*100;v=clamp(v,0,100);for(const d of[0,50,85,100])if(abs(v-d)<3)v=d;return v;};
  mt.addEventListener('pointerdown',e=>{manualThrust();drag=true;try{mt.setPointerCapture(e.pointerId);}catch(_){}setThrottle(fromY(e.clientY));});
@@ -2872,7 +2925,7 @@ if(SETTINGS.vol!=null){audio.vol=SETTINGS.vol;if($('vol'))$('vol').value=Math.ro
 {let t=0;const wake=()=>{if(view.classList.contains('idle'))view.classList.remove('idle');clearTimeout(t);t=setTimeout(()=>{if(!MOB&&$('title').hidden)view.classList.add('idle');},3000);};
  ['pointermove','pointerdown','wheel'].forEach(ev=>window.addEventListener(ev,wake,{passive:true}));wake();}
 $('btnMenu').addEventListener('click',()=>{$('result').hidden=true;$('title').hidden=false;$('app').classList.add('menu');frame.menu=true;ac.phase='standby';showScr('play');});
-function startGame(){setTimeK(1);if(depAp&&arrAp){SETTINGS.route=[depAp.id,arrAp.id];saveSettings();}ck.boot=mission==='takeoff'?0:null;camMode='chase';warmUp.cam='chase';fb.set=false;ORB.yaw=ORB.pitch=0;ORB.zoom=1;Object.assign(LIGHTS,{nav:true,bcn:true,strb:true,ldg:true,taxi:mission==='takeoff'});syncLights();applyTOD();$('title').hidden=true;$('result').hidden=true;$('app').classList.remove('menu');frame.menu=false;applyMob();resetFlight();camPos.copy(ac.pos).add(new THREE.Vector3(0,8,30));camLook.copy(ac.pos);
+function startGame(){setTimeK(1);{const ic=mission==='intercept';$('wpnBox').hidden=!ic;$('mLock').hidden=!ic;$('mFire').hidden=!ic;if(typeof ck!=='undefined'&&ck.ndScr)setNdMode(ic?'rdr':'cam');}if(depAp&&arrAp){SETTINGS.route=[depAp.id,arrAp.id];saveSettings();}ck.boot=mission==='takeoff'?0:null;camMode='chase';warmUp.cam='chase';fb.set=false;ORB.yaw=ORB.pitch=0;ORB.zoom=1;Object.assign(LIGHTS,{nav:true,bcn:true,strb:true,ldg:true,taxi:mission==='takeoff'});syncLights();applyTOD();$('title').hidden=true;$('result').hidden=true;$('app').classList.remove('menu');frame.menu=false;applyMob();resetFlight();camPos.copy(ac.pos).add(new THREE.Vector3(0,8,30));camLook.copy(ac.pos);
   LOAD.on=true;LOAD.t0=performance.now();LOAD.shown=!$('loading').hidden;camera.position.copy(camPos);if(osmCity){osmCity.OSMB.t=performance.now();osmCity.watch();}}
 
 /* ================= Destination & moving map ================= */
@@ -2994,6 +3047,7 @@ function showResult(ok,why){
     if(t){add('Sink rate at impact',fmt(t.vsFpm)+' fpm',t.vsFpm>700?'bad':'');add('Impact point',t.onRwy?fmt(t.dist)+' m past threshold':'off runway',t.onRwy?'':'bad');add('Speed at impact',fmt(t.ias)+' kt');add('Bank at impact',fmt(t.bank,1)+'°',t.bank>7?'bad':'');add('Gear',t.gear?'down':'up',t.gear?'':'bad');}
     else{add('Altitude lost','terrain impact','bad');add('Speed',fmt(ac.ias)+' kt');}
   }
+  if(mission==='intercept'){const n=CMB.bandits.length;add('Bandits destroyed',CMB.kills+' of '+n,CMB.kills===n?'ok':CMB.kills?'meh':'bad');add('AIM-120s fired',CMB.fired+' of 4'+(CMB.fired?' · '+Math.round(100*CMB.kills/CMB.fired)+' % hit':''));}
   $('resScore').textContent=score;$('resGrade').textContent=grade;$('scoreRow').hidden=!ok;$('result').hidden=false;
 }
 
@@ -3111,7 +3165,7 @@ function frame(now){
   // behaves the same on every machine. Time compression simply runs more steps
   let simH=0;
   if(ac.phase==='fly'&&!LOAD.on&&!PAUSE.on){PHYS.acc+=dt*timeK;let k=0;
-    while(PHYS.acc>=PHYS.h&&k<96){PHYS.prev.copy(ac.pos);if(ac.Q)PHYS.prevQ.copy(ac.Q);step(PHYS.h);for(let i=0;i<2&&ac.phase==='fly';i++)flyStep(PHYS.h/2);PHYS.acc-=PHYS.h;simH+=PHYS.h;k++;}
+    while(PHYS.acc>=PHYS.h&&k<96){PHYS.prev.copy(ac.pos);if(ac.Q)PHYS.prevQ.copy(ac.Q);step(PHYS.h);for(let i=0;i<2&&ac.phase==='fly';i++)flyStep(PHYS.h/2);if(ac.phase==='fly'&&(CMB.on||CMB.msls.length))combatStep(PHYS.h);PHYS.acc-=PHYS.h;simH+=PHYS.h;k++;}
     if(k>=96)PHYS.acc=0;}else PHYS.acc=0;
   // felt acceleration (the change in velocity plus gravity) along the aircraft's own axes, in g: nz is 1 in level flight, 9 in the
   // hardest pull; drives the head in the cockpit, the chase camera's dip and the vapour
@@ -3131,7 +3185,7 @@ function frame(now){
   // drawn aircraft rides up by the thickness of the surface under it; below 100 ft it looks ahead at the surface it will land on
   {const sf=ac.onGround?ac.surf:ac.agl<100?surfaceAt(ac.pos):null;if(sf){const tgt=sf==='runway'?0.12:sf==='pavement'?0.1:0.01;ac.surfY=ac.surfY==null?tgt:ac.surfY+(tgt-ac.surfY)*(1-exp(-dt/0.15));}}
   drone.position.copy(ac.pos);drone.position.y+=(ac.yEase||0)+(ac.surfY||0);if(ac.Q)drone.quaternion.copy(ac.Q);else{drone.rotation.set(0,0,0);drone.rotateY(-ac.psiB);drone.rotateX(ac.theta);drone.rotateZ(-ac.phi);}
-  updateChute3D(dt);
+  updateChute3D(dt);updateCombat3D(dt);
   // gear: retract forward into the pods/nose, struts compress, wheels spin with ground speed and spin down in the air
   const gE=clamp((ac.gearT-0.03)/0.94,0,1);
   gearUnits.forEach((u,i)=>{u.pivot.rotation.x=(1-gE)*PI/2*(u.fold||1);u.slide.position.y=u.axleY+(ac.gc?ac.gc[i]||0:0);
@@ -3162,7 +3216,7 @@ function frame(now){
    const nk=GLU.uNight.value;ACL.ldg.intensity=LIGHTS.ldg?220000*(0.05+0.95*nk):0;ACL.taxi.intensity=(LIGHTS.taxi&&ac.gearT>0.9)?20000*(0.06+0.94*nk):0;
    ACL.beams.forEach(b=>{const on=LIGHTS[b.k]&&(b.k!=='taxi'||ac.gearT>0.9);b.m.uniforms.uI.value=on?(b.k==='ldg'?0.07:0.06)*clamp((nk-0.25)/0.75,0,1):0;});
    const bc=LIGHTS.bcn&&((now/1000)%1)<0.11;ACL.lens.forEach(b=>b.material.color.setHex(bc?0xff3020:0x5a1008));}
-  GLU.uTime.value=now/1000;GLU.uScale.value=renderer.domElement.height*camera.projectionMatrix.elements[5]*0.5;
+  GLU.uTime.value=now/1000;{const w=SCEN[scen].wind,sp=Math.hypot(w[0],w[2]);if(sp>0.5)WATER.wind.value.set(w[0]/sp,w[2]/sp,clamp((sp+3)/13,0,1));else WATER.wind.value.set(-0.7071,0.7071,0.25);}GLU.uScale.value=renderer.domElement.height*camera.projectionMatrix.elements[5]*0.5;
   sun.target.position.copy(ac.pos);sun.position.copy(ac.pos).add(SUNOFF);
   // PAPI colours
   papiEnds.forEach((q,k)=>{const l=local(q.end,ac.pos);const ang=atan2(ac.pos.y-AC.gearH-q.end.ap.elev,max(1,q.end.aim-l.u))/DEG;const red=ang<[2.5,2.8,3.2,3.5][q.i];papiAttr.setXYZ(k,1,red?0.15:1,red?0.15:1);});papiAttr.needsUpdate=true;
@@ -3193,7 +3247,7 @@ function frame(now){
   {const R=MOB?11000:22000;for(const c of cityChunks)c.m.visible=camera.position.distanceTo(c.c)<R+c.r;}PERF.m('stream');if(osmCity)osmCity.tick(now);PERF.m('city');
   skyMesh.position.copy(camera.position);updateClouds(now,dtFrame);clouds.forEach(c=>{c.position.x+=SCEN[scen].wind[0]*0.3*dt;});PERF.m('clouds');renderMain();renderFlare(dt);PERF.m('render');
   {const m=!$('title').hidden;if(m!==frame.menu){frame.menu=m;$('app').classList.toggle('menu',m);}}
-  updateHUD(dt);updateRunwaySymbol();PERF.m('hud');if(ipol){ac.pos.copy(PHYS.real);ac.Q.copy(PHYS.realQ);}if((now/100|0)%2===0)drawMap();PERF.m('map');updatePanel(dt);renderLever();PERF.m('panel');PERF.end(pf0,now);
+  updateHUD(dt);updateRunwaySymbol();drawCombatOverlay();PERF.m('hud');if(ipol){ac.pos.copy(PHYS.real);ac.Q.copy(PHYS.realQ);}if((now/100|0)%2===0)drawMap();PERF.m('map');updatePanel(dt);renderLever();PERF.m('panel');PERF.end(pf0,now);
 }
 syncSys();updateThrOut();resetFlight();ac.phase='standby';applyMob();
 // only the aircraft's large parts cast a shadow: the ~200 small ones (fasteners, lamps, antennas, gear links) don't change the

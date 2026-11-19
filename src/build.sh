@@ -8,7 +8,8 @@ python3 -I - <<'PY'
 s=open('hawk-landing.src.html',encoding='utf-8').read()
 sim=open('sim-block.js',encoding='utf-8').read();gau=open('gauge-block.js',encoding='utf-8').read()
 aud=open('audio-block.js',encoding='utf-8').read().replace('const src=(buf,rate)=>','audio.white=white;audio.brown=brown;const src=(buf,rate)=>',1)
-out=s.replace('/*__SIM__*/',sim).replace('/*__AUDIO__*/',aud).replace('/*__GAUGE__*/',gau);assert '/*__' not in out
+cs=open('combat-sim.js',encoding='utf-8').read();cv=open('combat-view.js',encoding='utf-8').read()
+out=s.replace('/*__SIM__*/',sim).replace('/*__AUDIO__*/',aud).replace('/*__GAUGE__*/',gau).replace('/*__CMBSIM__*/',cs).replace('/*__CMBVIEW__*/',cv);assert '/*__' not in out
 import datetime;stamp=datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')   # build stamp in the panel footer, to tell versions apart
 assert out.count('<div class="credit-foot">Made by Baris Hiz</div>')==1;out=out.replace('<div class="credit-foot">Made by Baris Hiz</div>','<div class="credit-foot">Made by Baris Hiz · build '+stamp+'</div>')
 open('out/hawk-landing.html','w',encoding='utf-8').write(out)

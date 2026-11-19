@@ -475,7 +475,7 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
             <dt>Q E</dt><dd>Rudder left / right (steers on the ground). Auto-rudder keeps turns coordinated unless you switch it off</dd>
             <dt>[ ] · T</dt><dd>Trim nose down / up · fly-by-wire on or off (on: a centred stick holds the flight path and bank, full stick pulls up to 9 g)</dd>
             <dt>U</dt><dd>Drag chute: after touchdown (weight on the wheels) the brake chute streams from the tail and opens in about a second, adding up to 0.45 g of braking at landing speed. It shreds above 185 kt and burns off if the afterburner is lit; in a crosswind it pulls the nose into wind. Press U again to jettison it, normally below about 40 kt</dd>
-            <dt>J</dt><dd>Post-stall mode: the nozzle vectors ±20° in pitch and yaw and the AoA and g limiters are off. For a Cobra: about 230 kt, full afterburner, full aft stick for about 2 s, then let go. The nose goes past 70° and the speed bleeds away, and with the stick released the nozzle brings the nose back down. With rudder or roll stick at high AoA the nozzle yaws the aircraft round (a flat turn). The autopilot is unavailable while it is on</dd>
+            <dt>J</dt><dd>Post-stall mode: the nozzle vectors ±20° in pitch and yaw and the AoA and g limiters are off. The stick commands pitch rate and the nose holds wherever you let go, even with no airspeed. For a Cobra: about 230 kt, full afterburner, full aft stick until the nose nears 70° (it runs on about 15° more), let go, then push forward to bring it back down. To hang nose-up at zero speed: pull to vertical, let go, and as the speed bleeds away hold about 95 % throttle (light afterburner) so the vertical speed stays near zero. With rudder or roll stick at high AoA the nozzle yaws the aircraft round (a flat turn). The autopilot is unavailable while it is on</dd>
             <dt>Heading</dt><dd>The tape at the top shows your heading in the box; the cyan bug is the autopilot's selected heading (solid while the autopilot is flying it) and the magenta diamond points to the destination runway. The map repeats both: a green line for your heading and a dashed cyan line with a bug for the selected heading</dd>
             <dt>L · K</dt><dd>Landing lights · taxi light. All exterior lights (nav, beacon, strobe, landing, taxi, logo) have switches on the left console in the cockpit and in the Systems panel. Choose day, dusk or night on the setup screen</dd>
             <dt>Z · panel</dt><dd>Autopilot on/off; set IAS, HDG, ALT, V/S and use A/THR, HDG, ALT, V/S, APP (ILS with autoland)</dd>
@@ -595,13 +595,13 @@ input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px
           <dt>Stall, clean</dt><dd>103 kt at 24° AoA</dd>
           <dt>Engine</dt><dd>TF-10K, 10,000 lbf dry, 23,000 lbf with afterburner (last 10 % of the throttle) · T/W 0.78 dry, 1.8 wet</dd>
           <dt>Drag chute</dt><dd>5 m ribbon chute in a tail canister · about 10 m² drag area · deploy after touchdown, up to 185 kt (U)</dd>
-          <dt>Thrust vectoring</dt><dd>Axisymmetric nozzle, ±20° pitch and yaw at 60°/s · post-stall flight to beyond 90° AoA (J)</dd>
+          <dt>Thrust vectoring</dt><dd>Axisymmetric nozzle, ±20° pitch and yaw at 90°/s · pitch-rate command with attitude hold · post-stall flight beyond 90° AoA and hanging on thrust at zero speed (J)</dd>
           <dt>Tail clearance</dt><dd>about 13° nose-up on the mains</dd>
           <dt>Airfields</dt><dd>18 across Turkey: Istanbul (IST, SAW, ISL, SMD), Ankara, İzmir, Antalya, Dalaman, Bodrum, Adana, Kayseri, Konya, Samsun, Trabzon, Gaziantep, Diyarbakır, Erzurum and Van</dd>
         </dl>
         <ul id="msgs"></ul>
       </details>
-      <div class="credit-foot">Made by Baris Hiz · build 2026-11-19 02:29 UTC</div>
+      <div class="credit-foot">Made by Baris Hiz · build 2026-11-19 02:38 UTC</div>
     </aside>
   </main>
 </div>
@@ -863,8 +863,8 @@ function findRunway(p){for(const ap of AIRPORTS){const l=local(ap.ends[0],p);if(
 function approachEnd(ap,p){return local(ap.ends[0],p).u<ap.len/2?ap.ends[0]:ap.ends[1];}
 const SCEN=[{name:'Calm',wind:[0,0,0],gust:0,label:'calm',cloud:0.4},{name:'Crosswind',wind:[-6.2,0,0],gust:0,label:'12 kt from 090',cloud:0.55},{name:'Gusty',wind:[-9.3,0,2],gust:1,label:'18 kt from 100, gusts',cloud:0.7}];
 let scen=0,invert=true,autoTrim=true,autoRudder=true,pst=false;   // pst: thrust-vectoring post-stall mode (J)
-// thrust vectoring: the nozzle swivels ±20° in pitch and yaw at 60°/s; arm from the CG to the nozzle hinge, and the yaw inertia
-const TVC={max:20*DEG,rate:60*DEG,arm:6.5,Iz:52000};
+// thrust vectoring: the nozzle swivels ±20° in pitch and yaw at 90°/s; arm from the CG to the nozzle hinge, and the yaw inertia
+const TVC={max:20*DEG,rate:90*DEG,arm:6.5,Iz:52000,qMax:70*DEG,kq:6,rMax:30*DEG,kr:3};
 // pitch/roll model (normalised moments): trim AoA, AoA stiffness, elevator power, pitch damping, aileron power, roll damping, dihedral, auto-trim gain
 const PM={qref:0.5*1.225*61.7*61.7,a0:6*DEG,ka:6,kd:1.3,kq:3.2,la:1.3,lp:2.4,ld:0.12,at:1.6,
   // directional: weathercock stiffness, yaw damping, rudder power, adverse yaw, side force, dihedral effect (roll from sideslip)
@@ -1045,19 +1045,16 @@ function flyStep(dt){
   // full stick reaches the g limit, or just past the stall AoA when slow, so a stall is still possible
   if(autoTrim&&!a.onGround&&qbar>50&&!ap.on&&!pst){const W=acMass()*9.81,an=n=>AC.a0+(n*W/(qbar*AC.S)-AC.clFlap[f])/AC.clA,el=x=>PM.ka*(x-PM.a0)/PM.kd;
     const ka=clamp((a.airT||0)/2,0,1),kf=ka*ka*(3-2*ka);dEl=clamp((a.de*(1+0.6*kf)+a.trim)*(a.stalled?0.55:1),el(max(an(PM.nzMin),-12*DEG)),el(min(an(PM.nzMax),st-PM.aoaMargin)));}
-  // thrust-vectoring nozzle (post-stall mode only): the stick sets the pitch angle, pedals and (at high AoA) the roll stick the yaw
-  // angle; with the stick released it damps the pitch rate and
-  // pushes the nose back down to a normal angle of attack (as Su-35 control laws do). The nozzle follows its command at 60°/s.
-  // on the ground it follows the stick and pedals directly, as in a pre-flight control check (the ground model ignores the angle)
-  {let cp=0,cy=0;if(pst&&a.onGround){cp=a.de*TVC.max;cy=clamp(a.drTot||0,-1,1)*TVC.max;}else if(pst){cp=abs(a.de)>0.05?a.de*TVC.max:-0.35*a.q-1.2*max(0,a.alpha-st+6*DEG);cy=clamp(a.drTot+0.6*a.da*sstep(20*DEG,45*DEG,a.alpha),-1,1)*TVC.max-0.25*a.r*sstep(20*DEG,40*DEG,a.alpha);}
-    a.tvP=ramp(a.tvP||0,clamp(cp,-TVC.max,TVC.max),TVC.rate);a.tvY=ramp(a.tvY||0,clamp(cy,-TVC.max,TVC.max),TVC.rate);}
+  // thrust-vectoring nozzle on the ground (post-stall mode): follows the stick and pedals directly, as in a pre-flight control
+  // check; the ground model ignores the angle. Out of post-stall mode it centres. The flight control law is further down.
+  if(a.onGround||!pst){const cp=pst?a.de*TVC.max:0,cy=pst?clamp(a.drTot||0,-1,1)*TVC.max:0;a.tvP=ramp(a.tvP||0,cp,TVC.rate);a.tvY=ramp(a.tvY||0,cy,TVC.rate);}
   // static pitch stability: in post-stall mode the fly-by-wire no longer adds stability, so the airframe is only lightly stable;
   // past the stall it has the pitch-up tendency of a relaxed-stability fighter (neutral by about 50°), then grows strongly nose-down
-  // past 60°, which is what stops the nose and brings it back down at the end of a Cobra
-  const aS=!pst?a.alpha-PM.a0:0.4*(min(a.alpha,st)-PM.a0)-0.3*clamp(a.alpha-st,0,30*DEG)+1.6*max(0,a.alpha-60*DEG);
+  // past 60°; the nozzle control law below can hold the nose against it with enough thrust
+  const aS=!pst?a.alpha-PM.a0:0.4*(min(a.alpha,st)-PM.a0)-0.3*clamp(a.alpha-st,0,30*DEG)+0.8*max(0,a.alpha-60*DEG);
   let qd=qn*(-PM.ka*aS+PM.kd*dEl)-PM.kq*sq*(pst?1-0.5*sstep(st,st+20*DEG,a.alpha):1)*(a.q-(autoTrim&&!a.onGround&&!pst?a.qRef||0:0));
   if(a.stalled){const ex=(a.alpha-st)/DEG;
-    if(pst){a.p+=sin(a.t*2.7)*min(ex,40)*0.5*DEG*dt;}   // gentle wing rock and some extra damping, no random departure
+    if(pst){a.p+=sin(a.t*2.7)*min(ex,40)*0.5*DEG*dt*min(1,qn*3);}   // gentle wing rock and some extra damping, no random departure
     else{qd-=ex*0.05*max(qn,0.3);a.p+=(Math.random()-0.5)*ex*0.9*DEG;}}
   // rolling moment: aileron, roll damping, dihedral
   let pd;
@@ -1071,6 +1068,16 @@ function flyStep(dt){
   }else pd=qn*(PM.la*a.da+PM.lb*a.beta)-PM.lp*sq*a.p-PM.ld*a.phi;
   // yawing moment: weathercock stability (sideslip), rudder, adverse yaw from aileron, yaw damping relative to the turn
   const rd=qn*(-PM.nb*a.beta+PM.ndr*a.drTot-PM.nda*a.da)-PM.nr*sq*(a.r-(a.psiDot||0));
+  // thrust-vectoring control law (post-stall mode, in flight), as TVC fighters fly it: the stick commands pitch rate (up to 70°/s,
+  // gentle near centre) and the pedals yaw rate; centred, the rates are held at zero, so the nose stays where it was put, even with
+  // no airspeed left. Each step the nozzle angle is solved from the moment still needed after the aerodynamic one (dynamic
+  // inversion), within ±20° and the nozzle's 90°/s. With the nose up and thrust trimmed to the weight it hangs in place.
+  if(pst&&!a.onGround){const T0=max(a.thrN||0,3000)*TVC.arm,sh=x=>0.35*x+0.65*x*x*x;
+    // the elevator takes what it can first (strong at speed), the nozzle the rest (all of it when there is no airflow)
+    const qc=sh(clamp(a.de,-1,1))*TVC.qMax,eff=qn*PM.kd*(1-0.45*sstep(st,st+15*DEG,a.alpha)),qdA=qd-eff*dEl,need=TVC.kq*(qc-a.q)-qdA;
+    a.dEl=eff>0.02?clamp(need/eff,-1.4,1.4):0;qd=qdA+eff*a.dEl;const cp=Math.asin(clamp((need-eff*a.dEl)*GX.Iy/T0,-1,1));
+    const rc=sh(clamp(a.dr+0.6*a.da*sstep(20*DEG,45*DEG,a.alpha),-1,1))*TVC.rMax,cy=Math.asin(clamp((TVC.kr*(rc-a.r)-rd)*TVC.Iz/T0,-1,1));
+    a.tvP=ramp(a.tvP||0,clamp(cp,-TVC.max,TVC.max),TVC.rate);a.tvY=ramp(a.tvY||0,clamp(cy,-TVC.max,TVC.max),TVC.rate);}
   // auto-trim: with the yoke centred the drone holds its attitude, like fly-by-wire
   // auto-trim holds the flight path with the yoke centred and adds back-pressure in turns (fly-by-wire style)
   // just after liftoff the takeoff (nose-down) trim is wound towards what holds the present angle of attack, so the nose stays put when the stick is released
@@ -3001,7 +3008,7 @@ $('chipInv').addEventListener('click',e=>{invert=!invert;e.currentTarget.setAttr
 function toggleAutoTrim(){autoTrim=!autoTrim;syncSys();}
 // post-stall mode: thrust vectoring on, angle-of-attack and g limiters off, autopilot unavailable (J)
 function togglePst(on){pst=on==null?!pst:!!on;if(pst){apDisconnect('AP DISC · post-stall mode');ac.fpHold=null;}
-  onEvent(pst?'Post-stall mode ON · thrust vectoring, AoA and g limits off. Full aft stick for a Cobra, release to recover':'Post-stall mode OFF · fly-by-wire limits back on',pst?'warn':'');syncSys();}
+  onEvent(pst?'Post-stall mode ON · thrust vectoring, AoA and g limits off. stick commands pitch rate and the nose holds where you let go; push to recover':'Post-stall mode OFF · fly-by-wire limits back on',pst?'warn':'');syncSys();}
 function toggleAutoRudder(){autoRudder=!autoRudder;syncSys();}
 function syncLights(){document.querySelectorAll('[data-l]').forEach(b=>b.classList.toggle('on',!!LIGHTS[b.dataset.l]));const m=$('mLights');if(m)m.classList.toggle('on',LIGHTS.ldg);}
 function toggleLight(k){LIGHTS[k]=!LIGHTS[k];syncLights();audio.click&&audio.click();}
